@@ -1,0 +1,23 @@
+version: '3.5'
+
+services:
+  griddb-server:
+    build:
+      context: ./griddb
+      dockerfile: Dockerfile
+    ports:
+      - "10001:10001"
+      - "10010:10010"
+      - "10020:10020"
+      - "10030:10030"
+      - "10040:10040"
+      - "10050:10050"
+      - "10080:10080"
+      - "20001:20001"
+
+  fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
