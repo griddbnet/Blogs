@@ -20,7 +20,6 @@ RUN  ./bootstrap.sh
 RUN ./configure
 RUN make
 WORKDIR /c_client-4.6.0/bin
-RUN ls
 ENV LIBRARY_PATH ${LIBRARY_PATH}:/c_client-4.6.0/bin
 ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/c_client-4.6.0/bin
 
@@ -57,11 +56,10 @@ RUN make
 RUN make install
 WORKDIR /
 
+# Download and Make the Pyhon client
 RUN wget https://github.com/griddb/python_client/archive/refs/tags/0.8.5.tar.gz
 RUN tar xvf 0.8.5.tar.gz
 WORKDIR /python_client-0.8.5
-
-#RUN yum -y install python36 python36-devel
 RUN make
 ENV PYTHONPATH /python_client-0.8.5
 
