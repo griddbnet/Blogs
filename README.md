@@ -1,8 +1,12 @@
 ## Introduction
 
-A new version of the GridDB Python client has been released which adds some new time series functions. Though these functions are new to the python client, they have been available for use in the native GridDB language (java) prior to this release. These are `aggregate_time_series`, `query_by_time_series_range`, and `query_by_time_series_sampling`. 
+A new version of the GridDB Python client has been released which adds some new time series functions. Though these explicity functions are new to the python client, they have been available for use in the native GridDB language (java) and through `TQL` strings/queries prior to this release. 
 
-In this blog, we will walkthrough the uses for these functions, how to use them, and some examples using a freely available data set from [kaggle](https://www.kaggle.com/datasets/census/population-time-series-data). We will also have a brief section showing how to ingest the data from the `csv` file using Java. To add to that, we will also share a `Dockerfile` which will contain all instructions to building and running the new python client. 
+Generally, staying away from TQL query strings will be safer as it allows us to not worry about injection attacks; it is also much simpler to use these functions compared to the TQL equivalent. You can read more about the TQL queries [here](http://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v4_3/GridDB_TQL_Reference.html).  
+
+In this blog, we will walkthrough the uses for these functions, how to use them, and some examples using a freely available data set from [kaggle](https://www.kaggle.com/datasets/census/population-time-series-data). These are `aggregate_time_series`, `query_by_time_series_range`, and `query_by_time_series_sampling`. 
+
+We will also have a brief section showing how to ingest the data from the `csv` file using Java. To add to that, we will also share a `Dockerfile` which will contain all instructions to building and running the new python client. 
 
 ## Installing Python Client
 
@@ -231,11 +235,11 @@ We will also need to fetch our newly made dataset to run our queries:
 
 ```python
 ts = store.get_container("population")
-query = ts.query("select * from population where value > 280000")
+query = ts.query("select * from population where value > 327000")
 rs = query.fetch()
 ```
 
-To avoid querying too many rows, as well as avoiding the missing data from before 1970, we will start our query with popular over 280000 (these values are in thousands), which will put us at around 1999 (20+ years ago).
+To avoid querying too many rows, as well as avoiding the missing data from before 1970, we will start our query with population over 280000 (these values are in thousands), which will put us at around 1999 (20+ years ago).
 
 This query will grab 20 years of data, but for simplicity sake, I will simply start from the first date which is over our query parameter and use the time series analysis since then.
 
@@ -251,32 +255,72 @@ time = datetime.datetime.fromtimestamp(gsTS/1000.0) # converts back to a usable 
 
 The `aggregation` functionality is a bit unqiue as it will return an `AggregationResult` instead of a set of rows as the other queries do. These results can grab values of `min, max, total, average, variance, standard deviation, count, and weighted average`. 
 
-So, `AggregationResult` is the return type, and the parameters expected look like this: `aggregate_time_series(object start, object end, Aggregation type, string column_name=None)`. This is what it looks like fully formed: 
+Let's walk through these examples.
 
 ```python
+data = rs.next()
 year_in_mili = 31536000000 # this is one year in miliseconds
 added = gsTS + (year_in_mili * 7) # 7 years after our start time (this is end time)
 addedTime = datetime.datetime.fromtimestamp(added/1000.0) # converting to datetime obj as this is what the function expects
 ```
 
+Here you can see we use the start time as the first row returned from our query, and then the end time as 7 years later. 
+
+So, if we set the aggregation type to min, the function will return the minimum value from the dataset (the smallest number). The max will do the opposite -- the largest integer from the result. Total will take the sum of all values and return that to you. `AggregationResult` is the return type, and the parameters expected look like this: `aggregate_time_series(object start, object end, Aggregation type, string column_name=None)`. This is what it looks like fully formed: 
+
 ```python
-aggResult = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.AVERAGE, "value")
-print("aggregation: ", aggResult.get(griddb.Type.DOUBLE))
+total = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.TOTAL, "value")
+print("TOTAL: ", total.get(griddb.Type.LONG))
 ```
 
-Here you can see we use the start time as the first row returned from our query, and then the end time as 7 years later. We are asking for the average and asking to pull from the value column. 
+`TOTAL:  48714984`
 
-The result: 
+Variance is mathematically defined as: the average of the squared differences from the mean. This essentially means how different each number is different from the mean/average. With this particular dataset: 
 
-`aggregation:  289970.14285714284`
+```python
+variance = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.VARIANCE, "value")
+print("VARIANCE: ", variance.get(griddb.Type.LONG))
+```
+
+`VARIANCE:  -84078718183`
+
+Standard deviation is similar to variance, it "is a statistical measurement that looks at how far a group of numbers is from the mean. Put simply, standard deviation measures how far apart numbers are in a data set." It is usually used to analyze how closely related the numbers are to the mean.
+
+
+```python
+stdDev = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.STANDARD_DEVIATION, "value")
+print("STANDARD DEVIATION: ", stdDev.get(griddb.Type.LONG))
+```
+
+`STANDARD DEVIATION:  -9223372036854775808`
+
+The average is also the mean, it simply takes the total sum of all values divided by the count.
+
+```python
+aggResult = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.AVERAGE, "value")
+print("AVERAGE: ", aggResult.get(griddb.Type.LONG))
+```
+
+`AVERAGE:  289970`
 
 So the average between 1999 and 2006 was about 290 million.
 
-Of course just grabbing the average is not that interesting or important, but I hope it is obvious that any of other results could be useful in different types of analysis.
+The last one worth discussing here is the weighted average. A weighted average attimeted to quantify the importance of numbers over others in the average. In the case of time series data, it generally measures the time space between two data points and tries to weigh that. For this specific dataset, each data point is exactly 1 month apart, so unfortunately the number that is produced by our query is the same as our average: 
+
+```python
+weightedAvg = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.WEIGHTED_AVERAGE, "value")
+print("WEIGHTED AVERAGE: ", weightedAvg.get(griddb.Type.LONG))
+```
+
+`WEIGHTED AVERAGE:  289970`
+
+But if the time series datas was irregularly spaced, the number produced would have been different from our average. You can read more about this from a previous [blog](https://griddb.net/en/blog/aggregation-with-griddb/)
 
 ### Query Time Series Range
 
-The query time series range will return a set of Rows type same as most other queries. The function looks like this: `query_by_time_series_range(object start, object end, QueryOrder order=QueryOrder.ASCENDING)`. Here's the concrete example: 
+The query time series range will return a set of Rows type same as most other queries. The function looks like this: `query_by_time_series_range(object start, object end, QueryOrder order=QueryOrder.ASCENDING)`. It returns the row from the start time to the end time -- essentially giving the developer an easy way to grab an explicit time range. 
+
+Here's the concrete example: 
 
 ```python
 rangeQuery = ts.query_by_time_series_range(time, addedTime, griddb.QueryOrder.ASCENDING)
@@ -315,13 +359,13 @@ d:  [datetime.datetime(2000, 9, 1, 0, 0), 282932]
 d:  [datetime.datetime(2000, 9, 1, 7, 0), 282932]
 ```
 
-This result can be useful but for the purposes of this example, it is not that exciting.
-
 ### Query By Time Series Sampling
 
-The last of the new functions is, in my opinion, the most interesting. The time series sampling function also returns a set of Rows. It takes the most parameters of all the functions: `query_by_time_series_sampling(object start, object end, list[string] column_name_list, InterpolationMode mode, int interval, TimeUnit interval_unit)`. It also takes the start and end, but this time it takes a list of column names, and then an interpolation mode, and intervals and time units. 
+The last of the new functions is, in my opinion, the most interesting. Thie sampling returns a uniform sample of rows which have a set time between each point.
 
-For interpolation mode, you can choose either: `LINEAR_OR_PREVIOUS` or `EMPTY`. For the interval unit, the following choices are available: `YEAR,MONTH,DAY,HOUR,MINUTE,SECOND,MILLISECOND` but the year and month are too large and not allowed as intervals, so essentially you would choose an interval from day and below. 
+The time series sampling function also returns a set of Rows. It takes the most parameters of all the functions: `query_by_time_series_sampling(object start, object end, list[string] column_name_list, InterpolationMode mode, int interval, TimeUnit interval_unit)`. It also takes the start and end, but this time it takes a list of column names, and then an interpolation mode, and intervals and time units. 
+
+For interpolation mode, you can choose either: `LINEAR_OR_PREVIOUS` or `EMPTY`. For the interval unit, the following choices are available: `YEAR,MONTH,DAY,HOUR,MINUTE,SECOND,MILLISECOND` but the year and month are too large and not allowed as intervals, so essentially you would choose an interval from day or below. 
 
 Here is the concrete example ran for the blog: 
 
@@ -386,6 +430,10 @@ sampling:  [datetime.datetime(2006, 9, 10, 0, 0), 299636]
 ```
 
 The original dataset provides us with the population numbers for the first of every month. And with the sampling, we can extrapolate the population values on a per-day basis. We can see, based on the data, the values we do have from kaggle, are correct, and the population leading up to those days are reasonable. For example, 09/01/2006 has a population value of 299554, which matches our kaggle data, and the day before has a value of 299544.
+
+Here is a chart made with excel with the full data from the query result
+
+![]image 
 
 ## Conclusion
 
