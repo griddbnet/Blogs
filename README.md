@@ -188,8 +188,8 @@ print("TOTAL: ", total.get(griddb.Type.LONG))
 The average is also the mean, it simply takes the total sum of all values divided by the count.
 
 ```python
-aggResult = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.AVERAGE, "value")
-print("AVERAGE: ", aggResult.get(griddb.Type.LONG))
+avg = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.AVERAGE, "value")
+print("AVERAGE: ", avg.get(griddb.Type.LONG))
 ```
 
 `AVERAGE:  289970`
@@ -324,7 +324,7 @@ sampling:  [datetime.datetime(2006, 9, 9, 0, 0), 299626]
 sampling:  [datetime.datetime(2006, 9, 10, 0, 0), 299636]
 ```
 
-The original dataset provides us with the population numbers for the first of every month. And with the sampling, we can extrapolate the population values on a per-day basis. We can see, based on the data, the values we do have from kaggle, are correct, and the population leading up to those days are reasonable. For example, 09/01/2006 has a population value of 299554, which matches our kaggle data, and the day before has a value of 299544.
+The original dataset provides us with the population numbers for the first of every month. And with the sampling, we can extrapolate the population values on a per-day basis. We can see, based on the data, the values we do have from kaggle, are correct, and the population leading up to those days are reasonable. For example, 09/01/2006 has a population value of 299554, which matches our kaggle data, and the day before has a value of 299544.    
 
 ## Conclusion
 

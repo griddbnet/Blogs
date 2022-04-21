@@ -30,14 +30,31 @@ time = datetime.datetime.fromtimestamp(gsTS/1000.0)
 added = gsTS + (year_in_mili * 7)
 addedTime = datetime.datetime.fromtimestamp(added/1000.0)
 
-x = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.AVERAGE, "value")
-print("aggregation: ", x.get(griddb.Type.DOUBLE))
+
+
+total = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.TOTAL, "value")
+print("TOTAL: ", total.get(griddb.Type.LONG))
+
+avg = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.AVERAGE, "value")
+print("AVERAGE: ", avg.get(griddb.Type.LONG))
+
+variance = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.VARIANCE, "value")
+print("VARIANCE: ", variance.get(griddb.Type.DOUBLE))
+
+stdDev = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.STANDARD_DEVIATION, "value")
+print("STANDARD DEVIATION: ", stdDev.get(griddb.Type.LONG))
+
+count = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.COUNT, "value")
+print("COUNT ", count.get(griddb.Type.LONG))
+
+weighted_avg = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.WEIGHTED_AVERAGE, "value")
+print("WEIGHTED AVERAGE: ", weighted_avg.get(griddb.Type.LONG))
     
 rangeQuery = ts.query_by_time_series_range(time, addedTime, griddb.QueryOrder.ASCENDING)
 rangeRs = rangeQuery.fetch()
 while rangeRs.has_next():
     d = rangeRs.next()
-    print("d: ", d)
+    print("range: ", d)
   
 try:   
     samplingQuery = ts.query_by_time_series_sampling(time, addedTime, ["value"], griddb.InterpolationMode.LINEAR_OR_PREVIOUS, 1, griddb.TimeUnit.DAY)
