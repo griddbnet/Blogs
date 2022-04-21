@@ -1,10 +1,10 @@
 ## Introduction
 
-A new version of the GridDB Python client has been released which adds some new time series functions. Though these explicity functions are new to the python client, they have been available for use in the native GridDB language (java) and through `TQL` strings/queries prior to this release. 
+A new version of the GridDB Python client has been released which adds some new time series functions. Though these functions are new to the python client, they have been available for use in the native GridDB language (java) and through `TQL` strings/queries prior to this release. 
 
-Generally, staying away from TQL query strings will be safer as it allows us to not worry about injection attacks; it is also much simpler to use these functions compared to the TQL equivalent. You can read more about the TQL queries [here](http://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v4_3/GridDB_TQL_Reference.html).  
+Generally, staying away from TQL query strings will be safer as it allows us to not worry about injection attacks; it is also much simpler to use these functions compared to their TQL equivalents. You can read more about the TQL queries [here](http://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v4_3/GridDB_TQL_Reference.html).  
 
-In this blog, we will walkthrough the uses for these functions, how to use them, and some examples using a freely available data set from [kaggle](https://www.kaggle.com/datasets/census/population-time-series-data). These are `aggregate_time_series`, `query_by_time_series_range`, and `query_by_time_series_sampling`. 
+Now, let's move on to what we will discuss in this blog: we will walk through the uses for these functions, how to use them, and display some examples using a freely available data set from [kaggle](https://www.kaggle.com/datasets/census/population-time-series-data). These are `aggregate_time_series`, `query_by_time_series_range`, and `query_by_time_series_sampling`. 
 
 We will also have a brief section showing how to ingest the data from the `csv` file using Java. To add to that, we will also share a `Dockerfile` which will contain all instructions to building and running the new python client. 
 
@@ -12,7 +12,7 @@ We will also have a brief section showing how to ingest the data from the `csv` 
 
 You will of course need to have GridDB installed on to your machine. Instructions for that can be found here: [docs](https://docs.griddb.net/gettingstarted/introduction/).
  
-According to the [GridDB Python Client github](https://github.com/griddb/python_client) page, these are the environment requirements: 
+According to the [GridDB Python Client github](https://github.com/griddb/python_client) page, these are the environment requirements for CentOS: 
 
     OS: CentOS 7.6(x64) (GCC 4.8.5)
     SWIG: 3.0.12
@@ -20,27 +20,15 @@ According to the [GridDB Python Client github](https://github.com/griddb/python_
     GridDB C client: V4.5 CE(Community Edition)
     GridDB server: V4.5 CE, CentOS 7.6(x64) (GCC 4.8.5)
 
-    OS: Ubuntu 18.04(x64) (gcc 7.3.0)
-    SWIG: 3.0.12
-    Python: 3.6
-    GridDB C client: V4.5 CE (Note: If you build from source code, please use GCC 4.8.5.)
-    GridDB server: V4.5 CE, Ubuntu 18.04(x64) (Note: If you build from source code, please use GCC 4.8.5.)
-    
-    OS: Windows 10(x64) (VS2017)
-    SWIG: 3.0.12
-    Python: 3.6
-    GridDB C client: V4.5 CE
-    GridDB server: V4.5 CE, CentOS 7.6(x64) (GCC 4.8.5)
-
-    OS: MacOS Catalina (x86_64)
-    SWIG: 3.0.12
-    Python: 3.6.9
-    GridDB C client: V4.5 CE
-    GridDB server: V4.5 CE, Centos 7.6(x64) (GCC 4.8.5)
-
 ### Dockerfile
 
-The `Dockerfile` which we have prepared will build/make all prereqs and then run whichever Python script you feed into it at the bottom of the file. Here is the file in its entirety: 
+The `Dockerfile` which we have prepared will build/make all prereqs and then run whichever Python script you feed into it at the bottom of the file. 
+
+To make things easy, you can simply pull from Dockerhub: 
+
+`docker pull griddbnet/python-client-v0.8.5:latest`
+
+Here is the file in its entirety: 
 
 ```bash
 FROM centos:7
@@ -116,91 +104,11 @@ When using this container, you can either run a [second container which will hos
 
 `docker run -it --network host --name python_client <image id>`
 
-By setting this network flag, you tell your container to use your host machine's network; you can read more about that here: [Docker Docs](https://docs.docker.com/network/host/).
-
 ## Ingesting Data 
 
 The dataset we're using is downloadable on the [kaggle](https://www.kaggle.com/datasets/census/population-time-series-data) website for free and is presented to us in `csv` form. To ingest this into our GridDB server, we will be using java as it is the native connector, but of course ingesting via python is also feasible. 
 
-To ingest, we simply use the commons csv library parser to iterate through each line and grab and convert the values accordingly. With java, we also set the container's schema by first creating a java class of the object. 
-
-```java
-    static class Population {
-        @RowKey Date date;
-        int value;
-    }
-```
-
-Here you can see we choose to omit the columns we have no need for. We simply skip those columns and ingest the values which matter: the date and the population value. 
-
-Next will be the actual converting: 
-
-```java
-public static Population parseCsvRecord(CSVRecord r) throws Exception {
-
-    Population pop = new Population();
-
-    try {
-        String dateString = r.get("date");
-        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
-        Date tm1 = sf.parse(dateString);
-    
-        pop.value = Integer.parseInt(r.get("value"));
-        pop.date = tm1;
-    } catch(Exception e) {
-        return null;
-    }
-
-    return pop; 
-
-}
-```
-
-Here we feed in each row of the csv file and parse the and convert the values we need.
-
-After we have the appropriate data, we simply feed it into our GridDB server: 
-
-```java
-public static void main(String[] args) throws Exception {
-
-		// Get a GridStore instance
-		Properties props = new Properties();
-		props.setProperty("notificationAddress", "239.0.0.1");
-		props.setProperty("notificationPort", "31999");
-		props.setProperty("clusterName", "defaultCluster");
-		props.setProperty("user", "admin");
-		props.setProperty("password", "admin");
-		GridStore store = GridStoreFactory.getInstance().getGridStore(props);
- 
-        Reader in = new FileReader("population.csv");
-        Iterable<CSVRecord> records = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in);
-        int i=0;
-        for (CSVRecord record : records) {
-            try {
-                Population pop = parseCsvRecord(record);
-                if(pop != null) {
-		            TimeSeries<Population> ts = store.putTimeSeries("population", Population.class);
-                    ts.setAutoCommit(false);
-                    ts.put(pop);
-                    ts.commit();
-                }
-            } catch(Exception e) {
-                System.out.println("Failed to ingest "+i);
-                System.out.println(e);
-            }
-        }
-
-		store.close();
-	}
-
-}
-```
-
-The rowkey for this dataset is timeseries so of course we are creating putting into a timeseries container. 
-
-One small caveat regarding this dataset is that it starts from around the 1950s, but because the timeseries data utilizes Unix epoch (Unix time), those values are technically negative and unusable by GridDB, so the dataset we will be using starts from 1970 and onwards; not a huge loss as this is simply for demo purposes. 
-
-After you run this ingest, you will have the timeseries population container in your host GridDB server ready to do some time series analysis. 
+You can download the java code to ingest the data yourself from our [Github Repo]()
 
 
 ## Time Series Functionality
@@ -255,7 +163,7 @@ time = datetime.datetime.fromtimestamp(gsTS/1000.0) # converts back to a usable 
 
 The `aggregation` functionality is a bit unqiue as it will return an `AggregationResult` instead of a set of rows as the other queries do. These results can grab values of `min, max, total, average, variance, standard deviation, count, and weighted average`. 
 
-Let's walk through these examples.
+Let's walk through these examples. First, some preliminary variables need to be set:
 
 ```python
 data = rs.next()
@@ -266,7 +174,9 @@ addedTime = datetime.datetime.fromtimestamp(added/1000.0) # converting to dateti
 
 Here you can see we use the start time as the first row returned from our query, and then the end time as 7 years later. 
 
-So, if we set the aggregation type to min, the function will return the minimum value from the dataset (the smallest number). The max will do the opposite -- the largest integer from the result. Total will take the sum of all values and return that to you. `AggregationResult` is the return type, and the parameters expected look like this: `aggregate_time_series(object start, object end, Aggregation type, string column_name=None)`. This is what it looks like fully formed: 
+So, if we set the aggregation type to min, the function will return the minimum value from the dataset (the smallest number). The max will do the opposite -- the largest integer from the result. Total will take the sum of all values and return that to you. 
+
+`AggregationResult` is the return type, and the parameters expected look like this: `aggregate_time_series(object start, object end, Aggregation type, string column_name=None)`. This is what it looks like fully formed: 
 
 ```python
 total = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.TOTAL, "value")
@@ -274,25 +184,6 @@ print("TOTAL: ", total.get(griddb.Type.LONG))
 ```
 
 `TOTAL:  48714984`
-
-Variance is mathematically defined as: the average of the squared differences from the mean. This essentially means how different each number is different from the mean/average. With this particular dataset: 
-
-```python
-variance = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.VARIANCE, "value")
-print("VARIANCE: ", variance.get(griddb.Type.LONG))
-```
-
-`VARIANCE:  -84078718183`
-
-Standard deviation is similar to variance, it "is a statistical measurement that looks at how far a group of numbers is from the mean. Put simply, standard deviation measures how far apart numbers are in a data set." It is usually used to analyze how closely related the numbers are to the mean.
-
-
-```python
-stdDev = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.STANDARD_DEVIATION, "value")
-print("STANDARD DEVIATION: ", stdDev.get(griddb.Type.LONG))
-```
-
-`STANDARD DEVIATION:  -9223372036854775808`
 
 The average is also the mean, it simply takes the total sum of all values divided by the count.
 
@@ -302,10 +193,14 @@ print("AVERAGE: ", aggResult.get(griddb.Type.LONG))
 ```
 
 `AVERAGE:  289970`
+ 
+The average between 1999 and 2006 was about 290 million.
 
-So the average between 1999 and 2006 was about 290 million.
+Variance is mathematically defined as: the average of the squared differences from the mean. This essentially means how different each number is different from the mean/average. 
 
-The last one worth discussing here is the weighted average. A weighted average attimeted to quantify the importance of numbers over others in the average. In the case of time series data, it generally measures the time space between two data points and tries to weigh that. For this specific dataset, each data point is exactly 1 month apart, so unfortunately the number that is produced by our query is the same as our average: 
+Standard deviation is similar to variance, it "is a statistical measurement that looks at how far a group of numbers is from the mean. Put simply, standard deviation measures how far apart numbers are in a data set." It is usually used to analyze how closely related the numbers are to the mean.
+
+The last one worth discussing here is the weighted average. A weighted average attempts to quantify the importance of some values over others in the average. In the case of time series data, it generally measures the time space between two data points and tries to weigh that. For this specific dataset, each data point is exactly 1 month apart, so unfortunately the number that is produced by our query is the same as our average: 
 
 ```python
 weightedAvg = ts.aggregate_time_series(time, addedTime, griddb.Aggregation.WEIGHTED_AVERAGE, "value")
@@ -430,10 +325,6 @@ sampling:  [datetime.datetime(2006, 9, 10, 0, 0), 299636]
 ```
 
 The original dataset provides us with the population numbers for the first of every month. And with the sampling, we can extrapolate the population values on a per-day basis. We can see, based on the data, the values we do have from kaggle, are correct, and the population leading up to those days are reasonable. For example, 09/01/2006 has a population value of 299554, which matches our kaggle data, and the day before has a value of 299544.
-
-Here is a chart made with excel with the full data from the query result
-
-![]image 
 
 ## Conclusion
 
