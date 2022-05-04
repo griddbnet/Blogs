@@ -1,0 +1,35 @@
+{
+  "name": "griddb_node",
+  "version": "0.8.4",
+  "description": "Node.JS Client for GridDB (an In-Memory NoSQL Database for highly scalable IoT applications)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/griddb/nodejs_client.git"
+  },
+  "dependencies": {
+    "nan": "^2.14.0"
+  },
+  "keywords": [
+    "griddb",
+    "client",
+    "libgridstore",
+    "iot"
+  ],
+  "author": "TOSHIBA Digital Solutions Corporation",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/griddb/nodejs_client/issues"
+  },
+  "homepage": "https://github.com/griddb/nodejs_client#readme",
+  "files": [
+    "index.js",
+    "package.json",
+    "lib",
+    "sample",
+    "README.md"
+  ]
+}
