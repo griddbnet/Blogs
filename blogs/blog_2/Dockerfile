@@ -6,7 +6,6 @@ RUN yum -y install pcre2-devel.x86_64
 RUN yum -y install openssl-devel libffi-devel bzip2-devel -y
 RUN yum -y install libffi-devel bzip2-devel nodejs-devel -y
 RUN yum -y install xz-devel  perl-core zlib-devel -y
-RUN yum -y install numpy scipy
 
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash -
 RUN yum install nodejs -y
@@ -35,7 +34,7 @@ RUN make
 RUN make install
 WORKDIR /
 
-# Download and Make the Pyhon client
+# Download and Make the Node.js Client
 RUN wget https://github.com/griddb/nodejs_client/archive/refs/tags/0.8.6.tar.gz
 RUN tar xvf 0.8.6.tar.gz
 WORKDIR /nodejs_client-0.8.6
