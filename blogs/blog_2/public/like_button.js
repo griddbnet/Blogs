@@ -7,28 +7,28 @@ class LikeButton extends React.Component {
     this.state = { liked: false };
   }
 
-    let myHeaders = new Headers();
-    myHeaders.append("Content-type", "application/json")
 
-    let requestOptions = {
-      method: 'GET',
-      headers: myHeaders,
-      redirect: 'follow'
+  componentDidMount() {
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+	// Only run if the request is complete
+	    if (xhr.readyState !== 4) return;
+
+	// Process our return data
+	    if (xhr.status >= 200 && xhr.status < 300) {
+		    // What do when the request is successful
+		    console.log(JSON.parse(xhr.responseText));
+	    }
     };
 
-    fetch("http://localhost:5000/api", requestOptions)
-      .then(response => response.text())
-      .then(result => {
-        let resp = JSON.parse(result)
-        console.log("resp: ", resp)
+    xhr.open('GET', 'http://localhost:5000/api');
+    xhr.send();
 
 
-      })
-      .catch(error => console.log('error', error));
-  }
-
-
-
+  }   
 
   render() {
     if (this.state.liked) {
