@@ -20,6 +20,12 @@ config();
 
 app.use(express.static(join(__dirname, 'public')));
 
+app.get('/api', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Welcome to the API',
+    });
+});
 
 app.get('/', (req, res) => {
     res.send('Hello World');
