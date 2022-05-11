@@ -24,7 +24,7 @@ class LikeButton extends React.Component {
 	    }
     };
 
-    xhr.open('GET', 'http://localhost:5000/api');
+    xhr.open('GET', 'http://20.114.53.255:5000/all');
     xhr.send();
 
 
