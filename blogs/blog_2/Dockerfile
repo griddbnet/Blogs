@@ -45,10 +45,14 @@ ENV NODE_PATH /nodejs_client-0.8.6
 WORKDIR /app
 
 COPY app.js /app
+COPY ingest.js /app
+COPY cereal.csv /app
 RUN mkdir /app/public
 COPY public /app/public
 COPY package.json /app
 RUN npm install
 
+
 ENTRYPOINT ["npm", "run", "start", "239.0.0.1",  "31999", "defaultCluster", "admin", "admin"]
 
+#ENTRYPOINT ["node", "ingest.js", "239.0.0.1",  "31999", "defaultCluster", "admin", "admin"]
