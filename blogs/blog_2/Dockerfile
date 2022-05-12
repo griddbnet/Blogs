@@ -50,6 +50,7 @@ COPY cereal.csv /app
 RUN mkdir /app/public
 COPY public /app/public
 COPY package.json /app
+COPY package-lock.json /app
 RUN npm install
 
 
