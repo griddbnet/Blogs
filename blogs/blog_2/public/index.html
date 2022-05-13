@@ -55,7 +55,6 @@
                 if (xhr.readyState !== 4) return;
                 if (xhr.status >= 200 && xhr.status < 300) {
                     let resp = JSON.parse(xhr.responseText);
-                    console.log("results: ", resp.results)
                     setData(resp.results)
                 }
             };
@@ -70,7 +69,6 @@
 
         React.useEffect( () => {
             if (data !== null) {
-                console.log("data: ", data)
                 var namesArr = []
                 var caloriesArr = []
                 var proteinArr = []
@@ -80,13 +78,12 @@
                 var carboArr = []
                 var sugarsArr = []
                 var vitaminsArr = []
-                var listOfStuff = ['name', 'calories', 'protein', 'fat',
+                var listOfStuff = ['calories', 'protein', 'fat',
                                     'sodium', 'fiber', 'carbo', 'sugars',
                                     'vitamins']
                 var listOfComp = ["Greater Than", "Less Than", "Equal"]
 
                 data.forEach(row => {
-                    console.log("row: ", row)
                     namesArr.push(row[0])
                     caloriesArr.push(row[3])
                     proteinArr.push(row[4])
@@ -132,11 +129,26 @@
 
         }, [vitamins])
 
+        const [specific, setSpecific] = React.useState(null)
+        const [waiting, setWaiting] = React.useState(false)
+       
+        const handleSubmit = async (event) => {
+            event.preventDefault()
+            let response = await fetch("http://20.114.53.255:5000/test")
+            let result = await response.text()
+            let resp = await JSON.parse(result)
+
+            setSpecific(resp)
+        } 
+
+        React.useEffect( () => {
+            console.log("specific: ", specific)
+        }, [specific])
 
         return ( 
                <div>
-                <form action="http://20.114.53.255:5000/query" method="post">
-                 <label for="Cereals">Choose a Query</label>
+                <form action="http://20.114.53.255:5000/query" method="post" id="form" onSubmit={handleSubmit}>
+                 <label for="Cereals">What Would You Like To Know?</label>
     
                     <select name="list" id="list">
                         {selectList}
@@ -151,9 +163,8 @@
                     </select>
 
                     <br /><br />
-                    <input type="submit" value="Submit" />
+                    <input type="submit" value="Submit Query" />
                 </form>
-                <h1>Hello, world!</h1>;
             </div>
     )
       }

@@ -25,7 +25,7 @@ var promise = new Promise(function(resolve, reject) {
     resolve(true);
 });
 
-containerName = 'Cereal';
+containerName = 'Crereal';
 
 const queryCont = async (queryStr) => {
 
@@ -60,6 +60,75 @@ const querySpecific = async (cereal, comp, list) => {
     }
 }
 
+
+const queryVal = async (list, comp, val) => {
+
+    var data = []
+    let q = `SELECT * WHERE ${list} ${comp} ${val} `
+    console.log("query VaL: ", q)
+    try {
+        const col = await store.getContainer(containerName)
+        const query = await col.query(q)
+        const rs = await query.fetch(query)
+        while(rs.hasNext()) {
+            data.push(rs.next())
+        }
+        return data
+    } catch (error) {
+        console.log("error: ", error)
+    }
+}
+
+
+const checkType = type => {
+    console.log("check type: ", type)
+    var par;
+    switch(type) {
+        case "calories":
+            par = 3
+            break
+        case "protein":
+            par = 4
+             break
+        case "fat":
+            par = 5
+             break
+        case "sodium":
+            par = 6
+             break
+        case "fiber":
+            par = 7
+             break
+        case "sugars":
+            par = 9
+             break
+        case "vitamins":
+            par = 11
+             break
+    }   
+
+    console.log("check type val: ", par)
+    return par
+}
+
+const checkComp = comp => {
+    console.log("Check comp: ", comp)
+    var c;
+    switch(String(comp)) {
+        case "Greater Than":
+            c = ">"
+             break
+        case "Less Than":
+            c = "<"
+             break
+        case "Equal":
+            c = "="
+             break
+    }
+    console.log("Check comp val: ", c)
+    return c
+}
+
 app.use(express.static(join(__dirname, 'public')));
 
 
@@ -75,14 +144,31 @@ app.get('/all', async (req, res) => {
     }
 });
 
+
+var userResult = {"ok": "ok"}
+var userVal;
 app.post('/query', urlencodedParser, async (req, res) => {
    const {list, comp, cereal} = req.body 
     try {
         var results = await querySpecific(cereal, comp, list)
-        console.log("results: ", results)
+        let type = checkType(list) //grabs array position of proper value
+        let compVal = checkComp(comp)
+        let val = results[0][type]
+        userVal = val
+        let specificRes = await queryVal(list, compVal, val)
+        userResult = specificRes
+        console.log("specific results: ", specificRes)
+        res.status(200).json({ success: true});
     } catch (error) {
         console.log("try error: ", error)
     }
+});
+
+app.get("/test", (req, res) => {
+    res.json({
+        userVal,
+        userResult
+    })
 });
 
 app.get('/', (req, res) => {
