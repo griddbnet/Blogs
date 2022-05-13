@@ -2,8 +2,11 @@ const { config } = require('dotenv');
 const express = require('express');
 const { join } = require('path');
 const griddb = require('griddb_node');
+var bodyParser = require('body-parser')
 
 const app = express();
+var jsonParser = bodyParser.json()
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
@@ -14,6 +17,7 @@ store = factory.getStore({
     "username": process.argv[5],
     "password": process.argv[6]
 });
+
 
 config();
 
@@ -39,6 +43,23 @@ const queryCont = async (queryStr) => {
     }
 }
 
+const querySpecific = async (cereal, comp, list) => {
+
+    var data = []
+    let q = `SELECT * WHERE name='${cereal}'`
+    try {
+        const col = await store.getContainer(containerName)
+        const query = await col.query(q)
+        const rs = await query.fetch(query)
+        while(rs.hasNext()) {
+            data.push(rs.next())
+        }
+        return data
+    } catch (error) {
+        console.log("error: ", error)
+    }
+}
+
 app.use(express.static(join(__dirname, 'public')));
 
 
@@ -49,6 +70,16 @@ app.get('/all', async (req, res) => {
         res.json({
             results
         });
+    } catch (error) {
+        console.log("try error: ", error)
+    }
+});
+
+app.post('/query', urlencodedParser, async (req, res) => {
+   const {list, comp, cereal} = req.body 
+    try {
+        var results = await querySpecific(cereal, comp, list)
+        console.log("results: ", results)
     } catch (error) {
         console.log("try error: ", error)
     }

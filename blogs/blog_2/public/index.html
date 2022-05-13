@@ -17,18 +17,46 @@
 
     <div id="root"></div>
     <script type="text/babel">
-    
+
+                     // 0 ["name", griddb.GS_TYPE_STRING],
+                     // 1  ["mfr", griddb.GS_TYPE_STRING],
+                     // 2  ["type", griddb.GS_TYPE_STRING],
+                     // 3  ["calories", griddb.GS_TYPE_INTEGER],
+                     // 4  ["protein", griddb.GS_TYPE_INTEGER],
+                     // 5  ["fat", griddb.GS_TYPE_INTEGER],
+                     // 6  ["sodium", griddb.GS_TYPE_INTEGER],
+                     // 7  ["fiber", griddb.GS_TYPE_FLOAT],
+                     // 8  ["carbo", griddb.GS_TYPE_FLOAT],
+                     // 9  ["sugars", griddb.GS_TYPE_INTEGER],
+                    //  10  ["potass", griddb.GS_TYPE_INTEGER],
+                    //  11  ["vitamins", griddb.GS_TYPE_INTEGER],
+                    //  12  ["shelf", griddb.GS_TYPE_INTEGER],
+                    //  13  ["weight", griddb.GS_TYPE_FLOAT],
+                    //  14  ["cups", griddb.GS_TYPE_FLOAT],
+                    //  15  ["rating", griddb.GS_TYPE_FLOAT]
+
       const MyApp = () =>  {
-    
+        const [data, setData] = React.useState(null)
+        const [name, setName] = React.useState(null)
+        const [calories, setCalories] = React.useState(null)
+        const [protein, setProtein] = React.useState(null)
+        const [fat, setFat] = React.useState(null)
+        const [sodium, setSodium] = React.useState(null)
+        const [fiber, setFiber] = React.useState(null)
+        const [carbo, setCarbo] = React.useState(null)
+        const [sugars, setSugars] = React.useState(null)
+        const [vitamins, setVitamins] = React.useState(null)        
+
         React.useEffect(() => {
             var xhr = new XMLHttpRequest();
 
             xhr.onreadystatechange = function () {
 
                 if (xhr.readyState !== 4) return;
-
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    console.log(JSON.parse(xhr.responseText));
+                    let resp = JSON.parse(xhr.responseText);
+                    console.log("results: ", resp.results)
+                    setData(resp.results)
                 }
             };
 
@@ -37,23 +65,94 @@
 
         }, [])
 
-        
+        const [selectList, setSelectList] = React.useState(null)
+        const [selectComp, setSelectComp] = React.useState(null)
+
+        React.useEffect( () => {
+            if (data !== null) {
+                console.log("data: ", data)
+                var namesArr = []
+                var caloriesArr = []
+                var proteinArr = []
+                var fatArr = []
+                var sodiumArr = []
+                var fiberArr = []
+                var carboArr = []
+                var sugarsArr = []
+                var vitaminsArr = []
+                var listOfStuff = ['name', 'calories', 'protein', 'fat',
+                                    'sodium', 'fiber', 'carbo', 'sugars',
+                                    'vitamins']
+                var listOfComp = ["Greater Than", "Less Than", "Equal"]
+
+                data.forEach(row => {
+                    console.log("row: ", row)
+                    namesArr.push(row[0])
+                    caloriesArr.push(row[3])
+                    proteinArr.push(row[4])
+                    fatArr.push(row[5])
+                    sodiumArr.push(row[6])
+                    fiberArr.push(row[7])
+                    carboArr.push(row[8])
+                    sugarsArr.push(row[9])
+                    vitaminsArr.push(row[11])
+                })
+
+
+                const y = listOfStuff.map((l, i) => <option value={l} key={i}> {l} </option> )
+                const z = listOfComp.map((c, i) => <option value={c} key={i}> {c} </option> )
+
+                setSelectList(y)
+                setSelectComp(z)
+
+                setName(namesArr)
+                setCalories(caloriesArr)
+                setProtein(proteinArr)
+                setFat(fatArr)
+                setSodium(sodiumArr)
+                setFiber(fiberArr)
+                setCarbo(carboArr)
+                setSugars(sugarsArr)
+                setVitamins(vitaminsArr)
+            }
+        }, [data])        
     
-        console.log("yesm")
+
+        const [selectName, setSelectName] = React.useState(null)
+
+        React.useEffect( () => {
+            if (name !== null) {
+                //console.log(name, calories, protein, fat, sodium, fiber, carbo, sugars, vitamins)
+                const x = name.map((n, i) =>
+                    <option value={n} key={i}> {n} </option>
+                )
+
+                setSelectName(x)
+            }
+
+        }, [vitamins])
+
 
         return ( 
-            <div>
-                <form action="/query">
-  <label for="cars">Choose a car:</label>
-  <select name="cars" id="cars">
-    <option value="volvo">Volvo</option>
-    <option value="saab">Saab</option>
-    <option value="opel">Opel</option>
-    <option value="audi">Audi</option>
-  </select>
-  <br /><br />
-  <input type="submit" value="Submit" />
-</form>
+               <div>
+                <form action="http://20.114.53.255:5000/query" method="post">
+                 <label for="Cereals">Choose a Query</label>
+    
+                    <select name="list" id="list">
+                        {selectList}
+                    </select>
+
+                    <select name="comp" id="comp">
+                        {selectComp}
+                    </select>
+
+                    <select name="cereal" id="cereal">
+                        {selectName}
+                    </select>
+
+                    <br /><br />
+                    <input type="submit" value="Submit" />
+                </form>
                 <h1>Hello, world!</h1>;
             </div>
     )
