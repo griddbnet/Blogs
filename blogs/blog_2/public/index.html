@@ -169,17 +169,28 @@
         const [tableRows, setTableRows] = React.useState(null)
         React.useEffect( () => {
             if (specific !== null) {
-                console.log("specific: ", specific.userResult)
-                let x;
+               // console.log("specific: ", specific.userResult)
+                let x = []
                 specific.userResult.forEach(row => {
-                    x = processRow(row)
-                    console.log(row, x)
+                    x.push(processRow(row))
+                  //  console.log(row, x)
                 })
-
+                console.log("x: ", x)
                 setTableRows(x)
-                console.log('Table Rows: ' , tableRows)
             }
         }, [specific])
+
+        const [dataRows, setDataRows] = React.useState(null)
+        React.useEffect( () => {
+            console.log('Table Rows: ' , tableRows)
+            if (tableRows !== null) {
+                const x = tableRows.map((r, i) =>
+                    <tr key={i}> {r} </tr>
+                )
+                console.log("table rows: ", x)
+                setDataRows(x)
+            }
+        }, [tableRows])
 
         const processRow = row => {
             const x = row.map((n, i) =>
@@ -210,6 +221,7 @@
     <td class="tg-0lax">Cups</td>
     <td class="tg-0lax">Rating</td>
   </tr>
+    {dataRows}
 </thead>
 </table>
             )
