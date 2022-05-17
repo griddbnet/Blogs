@@ -129,42 +129,107 @@
 
         }, [vitamins])
 
+        const [list, setList] = React.useState("calories")
+        const handleList = (event) => {
+            console.log("handle List: ", event.target.value)
+            setList(event.target.value)
+        }
+        const [comp, setComp] = React.useState("Greater Than")
+        const handleComp = (event) => {
+            console.log("handle Comp: ", event.target.value)
+            setComp(event.target.value)
+        }
+        const [nameDropDown, setNameDropDown] = React.useState("100% Bran")
+        const handleName = (event) => {
+            console.log("handle List: ", event.target.value)
+            setNameDropDown(event.target.value)
+        }
+
         const [specific, setSpecific] = React.useState(null)
-        const [waiting, setWaiting] = React.useState(false)
-       
+
         const handleSubmit = async (event) => {
+            fetch('http://20.114.53.255:5000/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({'list': list, 'comp': comp, 'name': nameDropDown})
+            }).then(function(response) {
+                console.log(response)
+                return response.json();
+            });
             event.preventDefault()
+
             let response = await fetch("http://20.114.53.255:5000/test")
             let result = await response.text()
             let resp = await JSON.parse(result)
-
             setSpecific(resp)
-        } 
+        }
 
         React.useEffect( () => {
-            console.log("specific: ", specific)
+            specifc.forEach(row => {
+                let x = processRow(row)
+            })
         }, [specific])
+
+        const processRow = row => {
+            const x = row.map((n, i) =>
+                <td key={i}> {n} </td>
+            )    
+            return x
+        }
+
+        const makeTable = () => {
+            return (
+<table class="tg" id="table">
+<thead>
+  <tr>
+    <td class="tg-0pky">Name</td>
+    <td class="tg-0pky">Manufacturer</td>
+    <td class="tg-0lax">Type</td>
+    <td class="tg-0lax">Calories</td>
+    <td class="tg-0lax">Protein</td>
+    <td class="tg-0lax">Fat</td>
+    <td class="tg-0lax">Sodium</td>
+    <td class="tg-0lax">Fiber</td>
+    <td class="tg-0lax">Carbos</td>
+    <td class="tg-0lax">Sugars</td>
+    <td class="tg-0lax">Potass</td>
+    <td class="tg-0lax">Vitamins</td>
+    <td class="tg-0lax">Shelf</td>
+    <td class="tg-0lax">Weight</td>
+    <td class="tg-0lax">Cups</td>
+    <td class="tg-0lax">Rating</td>
+  </tr>
+</thead>
+</table>
+            )
+        }
+
 
         return ( 
                <div>
-                <form action="http://20.114.53.255:5000/query" method="post" id="form" onSubmit={handleSubmit}>
+                <form method="post" id="form" onSubmit={handleSubmit}>
                  <label for="Cereals">What Would You Like To Know?</label>
     
-                    <select name="list" id="list">
+                    <select name="list" id="list" onChange={handleList}>
                         {selectList}
                     </select>
 
-                    <select name="comp" id="comp">
+                    <select name="comp" id="comp" onChange={handleComp}>
                         {selectComp}
                     </select>
 
-                    <select name="cereal" id="cereal">
+                    <select name="cereal" id="cereal" onChange={handleName}>
                         {selectName}
                     </select>
 
                     <br /><br />
                     <input type="submit" value="Submit Query" />
                 </form>
+
+                {makeTable()}`
+                
             </div>
     )
       }

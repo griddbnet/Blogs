@@ -8,6 +8,8 @@ const app = express();
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
+app.use(bodyParser.json({ type: 'application/*+json' }))
+
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 store = factory.getStore({
@@ -99,6 +101,9 @@ const checkType = type => {
         case "fiber":
             par = 7
              break
+        case "carbo":
+            par = 8
+             break
         case "sugars":
             par = 9
              break
@@ -144,21 +149,22 @@ app.get('/all', async (req, res) => {
     }
 });
 
-
 var userResult = {"ok": "ok"}
 var userVal;
-app.post('/query', urlencodedParser, async (req, res) => {
-   const {list, comp, cereal} = req.body 
+app.post('/query', jsonParser, async (req, res) => {
+    const {list, comp, name} = req.body 
+    console.log("req body: ", req.body)
     try {
-        var results = await querySpecific(cereal, comp, list)
+        var results = await querySpecific(name, comp, list)
         let type = checkType(list) //grabs array position of proper value
         let compVal = checkComp(comp)
         let val = results[0][type]
+        console.log("results, type, compval, val", type, compVal, val)
         userVal = val
         let specificRes = await queryVal(list, compVal, val)
         userResult = specificRes
-        console.log("specific results: ", specificRes)
-        res.status(200).json({ success: true});
+        //console.log("specific results: ", specificRes)
+        res.status(200).json(userResult);
     } catch (error) {
         console.log("try error: ", error)
     }
