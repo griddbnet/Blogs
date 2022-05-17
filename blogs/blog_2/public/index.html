@@ -166,10 +166,19 @@
             setSpecific(resp)
         }
 
+        const [tableRows, setTableRows] = React.useState(null)
         React.useEffect( () => {
-            specifc.forEach(row => {
-                let x = processRow(row)
-            })
+            if (specific !== null) {
+                console.log("specific: ", specific.userResult)
+                let x;
+                specific.userResult.forEach(row => {
+                    x = processRow(row)
+                    console.log(row, x)
+                })
+
+                setTableRows(x)
+                console.log('Table Rows: ' , tableRows)
+            }
         }, [specific])
 
         const processRow = row => {
