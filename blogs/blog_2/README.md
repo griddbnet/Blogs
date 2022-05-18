@@ -1,8 +1,12 @@
 ## Introduction 
 
-In this blog, we will create a simple query builder app to display data that a user queries. We will go through the process of installing the GridDB node.js Client via docker, ingesting our open source data from [Kaggle], and then setting up React to work with a node.js instance connected to GridDB. 
+This blog serves as a soft follow up to a [previous blog](https://griddb.net/en/blog/visualize-data-with-griddb-and-the-webapi-using-react-js/) in which we used Facebook's React, paired with the GridDB Web API to ingest a CSV file and then vizualize said data. In this follow up, we will again use React, but this time we will be using the GridDB Node.js connector instead of the Web API to ingest and serve data to our frontend.
 
-From there, we can move on to the front end which will be simple: three dropdowns to allow a user to find some data points relating to the dataset which was ingested. Specifically, we cannot use the typical React bundle tooling as our node.js server needs a direct connection to the GriddB server. Installing React via a single file import is very simple, but it also requires a few extra imports to work as modern React apps do.
+So, in totality, to showcase both of these products, we will create a simple query builder app to display data that a user wants to see. We will go through the process of installing the GridDB node.js Client via docker, ingesting our open source data from [Kaggle](https://www.kaggle.com/datasets/crawford/80-cereals), and then setting up React to work with a node.js instance connected to GridDB. 
+
+From there, we can move on to the frontend which will be simple: three dropdowns to allow a user to find some data points relating to the dataset which was ingested. 
+
+One small caveat regarding using React with this app: we cannot use the typical React bundle tooling as our node.js server needs a direct connection to the GriddB server. Instead we will be installing React via some file imports which is very simple, but different.
 
 ## Installing the GridDB node.js Connector
 
@@ -70,19 +74,21 @@ ENTRYPOINT ["npm", "run", "start", "239.0.0.1",  "31999", "defaultCluster", "adm
 #ENTRYPOINT ["node", "ingest.js", "239.0.0.1",  "31999", "defaultCluster", "admin", "admin"]
 ```
 
-As you can see here, we have both the ingest as well as the running of the node.js code in here by moving around which line is currently commented. 
+As you can see here, we have both the ingest as well as the running of the node.js code in here by moving around which line is currently commented out.
 
 You can also pull the project from the public Dockerhub repo like so: 
 
 `docker pull griddbnet/nodejs-client:latest`
 
-When using this container, you can either run a second container which will host a GridDB Server, or you can use your locally running GridDB instance. This can be accomplished by using the network flag while running your docker image:
+Though if you go this route, you will need to ingest the Cereal data through some other means.
+
+Anyway, when using this container, you can either run a second container which will host a GridDB Server, or you can use your locally running GridDB instance. This can be accomplished by using the network flag while running your docker image:
 
 `docker run -it --network host --name node_client <image id>`
 
 ## Ingesting CSV Data with Node.js
 
-To start, let's create a simple node.js script to ingest our data from the `csv` file provided by Kaggle. If you are familiar at all with the [Python GridDB Client](), the node.js iteration will be very familiar. 
+To start, let's create a simple node.js script to ingest our data from the `csv` file provided by Kaggle. If you are familiar at all with the [Python GridDB Client](https://griddb.net/en/blog/griddb-python-client-adds-new-time-series-functions/), the node.js iteration will be very familiar. 
 
 First, you must import the griddb library, along with the csv parser. To install the parser, simply use `npm`.
 
@@ -185,7 +191,7 @@ fs.createReadStream(__dirname+'/cereal.csv')
 
 Once you run this, the entirety of the data should be available in your instance.
 
-## Node.js 
+## Building Our App
 
 ### Getting Started
 
@@ -255,6 +261,7 @@ To start, we set up an `index.html` file and import React, React DOM, and then B
   </head>
   ```
 
+
 With this at the top of the file, now React can be used as normal in the rest of the file. We just need to add the following babel script tags for all of our code which contains `JSX`
 
 `  <script type="text/babel">`
@@ -270,6 +277,7 @@ There also needs to be a div made right above our babel script tags to let our R
     const container = document.getElementById('root');
     const root = ReactDOM.createRoot(container);
     root.render(<MyApp />);
+</script> // end of babel script tags
 ```
 
 And with that, we can get on to writing our React code. 
