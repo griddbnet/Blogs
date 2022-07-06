@@ -43,7 +43,7 @@ $ /usr/share/logstash/bin/logstash-plugin install logstash-output-griddb-1.0.0.g
 
 Now we're ready to start using Logstash with the GridDB output plugin.
 
-# Usage
+# Basic Usage
 
 
 First, we need to create a config file /etc/logstash/mylogstash.conf with both input and output sections. In the input section, we configure Logstash to simply read /var/log/secure and parse it as a syslog output. This will let us track all logins. 
@@ -86,3 +86,54 @@ Now when a user logins or uses sudo, the secure log messages will be written to 
 
 ![](logstash_containerinfo.png)
 ![](logstash_records.png)
+
+
+# Filtering, Grok and Mutate
+
+Secure log has more than just SSHD messages, we can filter out non-SSH messages by adding the following filter:
+
+```
+filter {
+    if ([message] !~ "sshd") {
+        drop { }
+    }
+} 
+```
+
+
+What if you only want to track to unsuccessful logins? When a login fails, a "Connection closed by $remotehost port $port [preauth]" entry is added to secure log. First we filter out all messages that do not have contain "Connection closed by" and "[preauth]". 
+
+```
+    if ([message] !~ "[preauth]") {
+        drop { }
+    }
+    if ([message] !~ "Connection closed by") {
+        drop { }
+    }
+ 
+```
+
+Then we can grok for the log entry to get the remote host which is added to the remhost field. This block also gets to the filter block. Grok is extremely powerful, it is worth checking out its capabilities [here](https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html).
+
+```
+    grok { 
+        match => { "message" => "closed by %{IPORHOST:remhost} port "  }
+    }
+
+```
+
+Now we can use mutate to remove unnessary fields. Mutate can alter fields in many ways documented [here](https://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html).
+```
+    mutate {
+        remove_field => ["path", "type", "version"]
+    }
+
+```
+    mutate {
+        rename => { "tags" => "remotehost" }
+    }
+```
+
+Now we can use aggregation functions in the query to count the number of unsuccessful logins from different remote hosts.
+
+
