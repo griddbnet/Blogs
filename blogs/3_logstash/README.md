@@ -129,11 +129,7 @@ Now we can use mutate to remove unnessary fields. Mutate can alter fields in man
     }
 
 ```
-    mutate {
-        rename => { "tags" => "remotehost" }
-    }
-```
 
 Now we can use aggregation functions in the query to count the number of unsuccessful logins from different remote hosts.
 
-
+![](remhostcounts.png)
