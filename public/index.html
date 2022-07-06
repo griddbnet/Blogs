@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Query Builder</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  </head>
+  <body>
+
+    <div id="root"></div>
+    <script type="text/babel">
+
+                     // 0 ["name", griddb.GS_TYPE_STRING],
+                     // 1  ["mfr", griddb.GS_TYPE_STRING],
+                     // 2  ["type", griddb.GS_TYPE_STRING],
+                     // 3  ["calories", griddb.GS_TYPE_INTEGER],
+                     // 4  ["protein", griddb.GS_TYPE_INTEGER],
+                     // 5  ["fat", griddb.GS_TYPE_INTEGER],
+                     // 6  ["sodium", griddb.GS_TYPE_INTEGER],
+                     // 7  ["fiber", griddb.GS_TYPE_FLOAT],
+                     // 8  ["carbo", griddb.GS_TYPE_FLOAT],
+                     // 9  ["sugars", griddb.GS_TYPE_INTEGER],
+                    //  10  ["potass", griddb.GS_TYPE_INTEGER],
+                    //  11  ["vitamins", griddb.GS_TYPE_INTEGER],
+                    //  12  ["shelf", griddb.GS_TYPE_INTEGER],
+                    //  13  ["weight", griddb.GS_TYPE_FLOAT],
+                    //  14  ["cups", griddb.GS_TYPE_FLOAT],
+                    //  15  ["rating", griddb.GS_TYPE_FLOAT]
+
+      const MyApp = () =>  {
+        const [data, setData] = React.useState(null)
+        const [name, setName] = React.useState(null)
+        const [calories, setCalories] = React.useState(null)
+        const [protein, setProtein] = React.useState(null)
+        const [fat, setFat] = React.useState(null)
+        const [sodium, setSodium] = React.useState(null)
+        const [fiber, setFiber] = React.useState(null)
+        const [carbo, setCarbo] = React.useState(null)
+        const [sugars, setSugars] = React.useState(null)
+        const [vitamins, setVitamins] = React.useState(null)        
+
+        React.useEffect(() => {
+            var xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState !== 4) return;
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    let resp = JSON.parse(xhr.responseText);
+                    setData(resp.results)
+                }
+            };
+
+            xhr.open('GET', 'http://20.114.53.255:5000/all');
+            xhr.send();
+
+        }, [])
+
+        const [selectList, setSelectList] = React.useState(null)
+        const [selectComp, setSelectComp] = React.useState(null)
+
+        React.useEffect( () => {
+            if (data !== null) {
+                var namesArr = []
+                var caloriesArr = []
+                var proteinArr = []
+                var fatArr = []
+                var sodiumArr = []
+                var fiberArr = []
+                var carboArr = []
+                var sugarsArr = []
+                var vitaminsArr = []
+                var listOfStuff = ['calories', 'protein', 'fat',
+                                    'sodium', 'fiber', 'carbo', 'sugars',
+                                    'vitamins']
+                var listOfComp = ["Greater Than", "Less Than", "Equal"]
+
+                data.forEach(row => {
+                    namesArr.push(row[0])
+                    caloriesArr.push(row[3])
+                    proteinArr.push(row[4])
+                    fatArr.push(row[5])
+                    sodiumArr.push(row[6])
+                    fiberArr.push(row[7])
+                    carboArr.push(row[8])
+                    sugarsArr.push(row[9])
+                    vitaminsArr.push(row[11])
+                })
+
+
+                const y = listOfStuff.map((l, i) => <option value={l} key={i}> {l} </option> )
+                const z = listOfComp.map((c, i) => <option value={c} key={i}> {c} </option> )
+
+                setSelectList(y)
+                setSelectComp(z)
+
+                setName(namesArr)
+                setCalories(caloriesArr)
+                setProtein(proteinArr)
+                setFat(fatArr)
+                setSodium(sodiumArr)
+                setFiber(fiberArr)
+                setCarbo(carboArr)
+                setSugars(sugarsArr)
+                setVitamins(vitaminsArr)
+            }
+        }, [data])        
+    
+
+        const [selectName, setSelectName] = React.useState(null)
+
+        React.useEffect( () => {
+            if (name !== null) {
+                //console.log(name, calories, protein, fat, sodium, fiber, carbo, sugars, vitamins)
+                const x = name.map((n, i) =>
+                    <option value={n} key={i}> {n} </option>
+                )
+
+                setSelectName(x)
+            }
+
+        }, [vitamins])
+
+        const [list, setList] = React.useState("calories")
+        const handleList = (event) => {
+            console.log("handle List: ", event.target.value)
+            setList(event.target.value)
+        }
+        const [comp, setComp] = React.useState("Greater Than")
+        const handleComp = (event) => {
+            console.log("handle Comp: ", event.target.value)
+            setComp(event.target.value)
+        }
+        const [nameDropDown, setNameDropDown] = React.useState("100% Bran")
+        const handleName = (event) => {
+            console.log("handle List: ", event.target.value)
+            setNameDropDown(event.target.value)
+        }
+
+        const [specific, setSpecific] = React.useState(null)
+
+        const handleSubmit = async (event) => {
+            fetch('http://20.114.53.255:5000/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({'list': list, 'comp': comp, 'name': nameDropDown})
+            }).then(function(response) {
+                console.log(response)
+                return response.json();
+            });
+            event.preventDefault()
+
+            let response = await fetch("http://20.114.53.255:5000/test")
+            let result = await response.text()
+            let resp = await JSON.parse(result)
+            setSpecific(resp)
+        }
+
+        const [tableRows, setTableRows] = React.useState(null)
+        React.useEffect( () => {
+            if (specific !== null) {
+               // console.log("specific: ", specific.userResult)
+                let x = []
+                specific.userResult.forEach(row => {
+                    x.push(processRow(row))
+                  //  console.log(row, x)
+                })
+                console.log("x: ", x)
+                setTableRows(x)
+            }
+        }, [specific])
+
+        const [dataRows, setDataRows] = React.useState(null)
+        React.useEffect( () => {
+            console.log('Table Rows: ' , tableRows)
+            if (tableRows !== null) {
+                const x = tableRows.map((r, i) =>
+                    <tr key={i}> {r} </tr>
+                )
+                console.log("table rows: ", x)
+                setDataRows(x)
+            }
+        }, [tableRows])
+
+        const processRow = row => {
+            const x = row.map((n, i) =>
+                <td key={i}> {n} </td>
+            )    
+            return x
+        }
+
+        const makeTable = () => {
+            return (
+<table class="tg" id="table">
+<thead>
+  <tr>
+    <td class="tg-0pky">Name</td>
+    <td class="tg-0pky">Manufacturer</td>
+    <td class="tg-0lax">Type</td>
+    <td class="tg-0lax">Calories</td>
+    <td class="tg-0lax">Protein</td>
+    <td class="tg-0lax">Fat</td>
+    <td class="tg-0lax">Sodium</td>
+    <td class="tg-0lax">Fiber</td>
+    <td class="tg-0lax">Carbos</td>
+    <td class="tg-0lax">Sugars</td>
+    <td class="tg-0lax">Potass</td>
+    <td class="tg-0lax">Vitamins</td>
+    <td class="tg-0lax">Shelf</td>
+    <td class="tg-0lax">Weight</td>
+    <td class="tg-0lax">Cups</td>
+    <td class="tg-0lax">Rating</td>
+  </tr>
+    {dataRows}
+</thead>
+</table>
+            )
+        }
+
+
+        return ( 
+               <div>
+                <form method="post" id="form" onSubmit={handleSubmit}>
+                 <label for="Cereals">What Would You Like To Know?</label>
+    
+                    <select name="list" id="list" onChange={handleList}>
+                        {selectList}
+                    </select>
+
+                    <select name="comp" id="comp" onChange={handleComp}>
+                        {selectComp}
+                    </select>
+
+                    <select name="cereal" id="cereal" onChange={handleName}>
+                        {selectName}
+                    </select>
+
+                    <br /><br />
+                    <input type="submit" value="Submit Query" />
+                </form>
+
+                {makeTable()}`
+                
+            </div>
+    )
+      }
+
+      const container = document.getElementById('root');
+      const root = ReactDOM.createRoot(container);
+      root.render(<MyApp />);
+
+    </script>
+  </body>
+</html>
