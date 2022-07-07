@@ -11,7 +11,7 @@ var store = factory.getStore({
     "password": process.argv[6]
 });
 
-var containerName = "Crereal"
+var containerName = "Cereal"
 const conInfo = new griddb.ContainerInfo({
           'name': containerName,
           'columnInfoList': [

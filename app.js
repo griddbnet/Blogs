@@ -1,12 +1,10 @@
 const { config } = require('dotenv');
 const express = require('express');
-const { join } = require('path');
 const griddb = require('griddb-node-api');
 var bodyParser = require('body-parser')
 
 const app = express();
 var jsonParser = bodyParser.json()
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
 
 app.use(bodyParser.json({ type: 'application/*+json' }))
 
@@ -23,11 +21,7 @@ store = factory.getStore({
 
 config();
 
-var promise = new Promise(function(resolve, reject) {
-    resolve(true);
-});
-
-containerName = 'Crereal';
+containerName = 'Cereal';
 
 const queryCont = async (queryStr) => {
 
@@ -45,10 +39,10 @@ const queryCont = async (queryStr) => {
     }
 }
 
-const querySpecific = async (cereal, comp, list) => {
+const querySpecific = async (cerealName) => {
 
     var data = []
-    let q = `SELECT * WHERE name='${cereal}'`
+    let q = `SELECT * WHERE name='${cerealName}'`
     try {
         const col = await store.getContainer(containerName)
         const query = await col.query(q)
@@ -134,9 +128,6 @@ const checkComp = comp => {
     return c
 }
 
-app.use(express.static(join(__dirname, 'public')));
-
-
 app.get('/all', async (req, res) => {
     try {
         let queryStr = "select *"
@@ -155,7 +146,7 @@ app.post('/query', jsonParser, async (req, res) => {
     const {list, comp, name} = req.body 
     console.log("req body: ", req.body)
     try {
-        var results = await querySpecific(name, comp, list)
+        var results = await querySpecific(name)
         let type = checkType(list) //grabs array position of proper value
         let compVal = checkComp(comp)
         let val = results[0][type]
@@ -175,10 +166,6 @@ app.get("/test", (req, res) => {
         userVal,
         userResult
     })
-});
-
-app.get('/', (req, res) => {
-    res.send('Hello World');
 });
 
 const PORT = process.env.PORT || 5000;

@@ -2,22 +2,28 @@ This blog serves as a soft follow up to a [previous blog][1] in which we used [F
 
 The main and obvious difference between the MERN stack and the GERN Stack is of course the database being deployed. The original acronym stands for MongoDB, Express.js, React.js, and node.js. If you are unfamiliar with MongoDB, it is a document-based database which allows for quick prototyping as the NoSQL schema allows for very fluid ingestion of data without any sort of foresight or pre-planning. Using the GERN stack over the MERN stack depends solely on your use case: if you need much higher performance, if you need to store time series data, or if your data is from IoT sensors, you would opt to use GridDB over MongoDB.
 
-<iframe src='https://gfycat.com/ifr/SaneWeightyBlackfish' frameborder='0' scrolling='no' allowfullscreen width='640' height='404'></iframe>
 
 ## Project Overview
 
-To showcase both of these products, we will create a simple query builder app that will display data that a user selects via dropdown menus. We will go through the process of installing the GridDB node.js Client via docker, ingesting our open source data from [Kaggle][4], and then setting up React to work with a node.js server connected to GridDB.
+To showcase both of these products, we will create a simple query builder app that will display data that a user selects via dropdown menus. We will go through the process of installing the GridDB node.js Client via npm, ingesting our open source data from [Kaggle][4], and then setting up a React frontend to work with a node.js server (backend) connected to GridDB.
 
 From there, we can move on to the frontend which will be simple: three dropdowns to allow a user to find some data points relating to the dataset which was ingested.
 
 One small caveat regarding using React with this app: we cannot use the typical React bundle tooling. This is because our node.js server needs a direct connection to the GriddB server. Instead we will be installing and using React via script import tags in an HTML file -- truly old school!
 
-[Full Source Code Found Here](https://github.com/griddbnet/Blogs/tree/main/Create%20a%20GridDB%20Query%20Builder%20Using%20React.js)
+[Full Source Code Found Here](https://github.com/griddbnet/Blogs/tree/query_builder)
 
 
-## Prequisites
+Here is a quick example of the completed project: 
 
-The following prequisites are required to run this project: 
+<div style="text-align:center">
+<iframe src='https://gfycat.com/ifr/SaneWeightyBlackfish' frameborder='0' scrolling='no' allowfullscreen width='640' height='404'></iframe>
+</div>
+
+
+## Prerequisites
+
+The following prerequisites are required to run this project: 
 
 - GridDB
 - node.js
@@ -142,15 +148,21 @@ The following prequisites are required to run this project:
 
 ### <span id="architecture"> Architecture </span>
 
-As explained above, the technologies being used here fit nicely into the acronym GERN: GridDB, Express, React, node.js. My personal environment was as follows: a CentOS 7 server running GridDB on bare metal. For the web app's backend, I ran the [GridDB node.js connector][5] along with the node.js server and the express.js framework in a docker container. The frontend consists of React.js being ran via a self-contained HTML file that gets read in through the node.js frontend.
+As explained above, the technologies being used here fit nicely into the acronym GERN: GridDB, Express, React, node.js. My personal environment was as follows: a CentOS 7 server running GridDB on bare metal. For the web app's backend, I ran the [GridDB node.js connector][5] along with the node.js server and the express.js framework. The frontend consists of React.js being ran via the react bundler tool in its own frontend server; data is shared between the backend and frontend via API end points
 
 [<img src="https://griddb.net/en/wp-content/uploads/2022/06/diaghram-1.png" alt="" width="1280" height="720" class="aligncenter size-full wp-image-28479" />][6]
+
+The frontend server portion was set up using the [npx integrated toolchain](https://reactjs.org/docs/create-a-new-react-app.html). The backend was built simply by creating and adding some express.js code into the `app.js` file.
+
+One interesting point was adding in a line for proxy in the frontend portion. Because the frontend and backend use their own servers, they each have their own set of packages required to run, so you will need to run `npm install` on both the backend and the frontend. This also means that each server will have its own `package.json`, so in the frontend file, we added in a line indicating a proxy URL for the frontend: `"proxy": "http://localhost:5000"`. This address and port combination correspond to the backend we built using node.js/griddb/express. 
+
+The purpose of adding this line here means that our fetch API endpoints in the frontend can simply call the endpoint rather than calling the entire address (for example, calling `/query` directly rather than calling `http://localhost:5000/query`). This is perfect for running in a dev environment as it totally squashes CORS issues and keeps things simple.
 
 ### <span id="installing-npm"> Installing the GridDB node.js Connector (via npm) </span>
 
 To install the node.js connector, you will first need to install the GridDB c-client. To do so, you can grab appropriate package files from the [GitHub page](https://github.com/griddb/c_client/releases). 
 
-On CentOS you can still like so: 
+On CentOS you can install like so: 
 
 <div class="clipboard">
   <pre><code class="language-sh">$ sudo rpm -ivh griddb-c-client-5.0.0-linux.x86_64.rpm</code></pre>
@@ -167,11 +179,6 @@ And everything should run now. You can now run the ingest to ingest the `cereal.
 <div class="clipboard">
   <pre><code class="language-sh">$ node ingest.js 239.0.0.1 31999 defaultCluster admin admin</code></pre>
 </div>
-
-<div class="clipboard">
-  <pre><code class="language-sh">$ npm run start 239.0.0.1 31999 defaultCluster admin admin</code></pre>
-</div>
-
 
 
 ### <span id="building"> Building and Running </span>
@@ -294,17 +301,13 @@ Once the proposed schema is set up, we simply read the `csv` file from using the
   });</code></pre>
 </div>
 
-Once you run this, the entirety of the data should be available in your instance.
+Once you run this, the entirety of the data should be available in your GridDB server.
 
-## <span id="set-up"> Setting Up Backend and Frontend </span>
+## <span id="set-up"> Setting Up Backend and Frontend Code </span>
 
 ### <span id="getting-started"> Getting Started </span>
 
-To get started, we need to connect to the GridDB instance the same was as handled above in the ingest section. Of course, to host the frontend portion of our app, we will need to include html files loaded up with React imports. We will also need to set up some endpoints within the node.js code (`app.js`). To help us to easily set up the endpoints, as well as to help hosting the static HTML files, we will install the often-used `express` web framework.
-
-Loading up static files can be done like so:
-
-`app.use(express.static(join(__dirname, 'public')));`
+To get started, we need to connect to the GridDB instance in the same way as handled above in the ingest section. Of course, to host the frontend portion of our app, we will need to set up a frontend server which hosts our React frontend app. We will also need to set up some endpoints within the node.js code (`app.js`). To help us to easily set up the endpoints, we will install the often-used `express` web framework.
 
 ### <span id="querying"> Querying </span>
 
@@ -332,7 +335,7 @@ const queryCont = async (queryStr) => {
 }</code></pre>
 </div>
 
-We call the above code in our endpoint of `/all` which will run the query of `select *`, meaning we fetch all available data.
+We call the above code in our endpoint of `/all` which will run the query of `select *`, meaning we fetch all available data. So, whenever we fetch from `/all`, we run the `queryCont` function and return the results back to the agent creating the REQUEST, usually the browser and our React frontend.
 
 <div class="clipboard">
   <pre><code class="language-javascript">app.get('/all', async (req, res) => {
@@ -354,46 +357,23 @@ With React, we will run this query on page load to grab all the data with an HTT
 
 ### <span id="react"> Using React with GridDB </span>
 
-Now that we have the basics of our backend, we can set up a static HTML file in the `public` directory which will display when we run our node.js server. From there, we can test if our endpoint produces our query results.
-
-To start, we set up an `index.html` file and import React, React DOM, and then Babel. React and the DOM are self-explanatory; babel, however, is needed to use React's `JSX` which makes writing React code much simpler and easier to read.
+Now that we have the basics of our backend, we can set up our frontend. When building a new React app, it's usually easiest to use the integrating bundling tools maintained by Facebook/Meta. To shortcut your way to a ready-made project, you can simply run: 
 
 <div class="clipboard">
-  <pre><code class="language-html">&lt;head&gt;
-&lt;meta charset="UTF-8" /&gt;
-&lt;title&gt;Query Builder&lt;/title&gt;
-&lt;script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin&gt;&lt;/script&gt;
-&lt;script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin&gt;&lt;/script&gt;
-&lt;script src="https://unpkg.com/babel-standalone@6/babel.min.js"&gt;&lt;/script&gt;
-&lt;/head&gt;</code></pre>
+  <pre><code class="language-sh">$ npx create-react-app frontend</code></pre>
 </div>
 
-With this at the top of the file, now React can be used as normal in the rest of the file. We just need to add the following babel script tags for all of our code which contains `JSX`
+As mentioned [earlier](#architecture), it is wise to add in a line about which proxy to use in the frontend's `package.json` file. This will allow you to use endpoints that point directly to the address and not need to indicate IP address or port, etc. 
 
-`<script type="text/babel">`
+To make edits to the code, we simply edit the `src/App.js` file. For this project, I simply stuck in all code inside that file.
 
-There also needs to be a div made right above our babel script tags to let our React code where to create our React code in relation to the body of the HTML code. JavaScript
+The `App.js` file is essentially just one JavaScript function which then gets exported (at the bottom of the file). This function returns `JSX` which builds out app; in this case it will produce all of the elements we see in our frontend app.
 
-<div class="clipboard">
-  <pre><code class="language-javascript">&lt;div id="root"&gt;
-&lt;/div&gt;
-
-&lt;script type="text/babel"&gt;
-
-    const MyApp = () =&gt;  {
-
-    const container = document.getElementById('root');
-    const root = ReactDOM.createRoot(container);
-    root.render(&lt;myapp&gt;&lt;/myapp&gt;);
-&lt;/script&gt; 
-// end of babel script tags</code></pre>
-</div>
-
-And with that, we can get on to writing our React code.
+And with that, we can get on to writing our actual React code.
 
 ### <span id="query-builder"> Creating a Query Builder with React </span>
 
-The full code for this project is available on Github, so you can see in detail how this portion was created -- we will not being too much into detail from here. But the basic idea of it is that there are three separate dropdown menus for the user to select various options from. The user can select from a variety of different nutrients, and then pick greater than, less than, or equals, and then finally they can pick a specific cereal to run the query against.
+The full code for this project is available on Github, so you can see in detail how this portion was created -- we will not be delving into too much into detail from here. But the basic idea of it is that there are three separate dropdown menus for the user to select various options from. The user can select from a variety of different nutrients, and then pick greater than, less than, or equals, and then finally they can pick a specific cereal to run the query against.
 
 So for example. say you would like to find out which cereals have more fiber than Frosted Mini-Wheats, you would simply select, Fiber, then Greater Than, and finally the cereal name. The query will then be sent to the nodejs server, run the query, and then sent back up to the React code via an endpoint.
 
@@ -405,7 +385,7 @@ Once the user sets their parameters, they will click the submit button, which wi
 
 <div class="clipboard">
   <pre><code class="language-javascript"> const handleSubmit = async (event) => {
-            fetch('${ADDRESS}/query', {
+            fetch('/query', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -445,10 +425,10 @@ app.post('/query', jsonParser, async (req, res) => {
 So, once a user sets their parameters, the REQUEST comes back to this endpoint. First, we grab the proper values: `list`, `comp`, and `name`. Then, we use our `querySpecific` function which will form one of our queries based on the chosen cereal name.
 
 <div class="clipboard">
-  <pre><code class="language-javascript">const querySpecific = async (name) => {
+  <pre><code class="language-javascript">const querySpecific = async (cerealName) => {
 
     var data = []
-    let q = `SELECT * WHERE name='${name}'`
+    let q = `SELECT * WHERE name='${cerealName}'`
     try {
         const col = await store.getContainer(containerName)
         const query = await col.query(q)
@@ -510,7 +490,7 @@ And now that the data has been retrieved, we can run one more HTTP GET Request t
 And on the frontend:
 
 <div class="clipboard">
-  <pre><code class="language-javascript">let response = await fetch(`${ADDRESS}/data`)
+  <pre><code class="language-javascript">let response = await fetch(`/data`)
             let result = await response.text()
             let resp = await JSON.parse(result)
             // the Specific react state will set off other functions to form our table rows and columns to be inserted into our table with all the relevant information
@@ -521,7 +501,7 @@ And now with the data in our state, we can properly build out our table rows to 
 
 ## <span id="conclusion"> Conclusion </span>
 
-In this blog, we covered quite a lot. We covered how to build the latest GridDB Node.js connector from source, how to install it with Docker, how to ingest a CSV file with node.js, how to build a simple express server to serve up your GridDB data, how to use React with GridDB, and finally, how to run queries on your GridDB server which can be sent back to your React app.
+In this blog, we covered quite a lot. We covered how to install the latest GridDB node.js connector (and c_client), how to ingest a CSV file using the node.js connector, how to build a simple express server to serve up your GridDB data, how to use React with GridDB and its bundling tools, and finally, how to run queries on your GridDB server which can be sent up to your React app.
 
 ### <span id="source-code"> Source Code </span>
 
@@ -531,11 +511,11 @@ In this blog, we covered quite a lot. We covered how to build the latest GridDB 
  [2]: https://reactjs.org/
  [3]: https://www.geeksforgeeks.org/mern-stack/
  [4]: https://www.kaggle.com/datasets/crawford/80-cereals
- [5]: https://github.com/griddb/nodejs_client
+ [5]: https://github.com/griddb/node-api
  [6]: https://griddb.net/en/wp-content/uploads/2022/06/diaghram-1.png
  [7]: https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/
  [8]: https://griddb.net/en/blog/griddb-python-client-adds-new-time-series-functions/
  [9]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises#chaining
  [10]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
  [11]: https://griddb.net/en/wp-content/uploads/2022/05/Screen-Shot-2022-05-17-at-11.14.46-AM.png
- [12]: https://github.com/griddbnet/Blogs/tree/main/Create%20a%20GridDB%20Query%20Builder%20Using%20React.js
+ [12]: https://github.com/griddbnet/Blogs/tree/query_builder
