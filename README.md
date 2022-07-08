@@ -5,11 +5,9 @@ The main and obvious difference between the MERN stack and the GERN Stack is of 
 
 ## Project Overview
 
-To showcase both of these products, we will create a simple query builder app that will display data that a user selects via dropdown menus. We will go through the process of installing the GridDB node.js Client via npm, ingesting our open source data from [Kaggle][4], and then setting up a React frontend to work with a node.js server (backend) connected to GridDB.
+To showcase both of these products, we will create a simple query builder app that will display data that a user selects via dropdown menus. We will go through the process of installing the GridDB node.js Client via npm, ingesting our open source data from [Kaggle][4], and then setting up a React frontend to work with a node.js server (backend) connected to GridDB. We will also set the project up to build out the static React assets and be able to run the project with one command.
 
-From there, we can move on to the frontend which will be simple: three dropdowns to allow a user to find some data points relating to the dataset which was ingested.
-
-One small caveat regarding using React with this app: we cannot use the typical React bundle tooling. This is because our node.js server needs a direct connection to the GriddB server. Instead we will be installing and using React via script import tags in an HTML file -- truly old school!
+From there, we can move on to the frontend which will be simple: three dropdowns to allow a user to find some data points relating to the dataset which was ingested. We will then showcase sending query strings to our backend to run against our DB and then pushing the results back up to the frontend.
 
 [Full Source Code Found Here](https://github.com/griddbnet/Blogs/tree/query_builder)
 
@@ -78,13 +76,16 @@ The following prerequisites are required to run this project:
         <div class="inner-list">
           <ul style="list-style-type: none !important; padding-left: 9px;">
             <li>
-              <a href="#architecture ">Architecture </a>
+              <a href="#architecture ">Architecture Overview </a>
             </li>
             <li>
-              <a href="#installing-npm"> Installing the GridDB node.js Connector (via NPM) </a>
+              <a href="#frontend-backend "> Setting up the Frontend to Work with the Backend  </a>
             </li>
             <li>
               <a href="#building "> Building and Running </a>
+            </li>
+            <li>
+              <a href="#installing-npm"> Installing the GridDB node.js Connector (via NPM) </a>
             </li>
           </ul>
         </div>
@@ -107,7 +108,7 @@ The following prerequisites are required to run this project:
       </li>
       
       <li>
-        <a href="#set-up">Setting Up Backend and Frontend </a>
+        <a href="#set-up"> Setting Up Project Code </a>
       </li>
       <li style="list-style: outside none none !important;">
         <div class="inner-list">
@@ -146,15 +147,15 @@ The following prerequisites are required to run this project:
 
 ## <span id="details"> Technical Details </span>
 
-### <span id="architecture"> Architecture </span>
+### <span id="architecture"> Architecture Overview  </span>
 
-As explained above, the technologies being used here fit nicely into the acronym GERN: GridDB, Express, React, node.js. My personal environment was as follows: a CentOS 7 server running GridDB on bare metal. For the web app's backend, I ran the [GridDB node.js connector][5] along with the node.js server and the express.js framework. The frontend consists of React.js being ran via the react bundler tool in its own frontend server; data is shared between the backend and frontend via API end points
+As explained above, the technologies being used here fit nicely into the acronym GERN: GridDB, Express, React, node.js. My personal environment was as follows: a CentOS 7 server running GridDB on bare metal. For the web app's backend, I ran the [GridDB node.js connector][5] along with the node.js server and the express.js framework. The frontend consists of React.js being ran via the react bundler tool in its own frontend server; data is shared between the backend and frontend via API endpoints. The end goal will have the React frontend built out to static assets which are then read in through the express backend.
 
 [<img src="https://griddb.net/en/wp-content/uploads/2022/06/diaghram-1.png" alt="" width="1280" height="720" class="aligncenter size-full wp-image-28479" />][6]
 
 The frontend server portion was set up using the [npx integrated toolchain](https://reactjs.org/docs/create-a-new-react-app.html). The backend was built simply by creating and adding some express.js code into the `app.js` file.
 
-#### Setting up the Frontend to Work with the Backend
+### <span id="frontend-backend"> Setting up the Frontend to Work with the Backend </span>
 
 One interesting point was adding in a line for proxy in the frontend portion. Because the frontend and backend use their own servers, they each have their own set of packages required to run, so you will need to run `npm install` on both the backend and the frontend. This also means that each server will have its own `package.json`, so in the frontend file, we added in a line indicating a proxy URL for the frontend: `"proxy": "http://localhost:5000"`. This address and port combination correspond to the backend we built using nodejs/griddb/express. 
 
@@ -182,18 +183,32 @@ app.get('*', (req, res) => {
 
 This tells our server to serve up our Frontend of our newly built React contents found within the `frontend/build` directory.
 
-
-
 ### <span id="building"> Building and Running </span>
 
-Before we get into the details of how the project was made, let's briefly explain how exactly to run this on your local machine. There are two ways to do this, you can install GridDB normally on your machine and run it as a service as I have, or you can run GridDB in a container as shown in this [ blog ][7].
+Before we get into the details of how the project was made, let's briefly explain the exact steps of running this on your local machine.
 
-To run the project you will need to run both the frontend and the backend you can simply just use npm script.
+To run this project, you have two options: running as dev mode, or running just one server.
 
-Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
+To run in a development environment, you will need to run the frontend server first
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ cd frontend && npm install && npm run start</code></pre>
+</div>
+
+And then in another terminal you will need to run the backend. After running `$ npm install`, you can run: 
 
 <div class="clipboard">
   <pre><code class="language-sh">$ npm run start 239.0.0.1 31999 defaultCluster admin admin</code></pre>
+</div>
+
+Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
+
+But if you want a simpler way to run this project with only one terminal, you can build out the React static assets and simply run the backend server.
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ npm run build
+  $ npm install
+  $ npm run start 239.0.0.1 31999 defaultCluster admin admin</code></pre>
 </div>
 
 ### <span id="installing-npm"> Installing the GridDB node.js Connector (via npm) </span>
@@ -328,7 +343,7 @@ Once the proposed schema is set up, we simply read the `csv` file from using the
 
 Once you run this, the entirety of the data should be available in your GridDB server.
 
-## <span id="set-up"> Setting Up Backend and Frontend Code </span>
+## <span id="set-up"> Setting Up Project Code</span>
 
 ### <span id="getting-started"> Getting Started </span>
 
