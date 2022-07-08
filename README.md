@@ -154,9 +154,47 @@ As explained above, the technologies being used here fit nicely into the acronym
 
 The frontend server portion was set up using the [npx integrated toolchain](https://reactjs.org/docs/create-a-new-react-app.html). The backend was built simply by creating and adding some express.js code into the `app.js` file.
 
-One interesting point was adding in a line for proxy in the frontend portion. Because the frontend and backend use their own servers, they each have their own set of packages required to run, so you will need to run `npm install` on both the backend and the frontend. This also means that each server will have its own `package.json`, so in the frontend file, we added in a line indicating a proxy URL for the frontend: `"proxy": "http://localhost:5000"`. This address and port combination correspond to the backend we built using node.js/griddb/express. 
+#### Setting up the Frontend to Work with the Backend
+
+One interesting point was adding in a line for proxy in the frontend portion. Because the frontend and backend use their own servers, they each have their own set of packages required to run, so you will need to run `npm install` on both the backend and the frontend. This also means that each server will have its own `package.json`, so in the frontend file, we added in a line indicating a proxy URL for the frontend: `"proxy": "http://localhost:5000"`. This address and port combination correspond to the backend we built using nodejs/griddb/express. 
 
 The purpose of adding this line here means that our fetch API endpoints in the frontend can simply call the endpoint rather than calling the entire address (for example, calling `/query` directly rather than calling `http://localhost:5000/query`). This is perfect for running in a dev environment as it totally squashes CORS issues and keeps things simple.
+
+Another point of interest was setting up the workflow to work with just one server. When running this content within your dev environment, you will likely be running two simultaneous servers (one backend, one frontend), but when deploying to production or just checking out the demo, there is another step you can do. 
+
+In the `package.json` of the root directory, we need to add an `npm run build` script: 
+
+`"build": "cd frontend && npm install && npm run build"`
+
+This will build our React frontend to be static files within the `frontend/build` directory. 
+
+And then we add a snippet of code in our backend server (`app.js`): 
+
+<div class="clipboard">
+  <pre><code class="language-js">const path = require('path');
+app.use(express.static(path.resolve(__dirname, 'frontend/build')));
+
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
+  });
+  </code></pre>
+</div>
+
+This tells our server to serve up our Frontend of our newly built React contents found within the `frontend/build` directory.
+
+
+
+### <span id="building"> Building and Running </span>
+
+Before we get into the details of how the project was made, let's briefly explain how exactly to run this on your local machine. There are two ways to do this, you can install GridDB normally on your machine and run it as a service as I have, or you can run GridDB in a container as shown in this [ blog ][7].
+
+To run the project you will need to run both the frontend and the backend you can simply just use npm script.
+
+Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ npm run start 239.0.0.1 31999 defaultCluster admin admin</code></pre>
+</div>
 
 ### <span id="installing-npm"> Installing the GridDB node.js Connector (via npm) </span>
 
@@ -178,19 +216,6 @@ And everything should run now. You can now run the ingest to ingest the `cereal.
 
 <div class="clipboard">
   <pre><code class="language-sh">$ node ingest.js 239.0.0.1 31999 defaultCluster admin admin</code></pre>
-</div>
-
-
-### <span id="building"> Building and Running </span>
-
-Before we get into the details of how the project was made, let's briefly explain how exactly to run this on your local machine. There are two ways to do this, you can install GridDB normally on your machine and run it as a service as I have, or you can run GridDB in a container as shown in this [ blog ][7].
-
-To run the project on bare metal without the use of Docker, you can simply just use npm script.
-
-Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
-
-<div class="clipboard">
-  <pre><code class="language-sh">$ npm run start 239.0.0.1 31999 defaultCluster admin admin</code></pre>
 </div>
 
 ## <span id="implementation"> Implementation <span></span></span>
