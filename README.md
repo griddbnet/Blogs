@@ -192,6 +192,7 @@ To run this project, you have two options: running as dev mode, or running just 
 And then in another terminal you will need to run the backend. After running `$ npm install`, you can run: 
 
 <div class="clipboard">
+<<<<<<< HEAD
   <pre><code class="language-sh">$ npm run start 127.0.0.1 10001 myCluster admin admin</code></pre>
 </div>
 
@@ -211,6 +212,23 @@ But if you want a simpler way to run this project with only one terminal, you ca
 
 ## <span id="implementation"> Implementation of Ingest <span></span></span>
 
+=======
+  <pre><code class="language-sh">$ npm run start 239.0.0.1 31999 defaultCluster admin admin</code></pre>
+</div>
+
+Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
+
+But if you want a simpler way to run this project with only one terminal, you can build out the React static assets and simply run the backend server.
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ npm run build # builds out the frontend into frontend/build
+  $ npm install # installs backend packages
+  $ npm run start 239.0.0.1 31999 defaultCluster admin admin #command line arguments for GridDB server creds</code></pre>
+</div>
+
+## <span id="implementation"> Implementation of Ingest <span></span></span>
+
+>>>>>>> 4db9a0dfeac460f7093bd2ca99e6e76c70a6cb75
 ### <span id="installing-npm"> Installing the GridDB node.js Connector (via npm) </span>
 
 To install the node.js connector, you will first need to install the GridDB c-client. To do so, you can grab appropriate package files from the [GitHub page](https://github.com/griddb/c_client/releases). 
@@ -223,11 +241,19 @@ On CentOS you can install like so:
 </div>
 
 Now with the GridDB c-client installed, you can simply grab the [nodejs package](https://www.npmjs.com/package/griddb-node-api) using npm
+<<<<<<< HEAD
 
 <div class="clipboard">
   <pre><code class="language-sh">$ npm i griddb-node-api</code></pre>
 </div>
 
+=======
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ npm i griddb-node-api</code></pre>
+</div>
+
+>>>>>>> 4db9a0dfeac460f7093bd2ca99e6e76c70a6cb75
 And everything should run now. You can now run the ingest to ingest the `cereal.csv` file and then run project itself.
 
 ### <span id="ingest"> How to Create Ingesting Script with Node.js </span>
@@ -341,6 +367,7 @@ Once the proposed schema is set up, we simply read the `csv` file from using the
 To ingest the `cereal.csv` file, you can imply run the following code.
 
 <div class="clipboard">
+<<<<<<< HEAD
   <pre><code class="language-sh">$ node ingest.js 127.0.0.1 10001 myCluster admin admin</code></pre>
 </div>
 
@@ -382,6 +409,13 @@ No  Name                  Type            CSTR  RowKey
 15  rating                FLOAT
 ```
 
+=======
+  <pre><code class="language-sh">$ node ingest.js 239.0.0.1 31999 defaultCluster admin admin</code></pre>
+</div>
+
+Once you run this, the entirety of the data should be available in your GridDB server.
+
+>>>>>>> 4db9a0dfeac460f7093bd2ca99e6e76c70a6cb75
 ## <span id="set-up"> Setting Up Project Code</span>
 
 ### <span id="getting-started"> Getting Started </span>

@@ -1,5 +1,6 @@
 const { config } = require('dotenv');
 const express = require('express');
+const path = require('path');
 const griddb = require('griddb-node-api');
 var bodyParser = require('body-parser')
 
@@ -7,6 +8,7 @@ const app = express();
 var jsonParser = bodyParser.json()
 
 app.use(bodyParser.json({ type: 'application/*+json' }))
+app.use(express.static(path.resolve(__dirname, 'frontend/build')));
 
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
@@ -167,6 +169,11 @@ app.get("/test", (req, res) => {
         userResult
     })
 });
+
+// All other GET requests not handled before will return our React app
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
+  });
 
 const PORT = process.env.PORT || 5000;
 
