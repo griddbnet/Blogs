@@ -12,7 +12,10 @@ ENV GS_LOG $GS_HOME/log
 ENV HOME $GS_HOME
 WORKDIR $HOME
 
-RUN systemctl start gridstore
+ADD cmd.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/cmd.sh
+
+CMD ["/usr/local/bin/cmd.sh"]
 
 USER gsadm
 WORKDIR $HOME
