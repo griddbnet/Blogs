@@ -3,13 +3,12 @@ var { parse } = require('csv-parse');
 
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
-var store = factory.getStore({
-    "host": process.argv[2],
-    "port": parseInt(process.argv[3]),
-    "clusterName": process.argv[4],
-    "username": process.argv[5],
-    "password": process.argv[6]
-});
+store = factory.getStore({
+    "notificationMember": process.argv[2],
+    "clusterName": process.argv[3],
+    "username": process.argv[4],
+    "password": process.argv[5]
+ });
 
 var containerName = "Cereal"
 const conInfo = new griddb.ContainerInfo({

@@ -80,26 +80,29 @@ The following prerequisites are required to run this project:
             <li>
               <a href="#frontend-backend "> Setting up the Frontend to Work with the Backend  </a>
             </li>
-            <li>
-              <a href="#building "> Building and Running </a>
-            </li>
           </ul>
         </div>
       </li>
       <li>
-        <a href="#implementation">Implementation of Ingest</a>
+        <a href="#building">Building and Running</a>
       </li>
       <li style="list-style: outside none none !important;">
         <div class="inner-list">
           <ul style="list-style-type: none !important; padding-left: 9px;">
             <li>
-              <a href="#installing-npm"> Installing the GridDB node.js Connector (via NPM) </a>
+              <a href="#first"> First Steps</a>
+            </li>
+            <li>
+              <a href="#installing-npm"> Installing the GridDB node.js Connector (via npm) </a>
             </li>
             <li>
               <a href="#ingest">How to Create Ingesting Script with Node.js</a>
             </li>
             <li>
               <a href="#running-ingest">Running the Ingest</a>
+            </li>
+            <li>
+              <a href="#implementation">Running The Frontend and Backend</a>
             </li>
           </ul>
         </div>
@@ -179,37 +182,27 @@ app.get('*', (req, res) => {
 
 This tells our server to serve up our Frontend of our newly built React contents found within the `frontend/build` directory.
 
-### <span id="building"> Building and Running </span>
+## <span id="building"> Building and Running </span>
+
+### <span id="first"> First Steps </span>
 
 Before we get into the frontend and backend code, let's briefly explain the exact steps of running this on your local machine.
 
-To run this project, you have two options: running as dev mode, or running just one server. To run in a development environment, you will need to run the frontend server first:
+First and foremost, let's do a git clone for the full project's source code
 
 <div class="clipboard">
-  <pre><code class="language-sh">$ cd frontend && npm install && npm run start</code></pre>
+  <pre><code class="language-sh">$ git clone --branch query_builder https://github.com/griddbnet/Blogs.git</code></pre>
 </div>
 
-And then in another terminal you will need to run the backend. After running `$ npm install`, you can run: 
+And then let's install GridDB and run as a service: 
 
 <div class="clipboard">
-  <pre><code class="language-sh">$ npm run start 127.0.0.1 10001 myCluster admin admin</code></pre>
+  <pre><code class="language-sh">$ wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.0.0/griddb-c-client_5.0.0_amd64.deb
+$ sudo dpkg -i griddb-c-client_5.0.0_amd64.deb
+$ sudo systemctl start gridstore</code></pre>
 </div>
 
-***NOTE: When running GridDB v5.0 as a service, GridDB will be run in FIXED_LIST mode (as opposed to Multicast). You can read more about it [here](https://docs.griddb.net/architecture/structure-of-griddb/#cluster-configuration-methods).***
-
-If you are following along and ran GridDB as a service, the above command will work. If you are running GridDB in Multicast mode, the IP address and port may be different. Please use the correct credentials for your configuration.
-
-Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
-
-But if you want a simpler way to run this project with only one terminal, you can build out the React static assets and simply run the backend server.
-
-<div class="clipboard">
-  <pre><code class="language-sh">$ npm run build # builds out the frontend into frontend/build
-  $ npm install # installs backend packages
-  $ npm run start 127.0.0.1 10001 myCluster admin admin #command line arguments for GridDB server creds</code></pre>
-</div>
-
-## <span id="implementation"> Implementation of Ingest <span></span></span>
+Next steps will be installing the Node.js client and then setting up and running the ingest for our demo dataset.
 
 ### <span id="installing-npm"> Installing the GridDB node.js Connector (via npm) </span>
 
@@ -332,7 +325,7 @@ fs.createReadStream(__dirname + '/cereal.csv')
 To ingest the `cereal.csv` file, you can imply run the following code.
 
 <div class="clipboard">
-  <pre><code class="language-sh">$ node ingest.js 127.0.0.1 10001 myCluster admin admin</code></pre>
+  <pre><code class="language-sh">$ node ingest.js 127.0.0.1:10001 myCluster admin admin</code></pre>
 </div>
 
 Once you run this, the entirety of the data should be available in your GridDB server under the container name `Cereal`.
@@ -372,6 +365,34 @@ No  Name                  Type            CSTR  RowKey
 14  cups                  FLOAT                 
 15  rating                FLOAT
 ```
+
+### <span id="implementation"> Running The Frontend and Backend <span></span></span>
+
+To run this project, you have two options: running as dev mode, or running just one server. To run in a development environment, you will need to run the frontend server first:
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ cd frontend && npm install && npm run start</code></pre>
+</div>
+
+And then in another terminal you will need to run the backend. After running `$ npm install`, you can run: 
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ npm run start 127.0.0.1:10001 myCluster admin admin</code></pre>
+</div>
+
+***NOTE: When running GridDB v5.0 as a service, GridDB will be run in FIXED_LIST mode (as opposed to Multicast). You can read more about it [here](https://docs.griddb.net/architecture/structure-of-griddb/#cluster-configuration-methods).***
+
+If you are following along and ran GridDB as a service, the above command will work. If you are running GridDB in Multicast mode, the IP address and port may be different. Please use the correct credentials for your configuration.
+
+Of course, you will need to enter in your own credentials along with the run command; these are all GridDB default values.
+
+But if you want a simpler way to run this project with only one terminal, you can build out the React static assets and simply run the backend server.
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ npm run build # builds out the frontend into frontend/build
+  $ npm install # installs backend packages
+  $ npm run start 127.0.0.1:10001 myCluster admin admin #command line arguments for GridDB server creds</code></pre>
+</div>
 
 ## <span id="set-up"> Setting Up Project Code</span>
 
