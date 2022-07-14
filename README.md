@@ -148,7 +148,7 @@ The following prerequisites are required to run this project:
 
 As explained above, the technologies being used here fit nicely into the acronym GERN: GridDB, Express, React, node.js. My personal environment was as follows: a CentOS 7 server running GridDB on bare metal. For the web app's backend, I ran the [GridDB node.js connector][5] along with the node.js server and the express.js framework. The frontend consists of React.js being ran via the react bundler tool in its own frontend server; data is shared between the backend and frontend via API endpoints. The end goal will have the React frontend built out to static assets which are then displayed by the backend.
 
-[<img src="https://griddb.net/en/wp-content/uploads/2022/06/diaghram-1.png" alt="" width="1280" height="720" class="aligncenter size-full wp-image-28479" />][6]
+[<img src="https://griddb.net/en/wp-content/uploads/2022/06/diaghram-1.png" class="aligncenter size-full wp-image-28479" />][6]
 
 The frontend server portion was set up using the [npx integrated toolchain](https://reactjs.org/docs/create-a-new-react-app.html). The backend was built simply by creating and adding some express.js code into the `app.js` file.
 
