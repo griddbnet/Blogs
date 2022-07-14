@@ -603,8 +603,6 @@ In this blog, we covered quite a lot. We covered how to install the latest GridD
 
 ### <span id="source-code"> Source Code </span>
 
-[ Full source code found here ][12]
-
  [1]: https://griddb.net/en/blog/visualize-data-with-griddb-and-the-webapi-using-react-js/
  [2]: https://reactjs.org/
  [3]: https://www.geeksforgeeks.org/mern-stack/
