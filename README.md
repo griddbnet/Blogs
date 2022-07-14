@@ -13,9 +13,7 @@ From there, we can move on to the frontend which will be simple: three dropdowns
 
 Here is a quick example of the completed project: 
 
-<div style="text-align:center">
-<iframe src='https://gfycat.com/ifr/SaneWeightyBlackfish' frameborder='0' scrolling='no' allowfullscreen width='640' height='404'></iframe>
-</div>
+![](https://thumbs.gfycat.com/SaneWeightyBlackfish-max-1mb.gif)
 
 
 ## Prerequisites
@@ -197,10 +195,12 @@ First and foremost, let's do a git clone for the full project's source code
 And then let's install GridDB and run as a service: 
 
 <div class="clipboard">
-  <pre><code class="language-sh">$ wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.0.0/griddb-c-client_5.0.0_amd64.deb
-$ sudo dpkg -i griddb-c-client_5.0.0_amd64.deb
+  <pre><code class="language-sh">$ wget --no-check-certificate https://github.com/griddb/griddb/releases/download/v5.0.0/griddb_5.0.0_amd64.deb
+$ sudo dpkg -i griddb_5.0.0_amd64.deb
 $ sudo systemctl start gridstore</code></pre>
 </div>
+
+[Here is a link to the GitHub Releases page for all distros and for the most up to date release ](https://github.com/griddb/griddb/releases)
 
 Next steps will be installing the Node.js client and then setting up and running the ingest for our demo dataset.
 
@@ -211,8 +211,8 @@ To install the node.js connector, you will first need to install the GridDB c-cl
 On CentOS you can install like so: 
 
 <div class="clipboard">
-  <pre><code class="language-sh">$ wget griddb-c-client-5.0.0-linux.x86_64.rpm
-  $ sudo rpm -ivh griddb-c-client-5.0.0-linux.x86_64.rpm</code></pre>
+  <pre><code class="language-sh">$ wget https://github.com/griddb/c_client/releases/download/v5.0.0/griddb-c-client_5.0.0_amd64.deb
+  $ sudo dpkg -i griddb-c-client_5.0.0_amd64.deb</code></pre>
 </div>
 
 Now with the GridDB c-client installed, you can simply grab the [nodejs package](https://www.npmjs.com/package/griddb-node-api) using npm
@@ -468,7 +468,8 @@ The full code for this project is available on [Github](https://github.com/gridd
 
 So for example: say you would like to find out which cereals have more fiber than Frosted Mini-Wheats, you would simply select, Fiber, then Greater Than, and finally the cereal name. The query will then be sent to the nodejs server, run the query, and then sent back up to the React code via an endpoint.
 
-[<img src="https://griddb.net/en/wp-content/uploads/2022/05/Screen-Shot-2022-05-17-at-11.14.46-AM.png" alt="" width="2840" height="844" class="aligncenter size-full wp-image-28265" />][11]
+[<img src="https://griddb.net/en/wp-content/uploads/2022/05/Screen-Shot-2022-05-17-at-11.14.46-AM.png" class="aligncenter size-full wp-image-28265" />][11]
+
 
 Sending the data back to the node.js server is done via an HTTP POST request. With this request, we can send back a payload of data, in this case JSON, to which we will use to build out our GridDB SQL query.
 

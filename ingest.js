@@ -8,7 +8,7 @@ store = factory.getStore({
     "clusterName": process.argv[3],
     "username": process.argv[4],
     "password": process.argv[5]
- });
+});
 
 var containerName = "Cereal"
 const conInfo = new griddb.ContainerInfo({
@@ -42,7 +42,10 @@ fs.createReadStream(__dirname + '/cereal.csv')
         arr.push(row)
     })
     .on('end', () => {
-        store.putContainer(conInfo)
+        store.dropContainer(containerName)
+            .then(() => {
+                return store.putContainer(conInfo)
+            })
             .then(col => {
                 arr.forEach(row => {
                     return col.put([
