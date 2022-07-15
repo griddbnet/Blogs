@@ -129,15 +129,6 @@ The following prerequisites are required to run this project:
       <li>
         <a href="#conclusion">Conclusion</a>
       </li>
-      <li style="list-style: outside none none !important;">
-        <div class="inner-list">
-          <ul style="list-style-type: none !important; padding-left: 9px;">
-            <li>
-              <a href="#source-code">Source Code</a>
-            </li>
-          </ul>
-        </div>
-      </li>
     </ul>
   </div>
 </div>
@@ -601,7 +592,6 @@ Here is that brief demo again:
 
 In this blog, we covered quite a lot. We covered how to install the latest GridDB node.js connector (and c_client), how to ingest a CSV file using the node.js connector, how to build a simple express server to serve up your GridDB data, how to use React with GridDB and its bundling tools, and finally, how to run queries on your GridDB server which can be sent up to your React app.
 
-### <span id="source-code"> Source Code </span>
 
  [1]: https://griddb.net/en/blog/visualize-data-with-griddb-and-the-webapi-using-react-js/
  [2]: https://reactjs.org/
