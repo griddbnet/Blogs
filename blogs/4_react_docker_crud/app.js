@@ -132,7 +132,7 @@ app.post("/update", jsonParser, async (req, res) => {
     try {
         let x = await updateRow(newRowArr)
         console.log("return of update row: ", x)
-        res.status(200).json(x);
+        res.status(200).json(true);
     } catch (err) {
         connsole.log("update endpoitn failure: ", err)
     }

@@ -41,6 +41,8 @@ const columns: GridColDef[] = [
 
 
       const App = () =>  {    
+        const [selectedRows, setSelectedRows] = useState([]);
+
         const [rows, setRows] = useState(
         [
             {id: 1, timestamp: "Generating Data", location: "A1", data: 10.10, temperature: 22.22}
@@ -110,6 +112,9 @@ const columns: GridColDef[] = [
     console.log("Failed")
   }, []);
 
+    useEffect( () => {
+        console.log("selectionModel: ", selectedRows)
+    }, [selectedRows] )
 
         return ( 
                <div style={{display:"flex", justifyContent:"center"}}>
@@ -130,8 +135,16 @@ const columns: GridColDef[] = [
         processRowUpdate={processRowUpdate}
         onProcessRowUpdateError={handleProcessRowUpdateError}
         rowsPerPageOptions={[5]}
+        hideFooterPagination
         checkboxSelection
-        disableSelectionOnClick
+        onSelectionModelChange={(ids) => {
+          const selectedIDs = new Set(ids);
+          const selectedRows = rows.filter((row) =>
+            selectedIDs.has(row.id),
+          );
+
+          setSelectedRows(selectedRows);
+        }}
       />
     </Box>                
 
