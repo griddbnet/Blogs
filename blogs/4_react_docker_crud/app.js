@@ -30,7 +30,6 @@ store = factory.getStore({
          while(rs.hasNext()) {
              data.push(rs.next())
          }
-         console.log("Data: " , data)
          return data
      } catch (error) {
          console.log("error: ", error)
@@ -43,12 +42,22 @@ const conInfo = new griddb.ContainerInfo({
     'name': containerName,
     'columnInfoList': [
         ["timestamp", griddb.Type.TIMESTAMP],
+        ["location", griddb.Type.STRING],
         ["data", griddb.Type.FLOAT],
         ["temperature", griddb.Type.FLOAT],
     ],
     'type': griddb.ContainerType.TIME_SERIES, 'rowKey': true
 });
 
+const updateRow = async (newRow) => {
+    try {
+        const cont = await store.putContainer(conInfo)
+        const res = await cont.put(newRow)
+        return res
+    } catch (err) {
+        console.log("update row error: ", err)
+    }
+}
 
 config();
 
@@ -60,7 +69,7 @@ function getRandomFloat(min, max) {
 
 
 const putCont = async () => {
-    console.log("Putting COntainer")
+    console.log("Putting Container")
     const rows = generateSensors();
     try {
         await store.dropContainer(containerName);
@@ -84,6 +93,7 @@ const generateSensors = () => {
         let data = parseFloat(getRandomFloat(1, 10).toFixed(2))
         let temperature = parseFloat(getRandomFloat(60, 130).toFixed(2))
         tmp.push(newTime)
+        tmp.push("A1")
         tmp.push(data)
         tmp.push(temperature)
         arr.push(tmp)
@@ -105,6 +115,26 @@ app.get('/firstLoad', async (req, res) => {
         });
     } catch (error) {
         console.log("try error: ", error)
+    }
+});
+
+app.post("/update", jsonParser, async (req, res) => {
+    const newRowObj = req.body.row
+    const newRowArr = []
+
+    for (const [key, value] of Object.entries(newRowObj)) {
+        newRowArr.push(value)
+    }
+    newRowArr.shift(); 
+    newRowArr[2] = parseFloat(newRowArr[2])
+    console.log("new row: from endpoint: ", newRowArr)
+
+    try {
+        let x = await updateRow(newRowArr)
+        console.log("return of update row: ", x)
+        res.status(200).json(x);
+    } catch (err) {
+        connsole.log("update endpoitn failure: ", err)
     }
 });
 
