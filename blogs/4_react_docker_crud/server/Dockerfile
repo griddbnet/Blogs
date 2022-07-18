@@ -1,4 +1,5 @@
 FROM centos:7
+RUN yum clean all 
 RUN yum install -y python3
 RUN rpm -Uvh https://github.com/griddb/griddb/releases/download/v5.0.0/griddb-5.0.0-linux.x86_64.rpm
 RUN rpm -Uvh https://github.com/griddb/cli/releases/download/v4.6.0/griddb-ce-cli-4.6.0-linux.x86_64.rpm

@@ -13,11 +13,10 @@ app.use(express.static(path.resolve(__dirname, 'frontend/build')));
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 store = factory.getStore({
-    "host": process.argv[2],
-    "port": parseInt(process.argv[3]),
-    "clusterName": process.argv[4],
-    "username": process.argv[5],
-    "password": process.argv[6]
+    "notificationMember": process.argv[2],
+    "clusterName": process.argv[3],
+    "username": process.argv[4],
+    "password": process.argv[5]
 });
 
  const queryCont = async (queryStr) => {
@@ -57,6 +56,25 @@ const updateRow = async (newRow) => {
     } catch (err) {
         console.log("update row error: ", err)
     }
+}
+
+const deleteRow = async (rows) => {
+    console.log("Rows to be deleted: ", rows)
+    var rowKeys = []
+    rows.forEach ( row => {
+        rowKeys.push(row[0])
+    })
+    
+    try {
+        const cont = await store.putContainer(conInfo)
+        rowKeys.forEach (rowKey => {
+            let res = await cont.remove(rowKey)
+        })
+        return res
+    } catch (err) {
+        console.log("update row error: ", err)
+    }
+
 }
 
 config();
@@ -134,16 +152,28 @@ app.post("/update", jsonParser, async (req, res) => {
         console.log("return of update row: ", x)
         res.status(200).json(true);
     } catch (err) {
-        connsole.log("update endpoitn failure: ", err)
+        console.log("update endpoitn failure: ", err)
     }
 });
+
+app.post("/delete", jsonParser, async (req, res) => {
+    const rows = req.body.row
+
+    try {
+        let x = await deleteRow(rows)
+        console.log("deleting rows")
+        res.status(200).json(true)
+    } catch (err) {
+        console.log("delete row endpoint failure: ", err)
+    }
+})
 
 // All other GET requests not handled before will return our React app
 app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
   });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 2727;
 
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
