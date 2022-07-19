@@ -4,11 +4,68 @@ In this blog, we will be showcasing the GERN stack and how to properly implement
 
  The update portion will allow users to update the location of a sensor. Deleting will delete the row outright and then re-query the container and update the table with the live data from the GridDB server.
 
-To top it all off, we have set up some docker containers which will allow you to run the entirety of this project.
+To top it all off, we have set up some docker containers which will allow you to run the entirety of this project using a simple `docker-compose` command.
 
 ## Docker 
 
-To run this project, please first install docker on your machine. 
+To run this project, please first install docker and docker-compose on your machine.
+
+### Docker Compose
+
+To run this project via Docker compose, simply run the following the command: 
+
+```bash
+$ docker-compose up
+```
+
+Once it's done building the images, the frontend will run and the GridDB DB itself will be starting up. At this point you can navigate to your browser and see the project, but you should wait until the docker output shows GridDB as fully running to actually see the project; otherwise you'll just have a mostly blank table with no functionality.
+
+And if you're wondering how the `docker-compose.yml` file looks: 
+
+```bash
+version: '3'
+
+services:
+
+  griddb-server:
+    build: ./server
+
+    expose:
+      - "10001"
+      - "10010"
+      - "10020"
+      - "10030"
+      - "10040"
+      - "10050"
+      - "10080"
+      - "20001"
+      - "41999"
+
+    healthcheck:
+        test: ["CMD", "tail", "-f", "tail -f /var/lib/gridstore/log/gridstore*.log"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+
+
+  frontend:
+    build: .
+    
+    ports:
+      - "2828:2828"
+
+    restart: unless-stopped
+    depends_on:
+      - griddb-server
+    links:
+      - griddb-server
+```
+
+And then you can of course read through each of the Dockerfile's contents if you want to see these containers are built.
+
+You can now skip to the CRUD section or read through running this project not through docker-compose, but through just regular ol' docker containers instead.
+
+
 
 ### GridDB Server
 
