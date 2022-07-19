@@ -12,9 +12,12 @@ ENV GS_HOME /var/lib/gridstore
 ENV GS_LOG $GS_HOME/log
 ENV HOME $GS_HOME
 WORKDIR $HOME
-
+ADD start_griddb.sh /
+RUN chmod +x /start_griddb.sh
+RUN chown gsadm:gridstore /start_griddb.sh
 
 USER gsadm
 WORKDIR $HOME
 
+CMD /start_griddb.sh
 EXPOSE 10001 10010 10020 10030 10040 10050 10080 20001 41999

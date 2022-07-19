@@ -1,0 +1,36 @@
+version: '3'
+
+services: 
+
+  griddb-server: 
+    build: ./server
+    
+    expose: 
+      - "10001" 
+      - "10010" 
+      - "10020"
+      - "10030" 
+      - "10040"
+      - "10050"
+      - "10080"
+      - "20001" 
+      - "41999"
+
+    healthcheck:
+        test: ["CMD", "tail", "-f", "tail -f /var/lib/gridstore/log/gridstore*.log"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+
+
+  frontend:
+    build: .
+    command: bash -c "sleep 30"
+    ports:
+      - "2828:2828"
+
+    restart: unless-stopped
+    depends_on: 
+      - griddb-server
+    links: 
+      - griddb-server
