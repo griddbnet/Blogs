@@ -18,4 +18,4 @@ RUN npm install
 
 ENTRYPOINT ["npm", "run", "start", "griddb-server:10001", "defaultCluster", "admin", "admin"]
 
-EXPOSE 5000
+EXPOSE 2828
