@@ -12,11 +12,20 @@ app.use(express.static(path.resolve(__dirname, 'frontend/build')));
 
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
+//store = factory.getStore({
+//    "notificationMember": process.argv[2],
+//    "clusterName": process.argv[3],
+//    "username": process.argv[4],
+//    "password": process.argv[5]
+//});
+//
+
 store = factory.getStore({
-    "notificationMember": process.argv[2],
-    "clusterName": process.argv[3],
-    "username": process.argv[4],
-    "password": process.argv[5]
+    "host": process.argv[2],
+    "port": parseInt(process.argv[3]),
+    "clusterName": process.argv[4],
+    "username": process.argv[5],
+    "password": process.argv[6]
 });
 
  const queryCont = async (queryStr) => {
@@ -62,15 +71,16 @@ const deleteRow = async (rows) => {
     console.log("Rows to be deleted: ", rows)
     var rowKeys = []
     rows.forEach ( row => {
-        rowKeys.push(row[0])
+        rowKeys.push(row.timestamp)
     })
-    
+    console.log("row keys: ", rowKeys) 
     try {
         const cont = await store.putContainer(conInfo)
-        rowKeys.forEach (rowKey => {
+        rowKeys.forEach ( async rowKey => {
             let res = await cont.remove(rowKey)
+            console.log("Row deleted: ", res, rowKey)
         })
-        return res
+        return true
     } catch (err) {
         console.log("update row error: ", err)
     }
@@ -122,6 +132,17 @@ const generateSensors = () => {
 
 }
 
+app.get("/updateRows", async (req, res) => {
+    try {
+        let queryStr = "select *"
+        var results = await queryCont(queryStr)
+        res.json({
+            results
+        });
+    } catch (error) {
+        console.log("update rows error: ", error)
+    }
+});
 
 app.get('/firstLoad', async (req, res) => {
     try {
@@ -157,7 +178,7 @@ app.post("/update", jsonParser, async (req, res) => {
 });
 
 app.post("/delete", jsonParser, async (req, res) => {
-    const rows = req.body.row
+    const rows = req.body.rows
 
     try {
         let x = await deleteRow(rows)
@@ -173,7 +194,7 @@ app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
   });
 
-const PORT = process.env.PORT || 2727;
+const PORT = process.env.PORT || 2828;
 
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);

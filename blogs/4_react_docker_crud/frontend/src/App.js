@@ -10,6 +10,7 @@ import {
   MuiEvent,
 } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 
 const columns = [
   { field: 'id', headerName: 'ID', width: 90 },
@@ -131,16 +132,42 @@ const App = () => {
     console.log("selectionModel: ", selectedRows)
   }, [selectedRows])
 
-  const handleClick = useCallback(
-    async (newRow) => {
-      // Make the HTTP request to save in the backend
-      console.log("new row: ", newRow)
-      const response = await updateRow(newRow);
+  const handleClick = async () => {
+      console.log("Rows to delete: ", selectedRows)
+      const response = await deleteRow(selectedRows);
       console.log("Response from roiw update: ", response)
-      return newRow;
-    },
-    [],
-  );
+
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        let resp = JSON.parse(xhr.responseText);
+        let res = resp.results
+
+
+        var t = []
+        for (let i = 0; i < res.length; i++) {
+          let obj = {}
+          obj["id"] = i
+          obj["timestamp"] = res[i][0]
+          obj["location"] = res[i][1]
+          obj["data"] = res[i][2].toFixed(2)
+          obj["temperature"] = res[i][3]
+          t.push(obj)
+        }
+        console.log("rows: ", rows)
+        setRows(t)
+      }
+    };
+    xhr.open('GET', '/updateRows');
+    xhr.send();
+
+
+    }
+
 
   return (
     <div style={{ display: "flex", justifyContent: "center" }}>
@@ -152,6 +179,11 @@ const App = () => {
             theme.palette.mode === 'dark' ? '#376331' : 'rgb(217 243 190)',
         }
       }}>
+      <Stack direction="row" spacing={1}>
+        <Button size="small" variant="contained" onClick={handleClick}>
+          Delete selected rows
+        </Button>
+      </Stack>
         <DataGrid
           rows={rows}
           experimentalFeatures={{ newEditingApi: true }}
@@ -173,9 +205,6 @@ const App = () => {
           }}
         />
       </Box>
-      <Button variant="contained" onClick={handleClick}>
-      Delete Selected Rows
-    </Button>
 
     </div>
   )
