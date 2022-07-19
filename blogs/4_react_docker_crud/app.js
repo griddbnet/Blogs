@@ -12,21 +12,21 @@ app.use(express.static(path.resolve(__dirname, 'frontend/build')));
 
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
-//store = factory.getStore({
-//    "notificationMember": process.argv[2],
-//    "clusterName": process.argv[3],
-//    "username": process.argv[4],
-//    "password": process.argv[5]
-//});
-//
-
 store = factory.getStore({
-    "host": process.argv[2],
-    "port": parseInt(process.argv[3]),
-    "clusterName": process.argv[4],
-    "username": process.argv[5],
-    "password": process.argv[6]
+    "notificationMember": process.argv[2],
+    "clusterName": process.argv[3],
+    "username": process.argv[4],
+    "password": process.argv[5]
 });
+
+
+//store = factory.getStore({
+//    "host": process.argv[2],
+//    "port": parseInt(process.argv[3]),
+//    "clusterName": process.argv[4],
+//    "username": process.argv[5],
+//    "password": process.argv[6]
+//});
 
  const queryCont = async (queryStr) => {
 
