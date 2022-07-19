@@ -15,7 +15,6 @@ COPY package-lock.json /app
 RUN npm run build
 RUN npm install
 
-
 ENTRYPOINT ["npm", "run", "start", "griddb-server:10001", "defaultCluster", "admin", "admin"]
 
-EXPOSE 2828
+EXPOSE 5000
