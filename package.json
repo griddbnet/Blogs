@@ -1,5 +1,5 @@
 {
-  "name": "nodejhs",
+  "name": "4_react_docker_crud",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,8 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "csv-parse": "^5.0.4",
-    "dotenv": "^16.0.0",
+    "@emotion/react": "^11.9.3",
+    "@emotion/styled": "^11.9.3",
+    "@mui/material": "^5.9.0",
+    "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "griddb-node-api": "^0.8.5"
   }

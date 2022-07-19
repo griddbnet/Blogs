@@ -1,9 +1,7 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 
-      const App = () =>  {
-        const [data, setData] = useState(null)
-        const [name, setName] = useState(null)
-        const [vitamins, setVitamins] = useState(null)        
+      const App = () =>  {    
 
         useEffect(() => {
             var xhr = new XMLHttpRequest();
@@ -17,86 +15,11 @@ import React, { useState, useEffect } from 'react';
                 }
             };
 
-            xhr.open('GET', '/all');
+            xhr.open('GET', '/firstLoad');
             xhr.send();
 
         }, [])
-
-        const [selectList, setSelectList] = useState(null)
-        const [selectComp, setSelectComp] = useState(null)
-
-        useEffect( () => {
-            if (data !== null) {
-                var namesArr = []
-                var caloriesArr = []
-                var proteinArr = []
-                var fatArr = []
-                var sodiumArr = []
-                var fiberArr = []
-                var carboArr = []
-                var sugarsArr = []
-                var vitaminsArr = []
-                var listOfStuff = ['calories', 'protein', 'fat',
-                                    'sodium', 'fiber', 'carbo', 'sugars',
-                                    'vitamins']
-                var listOfComp = ["Greater Than", "Less Than", "Equal"]
-
-                data.forEach(row => {
-                    namesArr.push(row[0])
-                    caloriesArr.push(row[3])
-                    proteinArr.push(row[4])
-                    fatArr.push(row[5])
-                    sodiumArr.push(row[6])
-                    fiberArr.push(row[7])
-                    carboArr.push(row[8])
-                    sugarsArr.push(row[9])
-                    vitaminsArr.push(row[11])
-                })
-
-
-                const y = listOfStuff.map((l, i) => <option value={l} key={i}> {l} </option> )
-                const z = listOfComp.map((c, i) => <option value={c} key={i}> {c} </option> )
-
-                setSelectList(y)
-                setSelectComp(z)
-
-                setName(namesArr)
-                setVitamins(vitaminsArr)
-            }
-        }, [data])        
     
-
-        const [selectName, setSelectName] = useState(null)
-
-        useEffect( () => {
-            if (name !== null) {
-                //console.log(name, calories, protein, fat, sodium, fiber, carbo, sugars, vitamins)
-                const x = name.map((n, i) =>
-                    <option value={n} key={i}> {n} </option>
-                )
-
-                setSelectName(x)
-            }
-
-        }, [vitamins])
-
-        const [list, setList] = useState("calories")
-        const handleList = (event) => {
-            console.log("handle List: ", event.target.value)
-            setList(event.target.value)
-        }
-        const [comp, setComp] = useState("Greater Than")
-        const handleComp = (event) => {
-            console.log("handle Comp: ", event.target.value)
-            setComp(event.target.value)
-        }
-        const [nameDropDown, setNameDropDown] = useState("100% Bran")
-        const handleName = (event) => {
-            console.log("handle List: ", event.target.value)
-            setNameDropDown(event.target.value)
-        }
-
-        const [specific, setSpecific] = useState(null)
 
         const handleSubmit = async (event) => {
             fetch('/query', {
@@ -104,107 +27,239 @@ import React, { useState, useEffect } from 'react';
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({'list': list, 'comp': comp, 'name': nameDropDown})
+                body: JSON.stringify({'testing': 'testing'})
             }).then(function(response) {
                 console.log(response)
                 return response.json();
             });
             event.preventDefault()
-
-            let response = await fetch("/test")
-            let result = await response.text()
-            let resp = await JSON.parse(result)
-            setSpecific(resp)
         }
-
-        const [tableRows, setTableRows] = useState(null)
-        useEffect( () => {
-            if (specific !== null) {
-               // console.log("specific: ", specific.userResult)
-                let x = []
-                specific.userResult.forEach(row => {
-                    x.push(processRow(row))
-                  //  console.log(row, x)
-                })
-                console.log("x: ", x)
-                setTableRows(x)
-            }
-        }, [specific])
-
-        const [dataRows, setDataRows] = useState(null)
-        useEffect( () => {
-            console.log('Table Rows: ' , tableRows)
-            if (tableRows !== null) {
-                const x = tableRows.map((r, i) =>
-                    <tr key={i}> {r} </tr>
-                )
-                console.log("table rows: ", x)
-                setDataRows(x)
-            }
-        }, [tableRows])
-
-        const processRow = row => {
-            const x = row.map((n, i) =>
-                <td key={i}> {n} </td>
-            )    
-            return x
-        }
-
-        const makeTable = () => {
-            return (
-<table class="tg" id="table">
-<thead>
-  <tr>
-    <td class="tg-0pky">Name</td>
-    <td class="tg-0pky">Manufacturer</td>
-    <td class="tg-0lax">Type</td>
-    <td class="tg-0lax">Calories</td>
-    <td class="tg-0lax">Protein</td>
-    <td class="tg-0lax">Fat</td>
-    <td class="tg-0lax">Sodium</td>
-    <td class="tg-0lax">Fiber</td>
-    <td class="tg-0lax">Carbos</td>
-    <td class="tg-0lax">Sugars</td>
-    <td class="tg-0lax">Potass</td>
-    <td class="tg-0lax">Vitamins</td>
-    <td class="tg-0lax">Shelf</td>
-    <td class="tg-0lax">Weight</td>
-    <td class="tg-0lax">Cups</td>
-    <td class="tg-0lax">Rating</td>
-  </tr>
-    {dataRows}
-</thead>
-</table>
-            )
-        }
-
 
         return ( 
                <div>
                 <form method="post" id="form" onSubmit={handleSubmit}>
-                 <label for="Cereals">What Would You Like To Know?</label>
+                 <label for="Cereals">Sensor Data</label>
     
-                    <select name="list" id="list" onChange={handleList}>
-                        {selectList}
-                    </select>
-
-                    <select name="comp" id="comp" onChange={handleComp}>
-                        {selectComp}
-                    </select>
-
-                    <select name="cereal" id="cereal" onChange={handleName}>
-                        {selectName}
-                    </select>
-
-                    <br /><br />
                     <input type="submit" value="Submit Query" />
                 </form>
-
-                {makeTable()}`
                 
             </div>
     )
       }
                 
+export default App;
+=======
+import React, { useState, useEffect, useCallback } from 'react';
+import Box from '@mui/material/Box';
+import {
+  GridColumns,
+  GridRowId,
+  GridRowsProp,
+  DataGrid,
+  GridCellEditStopParams,
+  GridCellEditStopReasons,
+  MuiEvent,
+} from '@mui/x-data-grid';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+
+const columns = [
+  { field: 'id', headerName: 'ID', width: 90 },
+  {
+    field: 'timestamp',
+    headerName: 'Time',
+    width: 220,
+    editable: false,
+  },
+  {
+    field: 'location',
+    headerName: 'Location',
+    width: 110,
+    editable: true
+  },
+  {
+    field: 'data',
+    headerName: 'Data',
+    width: 110,
+    editable: false,
+  },
+  {
+    field: 'temperature',
+    headerName: 'Temperature',
+    type: 'number',
+    width: 110,
+    editable: false,
+  },
+];
+
+
+const App = () => {
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  const [rows, setRows] = useState(
+    [
+      { id: 1, timestamp: "Generating Data", location: "A1", data: 10.10, temperature: 22.22 }
+    ]
+  )
+
+  useEffect(() => {
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        let resp = JSON.parse(xhr.responseText);
+        let res = resp.results
+
+
+        var t = []
+        for (let i = 0; i < res.length; i++) {
+          let obj = {}
+          obj["id"] = i
+          obj["timestamp"] = res[i][0]
+          obj["location"] = res[i][1]
+          obj["data"] = res[i][2].toFixed(2)
+          obj["temperature"] = res[i][3]
+          t.push(obj)
+        }
+        console.log("rows: ", rows)
+        setRows(t)
+      }
+    };
+    xhr.open('GET', '/firstLoad');
+    xhr.send();
+
+  }, [])
+
+  useEffect(() => {
+    console.log("data: ", rows)
+  }, [rows])
+
+  const updateRow = useCallback((row) => {
+    console.log("Str: ", row)
+    fetch('/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ row })
+    }).then(function (response) {
+      console.log(response)
+      return response.json();
+    });
+  }, [])
+
+  const processRowUpdate = useCallback(
+    async (newRow) => {
+      // Make the HTTP request to save in the backend
+      console.log("new row: ", newRow)
+      const response = await updateRow(newRow);
+      console.log("Response from roiw update: ", response)
+      return newRow;
+    },
+    [],
+  );
+
+  const handleProcessRowUpdateError = useCallback((error) => {
+    console.log("Failed")
+  }, []);
+
+  const deleteRow = useCallback((rows) => {
+    console.log("Str: ", rows)
+    fetch('/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ rows })
+    }).then(function (response) {
+      console.log(response)
+      return response.json();
+    });
+  }, [])
+
+  useEffect(() => {
+    console.log("selectionModel: ", selectedRows)
+  }, [selectedRows])
+
+  const handleClick = async () => {
+      console.log("Rows to delete: ", selectedRows)
+      const response = await deleteRow(selectedRows);
+      console.log("Response from roiw update: ", response)
+
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+
+      if (xhr.readyState !== 4) return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        let resp = JSON.parse(xhr.responseText);
+        let res = resp.results
+
+
+        var t = []
+        for (let i = 0; i < res.length; i++) {
+          let obj = {}
+          obj["id"] = i
+          obj["timestamp"] = res[i][0]
+          obj["location"] = res[i][1]
+          obj["data"] = res[i][2].toFixed(2)
+          obj["temperature"] = res[i][3]
+          t.push(obj)
+        }
+        console.log("rows: ", rows)
+        setRows(t)
+      }
+    };
+    xhr.open('GET', '/updateRows');
+    xhr.send();
+
+
+    }
+
+
+  return (
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <Box sx={{
+        height: 600,
+        width: '50%',
+        '& .MuiDataGrid-cell--editable': {
+          bgcolor: (theme) =>
+            theme.palette.mode === 'dark' ? '#376331' : 'rgb(217 243 190)',
+        }
+      }}>
+      <Stack direction="row" spacing={1}>
+        <Button size="small" variant="contained" onClick={handleClick}>
+          Delete selected rows
+        </Button>
+      </Stack>
+        <DataGrid
+          rows={rows}
+          experimentalFeatures={{ newEditingApi: true }}
+          isCellEditable={(params) => params.row.location}
+          columns={columns}
+          pageSize={10}
+          processRowUpdate={processRowUpdate}
+          onProcessRowUpdateError={handleProcessRowUpdateError}
+          rowsPerPageOptions={[5]}
+          hideFooterPagination
+          checkboxSelection
+          onSelectionModelChange={(ids) => {
+            const selectedIDs = new Set(ids);
+            const selectedRows = rows.filter((row) =>
+              selectedIDs.has(row.id),
+            );
+
+            setSelectedRows(selectedRows);
+          }}
+        />
+      </Box>
+
+    </div>
+  )
+}
 
 export default App;
+>>>>>>> 1c40c684f238def8a9413f0cca53217896fc00b7

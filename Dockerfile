@@ -8,15 +8,14 @@ RUN dpkg -i griddb-c-client_5.0.0_amd64.deb
 WORKDIR /app
 
 COPY app.js /app
-COPY ingest.js /app
-COPY cereal.csv /app
-RUN mkdir /app/public
-COPY public /app/public
+RUN mkdir /app/frontend
+COPY frontend /app/frontend
 COPY package.json /app
 COPY package-lock.json /app
+RUN npm run build
 RUN npm install
 
 
-ENTRYPOINT ["npm", "run", "start", "239.0.0.1",  "31999", "defaultCluster", "admin", "admin"]
+ENTRYPOINT ["npm", "run", "start", "griddb-server:10001", "defaultCluster", "admin", "admin"]
 
-#ENTRYPOINT ["node", "ingest.js", "239.0.0.1",  "31999", "defaultCluster", "admin", "admin"]
+EXPOSE 5000

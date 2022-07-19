@@ -17,120 +17,136 @@ store = factory.getStore({
     "clusterName": process.argv[3],
     "username": process.argv[4],
     "password": process.argv[5]
- });
+});
 
+
+//store = factory.getStore({
+//    "host": process.argv[2],
+//    "port": parseInt(process.argv[3]),
+//    "clusterName": process.argv[4],
+//    "username": process.argv[5],
+//    "password": process.argv[6]
+//});
+
+ const queryCont = async (queryStr) => {
+
+     var data = []
+     try {
+         const col = await store.getContainer(containerName)
+         const query = await col.query(queryStr)
+         const rs = await query.fetch(query)
+         while(rs.hasNext()) {
+             data.push(rs.next())
+         }
+         return data
+     } catch (error) {
+         console.log("error: ", error)
+     }
+}
+
+var containerName = 'sensorsblog';
+
+const conInfo = new griddb.ContainerInfo({
+    'name': containerName,
+    'columnInfoList': [
+        ["timestamp", griddb.Type.TIMESTAMP],
+        ["location", griddb.Type.STRING],
+        ["data", griddb.Type.FLOAT],
+        ["temperature", griddb.Type.FLOAT],
+    ],
+    'type': griddb.ContainerType.TIME_SERIES, 'rowKey': true
+});
+
+const updateRow = async (newRow) => {
+    try {
+        const cont = await store.putContainer(conInfo)
+        const res = await cont.put(newRow)
+        return res
+    } catch (err) {
+        console.log("update row error: ", err)
+    }
+}
+
+const deleteRow = async (rows) => {
+    console.log("Rows to be deleted: ", rows)
+    var rowKeys = []
+    rows.forEach ( row => {
+        rowKeys.push(row.timestamp)
+    })
+    console.log("row keys: ", rowKeys) 
+    try {
+        const cont = await store.putContainer(conInfo)
+        rowKeys.forEach ( async rowKey => {
+            let res = await cont.remove(rowKey)
+            console.log("Row deleted: ", res, rowKey)
+        })
+        return true
+    } catch (err) {
+        console.log("update row error: ", err)
+    }
+
+}
 
 config();
 
-containerName = 'Cereal';
+function getRandomFloat(min, max) {
+    return Math.random() * (max - min) + min;
+  }
 
-const queryCont = async (queryStr) => {
 
-    var data = []
+
+
+const putCont = async () => {
+    console.log("Putting Container")
+    const rows = generateSensors();
     try {
-        const col = await store.getContainer(containerName)
-        const query = await col.query(queryStr)
-        const rs = await query.fetch(query)
-        while(rs.hasNext()) {
-            data.push(rs.next())
-        }
-        return data
+        await store.dropContainer(containerName);
+        const cont = await store.putContainer(conInfo)
+        await cont.multiPut(rows);
     } catch (error) {
         console.log("error: ", error)
     }
 }
 
-const querySpecific = async (cerealName) => {
+const generateSensors = () => {
 
-    var data = []
-    let q = `SELECT * WHERE name='${cerealName}'`
+    let numSensors = 10
+    let arr = []
+    console.log("Generating sensors")
+
+    for (let i = 1; i <= numSensors; i++) {
+        let tmp = [];
+        let now = new Date();
+        let newTime = now.setMilliseconds(now.getMinutes() + i)
+        let data = parseFloat(getRandomFloat(1, 10).toFixed(2))
+        let temperature = parseFloat(getRandomFloat(60, 130).toFixed(2))
+        tmp.push(newTime)
+        tmp.push("A1")
+        tmp.push(data)
+        tmp.push(temperature)
+        arr.push(tmp)
+        
+    }
+ //   console.log("arr: ", arr)
+    return arr;
+
+}
+
+app.get("/updateRows", async (req, res) => {
     try {
-        const col = await store.getContainer(containerName)
-        const query = await col.query(q)
-        const rs = await query.fetch(query)
-        while(rs.hasNext()) {
-            data.push(rs.next())
-        }
-        return data
+        let queryStr = "select *"
+        var results = await queryCont(queryStr)
+        res.json({
+            results
+        });
     } catch (error) {
-        console.log("error: ", error)
+        console.log("update rows error: ", error)
     }
-}
+});
 
-
-const queryVal = async (list, comp, val) => {
-
-    var data = []
-    let q = `SELECT * WHERE ${list} ${comp} ${val} `
-    console.log("query VaL: ", q)
+app.get('/firstLoad', async (req, res) => {
     try {
-        const col = await store.getContainer(containerName)
-        const query = await col.query(q)
-        const rs = await query.fetch(query)
-        while(rs.hasNext()) {
-            data.push(rs.next())
-        }
-        return data
-    } catch (error) {
-        console.log("error: ", error)
-    }
-}
-
-
-const checkType = type => {
-    console.log("check type: ", type)
-    var par;
-    switch(type) {
-        case "calories":
-            par = 3
-            break
-        case "protein":
-            par = 4
-             break
-        case "fat":
-            par = 5
-             break
-        case "sodium":
-            par = 6
-             break
-        case "fiber":
-            par = 7
-             break
-        case "carbo":
-            par = 8
-             break
-        case "sugars":
-            par = 9
-             break
-        case "vitamins":
-            par = 11
-             break
-    }   
-
-    console.log("check type val: ", par)
-    return par
-}
-
-const checkComp = comp => {
-    console.log("Check comp: ", comp)
-    var c;
-    switch(String(comp)) {
-        case "Greater Than":
-            c = ">"
-             break
-        case "Less Than":
-            c = "<"
-             break
-        case "Equal":
-            c = "="
-             break
-    }
-    console.log("Check comp val: ", c)
-    return c
-}
-
-app.get('/all', async (req, res) => {
-    try {
+        await putCont();
         let queryStr = "select *"
         var results = await queryCont(queryStr)
         res.json({
@@ -141,42 +157,45 @@ app.get('/all', async (req, res) => {
     }
 });
 
-var userResult = {"ok": "ok"}
-var userVal;
-app.post('/query', jsonParser, async (req, res) => {
-    const {list, comp, name} = req.body 
-    console.log("req body: ", req.body)
+app.post("/update", jsonParser, async (req, res) => {
+    const newRowObj = req.body.row
+    const newRowArr = []
+
+    for (const [key, value] of Object.entries(newRowObj)) {
+        newRowArr.push(value)
+    }
+    newRowArr.shift(); 
+    newRowArr[2] = parseFloat(newRowArr[2])
+    console.log("new row: from endpoint: ", newRowArr)
+
     try {
-        var results = await querySpecific(name)
-        let type = checkType(list) //grabs array position of proper value
-        let compVal = checkComp(comp)
-        let val = results[0][type]
-        console.log("results, type, compval, val", type, compVal, val)
-        userVal = val
-        let specificRes = await queryVal(list, compVal, val)
-        userResult = specificRes
-        //console.log("specific results: ", specificRes)
-        res.status(200).json(userResult);
-    } catch (error) {
-        console.log("try error: ", error)
+        let x = await updateRow(newRowArr)
+        console.log("return of update row: ", x)
+        res.status(200).json(true);
+    } catch (err) {
+        console.log("update endpoitn failure: ", err)
     }
 });
 
-app.get("/test", (req, res) => {
-    res.json({
-        userVal,
-        userResult
-    })
-});
+app.post("/delete", jsonParser, async (req, res) => {
+    const rows = req.body.rows
+
+    try {
+        let x = await deleteRow(rows)
+        console.log("deleting rows")
+        res.status(200).json(true)
+    } catch (err) {
+        console.log("delete row endpoint failure: ", err)
+    }
+})
 
 // All other GET requests not handled before will return our React app
 app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
   });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 2828;
 
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
 });
-
