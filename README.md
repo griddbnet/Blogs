@@ -1,4 +1,6 @@
-In this blog, we will be showcasing the GERN stack and how to properly implement CRUD (Create, Read, Update, Delete) with React, Express, and GridDB. To help demonstrate this, we will showcase a data table with fake sensor data. We will also be creating a docker environment for this simple application so that users may try this on their machine without much hassle.
+In this blog, we will be showcasing the GERN stack and how to properly implement CRUD (Create, Read, Update, Delete) with React, Express, and GridDB. It can be thought of as a loose sequel to our previous blog in which we introduce the GERN stack and run that project on bare metal. You can read about that blog [here](https://griddb.net/en/blog/gern-stack)
+
+ To help demonstrate this, we will showcase a data table with fake sensor data. We will also be creating a docker environment for this simple application so that users may try this on their machine without much hassle.
 
  To mimic a possible real world scenario, the data and temp values are not able to be updated. Instead, there will be a location column which can be updated (think about a sensor possibly moving to a new building). The create portion of CRUD happens on page load -- all sensors are generated and saved into GridDB on each page load into the container called `sensorsblog`. 
 
@@ -10,7 +12,21 @@ To top it all off, we have set up some docker containers which will allow you to
 
 To run this project, please first install docker and docker-compose on your machine.
 
+To check if `docker-compose` is already installed: 
+
+```bash
+$ docker-compose --version
+```
+
+If not installed, you can do so here: [https://docs.docker.com/compose/install/](https://docs.docker.com/compose/install/)
+
 ### Docker Compose
+
+To start, let's grab all of the source code: 
+
+```bash
+$ git clone --branch react_crud https://github.com/griddbnet/Blogs.git
+```
 
 To run this project via Docker compose, simply run the following the command: 
 
@@ -61,6 +77,21 @@ services:
       - griddb-server
 ```
 
+There's really not much to this docker-compose file. One interesting point is that since they share a yaml file, these two containers are automatically placed into the same network, meaning communication between the two containers is very simple.
+
+The GridDB-Server container essentially does nothing fancy besides being built by the original docker container seen in [our previous blog](https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/). The various ports being exposed are the ports GridDB needs to run. You can read more about it here in the [QuickStart](https://www.griddb.net/en/docs/GridDB_QuickStartGuide.html)
+
+Here's a quick rundown of what ports do what: 
+
+```bash
+  "cluster": {"address":"172.17.0.45", "port":10010},
+  "sync": {"address":"172.17.0.45", "port":10020},
+  "system": {"address":"172.17.0.45", "port":10040},
+  "transaction": {"address":"172.17.0.45", "port":10001},
+  "sql": {"address":"172.17.0.45", "port":20001}
+```
+
+
 And then you can of course read through each of the Dockerfile's contents if you want to see these containers are built.
 
 You can now skip to the CRUD section or read through running this project not through docker-compose, but through just regular ol' docker containers instead.
@@ -98,6 +129,26 @@ $ docker run --network griddb-net --name griddb-nodejs -p 2828:2828 -d -t griddb
 And now if you navigate to `http://localhost:2828` you will the see full app running.
 
 If you're curious as to how these containers work, you can read this [previous blog] (https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/)
+
+## Project Overview
+
+This blog is running the [GERN Stack]("https://griddb.net/en/blog/gern-stack") in container form. This means that we have GridDB in the database layer, node.js and Express.js in the backend/server layer, and React.js in the frontend layer. 
+
+### GridDB -- Database 
+
+GridDB is our persistent storage database for this project, and is the G of the GERN stack. It will save our data into the `sensorsblog` container and will have auto-generated phoney sensor data placed into it at page load.
+
+It will take sql query strings, along with  the node.js client API to receive our CRUD changes from our backend
+
+### node.js & Express.js -- Backend 
+
+This is where our webpage is hosted. It will serve up our routes for our CRUD functionality and host our React.js frontend. The endpoints created by Express.js will correspond to interacting with our database and frontend.
+
+`/delete`, for example, will send back rowKeys from the frontend to the backend, and then out to GridDB via a SQL string, to tell our database which rows will be deleted. Each of the CRUD operations will have its own endpoint.
+
+### React.hs -- Frontend
+
+And finally React.js is our frontend, which allows for reactive web pages which can take new data without doing a full page reload. For this particular project, it really helped with sending data back to the backend without needing to navigate away from the home screen which contains all of our information
 
 ## CRUD Operations
 
@@ -382,7 +433,4 @@ We are reusing the code from the `firstLoad` to make things easy on us. Once the
 
 ## Conclusion
 
-The full source code can be found here: 
-
-
-
+The full source code can be found here:
