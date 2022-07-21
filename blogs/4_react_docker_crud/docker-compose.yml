@@ -3,16 +3,13 @@ version: '3'
 services: 
 
   griddb-server: 
-    build: ./server
+    image: griddbnet/griddb:5.0
     
     expose: 
       - "10001" 
       - "10010" 
       - "10020"
-      - "10030" 
       - "10040"
-      - "10050"
-      - "10080"
       - "20001" 
       - "41999"
 
@@ -24,7 +21,7 @@ services:
 
 
   frontend:
-    build: .
+    image: griddbnet/griddb-react-crud
     command: bash -c "sleep 30"
     ports:
       - "2828:2828"

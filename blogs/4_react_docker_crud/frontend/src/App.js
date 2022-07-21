@@ -1,16 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
-import {
-  GridColumns,
-  GridRowId,
-  GridRowsProp,
-  DataGrid,
-  GridCellEditStopParams,
-  GridCellEditStopReasons,
-  MuiEvent,
-} from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import Snackbar from '@mui/material/Snackbar';
+import Alert, { AlertProps } from '@mui/material/Alert';
 
 const columns = [
   { field: 'id', headerName: 'ID', width: 90 },
@@ -45,13 +39,17 @@ const columns = [
 const App = () => {
   const [selectedRows, setSelectedRows] = useState([]);
 
+  const [snackbar, setSnackbar] = React.useState(null);
+
+  const handleCloseSnackbar = () => setSnackbar(null);
+
   const [rows, setRows] = useState(
     [
-      { id: 1, timestamp: "Generating Data", location: "A1", data: 10.10, temperature: 22.22 }
+      { id: 1, timestamp: "Generating Data...", location: "A1", data: 10.10, temperature: 22.22 }
     ]
   )
 
-  useEffect(() => {
+  const queryForRows = (endPoint) => {
     var xhr = new XMLHttpRequest();
 
     xhr.onreadystatechange = function () {
@@ -72,21 +70,20 @@ const App = () => {
           obj["temperature"] = res[i][3]
           t.push(obj)
         }
-        console.log("rows: ", rows)
+        //console.log("rows: ", rows)
         setRows(t)
       }
     };
-    xhr.open('GET', '/firstLoad');
+    xhr.open('GET', endPoint);
     xhr.send();
+  }
 
+  useEffect(() => { //Runs on every page load
+    queryForRows("/firstLoad");
   }, [])
 
-  useEffect(() => {
-    console.log("data: ", rows)
-  }, [rows])
 
   const updateRow = useCallback((row) => {
-    console.log("Str: ", row)
     fetch('/update', {
       method: 'POST',
       headers: {
@@ -104,14 +101,15 @@ const App = () => {
       // Make the HTTP request to save in the backend
       console.log("new row: ", newRow)
       const response = await updateRow(newRow);
-      console.log("Response from roiw update: ", response)
+      setSnackbar({ children: `Location successfully saved to ${newRow.location}`, severity: 'success' });
       return newRow;
     },
     [],
   );
 
+
   const handleProcessRowUpdateError = useCallback((error) => {
-    console.log("Failed")
+    setSnackbar({ children: error.message, severity: 'error' });
   }, []);
 
   const deleteRow = useCallback((rows) => {
@@ -132,41 +130,25 @@ const App = () => {
     console.log("selectionModel: ", selectedRows)
   }, [selectedRows])
 
-  const handleClick = async () => {
-      console.log("Rows to delete: ", selectedRows)
-      const response = await deleteRow(selectedRows);
-      console.log("Response from roiw update: ", response)
+  const handleDeleteRow = async () => {
+    await deleteRow(selectedRows);
+    queryForRows("/updateRows");
+  }
 
+  const createRow = useCallback(() => {
+    fetch('/create', {
+      method: 'GET',
+    }).then(function (response) {
+      console.log(response)
+      return response.json();
+    });
+  }, [])
 
-    var xhr = new XMLHttpRequest();
+  const handleCreateRow = async () => {
+    await createRow();
+    queryForRows("/updateRows");
+  }
 
-    xhr.onreadystatechange = function () {
-
-      if (xhr.readyState !== 4) return;
-      if (xhr.status >= 200 && xhr.status < 300) {
-        let resp = JSON.parse(xhr.responseText);
-        let res = resp.results
-
-
-        var t = []
-        for (let i = 0; i < res.length; i++) {
-          let obj = {}
-          obj["id"] = i
-          obj["timestamp"] = res[i][0]
-          obj["location"] = res[i][1]
-          obj["data"] = res[i][2].toFixed(2)
-          obj["temperature"] = res[i][3]
-          t.push(obj)
-        }
-        console.log("rows: ", rows)
-        setRows(t)
-      }
-    };
-    xhr.open('GET', '/updateRows');
-    xhr.send();
-
-
-    }
 
 
   return (
@@ -179,11 +161,15 @@ const App = () => {
             theme.palette.mode === 'dark' ? '#376331' : 'rgb(217 243 190)',
         }
       }}>
-      <Stack direction="row" spacing={1}>
-        <Button size="small" variant="contained" onClick={handleClick}>
-          Delete selected rows
-        </Button>
-      </Stack>
+        <h1> IoT Web App with GERN stack </h1>
+        <Stack direction="row" spacing={1}>
+          <Button size="small" variant="outlined" color="red" onClick={handleDeleteRow}>
+            Delete selected rows
+          </Button>
+          <Button size="small" variant="outlined" color="blue" onClick={handleCreateRow}>
+            Create Row
+          </Button>
+        </Stack>
         <DataGrid
           rows={rows}
           experimentalFeatures={{ newEditingApi: true }}
@@ -206,6 +192,16 @@ const App = () => {
         />
       </Box>
 
+      {!!snackbar && (
+        <Snackbar
+          open
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          onClose={handleCloseSnackbar}
+          autoHideDuration={6000}
+        >
+          <Alert {...snackbar} onClose={handleCloseSnackbar} />
+        </Snackbar>
+      )}
     </div>
   )
 }
