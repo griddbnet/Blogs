@@ -36,26 +36,27 @@ $ docker-compose up
 
 Once it's done building the images, the frontend will run and the GridDB DB itself will be starting up. At this point you can navigate to your browser and see the project, but you should wait until the docker output shows GridDB as fully running to actually see the project; otherwise you'll just have a mostly blank table with no functionality.
 
+
+Here's a quick gif of the running process: 
+
+![img](https://gfycat.com/relievedanguishedboilweevil)
+
 And if you're wondering how the `docker-compose.yml` file looks: 
 
 ```bash
 version: '3'
 
-services:
+services: 
 
-  griddb-server:
-    build: ./server
-
-    expose:
-      - "10001"
-      - "10010"
+  griddb-server: 
+    image: griddbnet/griddb:5.0
+    
+    expose: 
+      - "10001" 
+      - "10010" 
       - "10020"
-      - "10030"
       - "10040"
-      - "10050"
-      - "10080"
-      - "20001"
-      - "41999"
+      - "20001" 
 
     healthcheck:
         test: ["CMD", "tail", "-f", "tail -f /var/lib/gridstore/log/gridstore*.log"]
@@ -65,19 +66,21 @@ services:
 
 
   frontend:
-    build: .
-    
+    image: griddbnet/griddb-react-crud
+    command: bash -c "sleep 30"
     ports:
       - "2828:2828"
 
     restart: unless-stopped
-    depends_on:
+    depends_on: 
       - griddb-server
-    links:
+    links: 
       - griddb-server
 ```
 
-There's really not much to this docker-compose file. One interesting point is that since they share a yaml file, these two containers are automatically placed into the same network, meaning communication between the two containers is very simple.
+There's really not much to this docker-compose file, it pulls the images for the griddb database and the frontend via dockerhub images.
+
+One interesting point is that since they share a yaml file, these two containers are automatically placed into the same network, meaning communication between the two containers is very simple.
 
 The GridDB-Server container essentially does nothing fancy besides being built by the original docker container seen in [our previous blog](https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/). The various ports being exposed are the ports GridDB needs to run. You can read more about it here in the [QuickStart](https://www.griddb.net/en/docs/GridDB_QuickStartGuide.html)
 
@@ -122,8 +125,8 @@ To run the Nodejs part of the application, there is a Dockerfile in the root of 
 You can build the image and then run pretty easily: 
 
 ```bash
-$ docker build -t griddb-nodejs .
-$ docker run --network griddb-net --name griddb-nodejs -p 2828:2828 -d -t griddb-nodejs
+$ docker pull griddbnet/griddb-react-crud
+$ docker run --network griddb-net --name griddbnet/griddb-react-crud -p 2828:2828 -d -t griddbnet/griddb-react-crud
 ```
 
 And now if you navigate to `http://localhost:2828` you will the see full app running.
@@ -161,8 +164,9 @@ To showcase CREATE, we generate fake sensor data and save our records into a tim
 The follow code snippet is from the frontend. The React Use Effect hook with an empty array at the end means it will run just once on page load. Here you can see it calls the `/firstLoad` endpoint and then washes the data that is sent from our GridDB server to fit into our data table
 
 ```javascript
-  useEffect(() => {
+  const queryForRows = (endPoint) => {
     var xhr = new XMLHttpRequest();
+    console.log("endpoint: ", endPoint)
 
     xhr.onreadystatechange = function () {
 
@@ -182,13 +186,16 @@ The follow code snippet is from the frontend. The React Use Effect hook with an 
           obj["temperature"] = res[i][3]
           t.push(obj)
         }
-        console.log("rows: ", rows)
-        setRows(t)
+        //console.log("rows: ", rows)
+        setRows([...t])
       }
     };
-    xhr.open('GET', '/firstLoad');
+    xhr.open('GET', endPoint);
     xhr.send();
+  }
 
+  useEffect(() => { //Runs on every page load
+    queryForRows("/firstLoad");
   }, [])
 ```
 
@@ -197,7 +204,7 @@ And here is the code in the backend:
 ```javascript
 app.get('/firstLoad', async (req, res) => {
     try {
-        await putCont();
+        await putCont(true, 10);
         let queryStr = "select *"
         var results = await queryCont(queryStr)
         res.json({
@@ -212,11 +219,14 @@ app.get('/firstLoad', async (req, res) => {
 Here you can see when this endpoint is called it calls the function `putCont();`. This function is what handles our CREATE. 
 
 ```javascript
-const putCont = async () => {
+const putCont = async (firstLoad, sensorCount) => {
     console.log("Putting Container")
-    const rows = generateSensors();
+    const rows = generateSensors(sensorCount);
+    console.log("firstLoad: ", firstLoad)
     try {
-        await store.dropContainer(containerName);
+        if (firstLoad) {
+            await store.dropContainer(containerName);
+        }
         const cont = await store.putContainer(conInfo)
         await cont.multiPut(rows);
     } catch (error) {
@@ -224,9 +234,9 @@ const putCont = async () => {
     }
 }
 
-const generateSensors = () => {
+const generateSensors = (sensorCount) => {
 
-    let numSensors = 10
+    let numSensors = sensorCount
     let arr = []
     console.log("Generating sensors")
 
@@ -241,17 +251,50 @@ const generateSensors = () => {
         tmp.push(data)
         tmp.push(temperature)
         arr.push(tmp)
-        
     }
  //   console.log("arr: ", arr)
     return arr;
-
 }
 ```
 
 When putCont is called it first calls generateSensors to create the fake sensor data based on the current time. When the data is done being created, we drop the old container (if it exists) and then `putContainer` and then `multiPut` all rows of generated sensor data.
 
-Immediately after running this, we run the READ operation in our `/firstLoad` endpoint
+We also have the `/createRow` endpoint which will allow users to create one row/sensor at a time: 
+
+```javascript
+  const createRow = useCallback(() => {
+    fetch('/create', {
+      method: 'GET',
+    }).then(function (response) {
+      console.log(response)
+      return response.json();
+    });
+  }, [])
+
+  const handleCreateRow = async () => {
+    await createRow();
+    queryForRows("/updateRows");
+  }
+
+```
+
+And the backend: 
+
+```javascript
+app.get("/create", async (req, res) => {
+    console.log("Creating")
+    try {
+        await putCont(false, 1);
+        console.log("creating row")
+        res.status(200).json(true)
+    } catch (err) {
+        console.log("/create error: ", err)
+    }
+    
+})
+```
+
+Here we again use the `putCont` container but this time we send a `false` flag to not drop our container, and then the int of `1` to make sure we are only creating one row/sensor. This shows how easy it is to create rows!
 
 ### READ
 
@@ -271,7 +314,6 @@ For the frontend, we handled editing the location like so:
 
 ```javascript
   const updateRow = useCallback((row) => {
-    console.log("Str: ", row)
     fetch('/update', {
       method: 'POST',
       headers: {
@@ -289,7 +331,7 @@ For the frontend, we handled editing the location like so:
       // Make the HTTP request to save in the backend
       console.log("new row: ", newRow)
       const response = await updateRow(newRow);
-      console.log("Response from roiw update: ", response)
+      setSnackbar({ children: `New location of  ${newRow.location} successfully saved to row: ${newRow.id}`, severity: 'success' });
       return newRow;
     },
     [],
@@ -391,46 +433,35 @@ The last bit that's important is that immediately following the actual running o
 The following function is what runs everytime the delete button is clicked: 
 
 ```javascript
-  const handleClick = async () => {
-      console.log("Rows to delete: ", selectedRows)
-      const response = await deleteRow(selectedRows);
-      console.log("Response from roiw update: ", response)
+  const deleteRow = useCallback((rows) => {
+    console.log("Str: ", rows)
+    fetch('/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ rows })
+    }).then(function (response) {
+      console.log(response)
+      return response.json();
+    });
+  }, [])
 
+  useEffect(() => {
+    console.log("selectionModel: ", selectedRows)
+  }, [selectedRows])
 
-    var xhr = new XMLHttpRequest();
-
-    xhr.onreadystatechange = function () {
-
-      if (xhr.readyState !== 4) return;
-      if (xhr.status >= 200 && xhr.status < 300) {
-        let resp = JSON.parse(xhr.responseText);
-        let res = resp.results
-
-
-        var t = []
-        for (let i = 0; i < res.length; i++) {
-          let obj = {}
-          obj["id"] = i
-          obj["timestamp"] = res[i][0]
-          obj["location"] = res[i][1]
-          obj["data"] = res[i][2].toFixed(2)
-          obj["temperature"] = res[i][3]
-          t.push(obj)
-        }
-        console.log("rows: ", rows)
-        setRows(t)
-      }
-    };
-    xhr.open('GET', '/updateRows');
-    xhr.send();
-
-
-    }
+  const handleDeleteRow = async () => {
+    await deleteRow(selectedRows);
+    queryForRows("/updateRows");
+  }
 ```
 
-We are reusing the code from the `firstLoad` to make things easy on us. Once the rows are deleted, it will re-read the container and transform the data and update the data table with the real contents of our GridDB container.
+Here we calling `queryForRows` again to  make sure the user gets an updated view of the contents of the container. Once the rows are deleted, it will re-read the container and transform the data and update the data table with the real contents of our GridDB container.
 
 
 ## Conclusion
+
+Here's a gif of the entire project running: ![img](https://gfycat.com/youngnimblearawana)
 
 The full source code can be found here:

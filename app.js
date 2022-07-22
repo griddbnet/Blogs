@@ -10,7 +10,6 @@ var jsonParser = bodyParser.json()
 app.use(bodyParser.json({ type: 'application/*+json' }))
 app.use(express.static(path.resolve(__dirname, 'frontend/build')));
 
-var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 store = factory.getStore({
     "notificationMember": process.argv[2],
@@ -94,13 +93,14 @@ function getRandomFloat(min, max) {
   }
 
 
-
-
-const putCont = async () => {
+const putCont = async (firstLoad, sensorCount) => {
     console.log("Putting Container")
-    const rows = generateSensors();
+    const rows = generateSensors(sensorCount);
+    console.log("firstLoad: ", firstLoad)
     try {
-        await store.dropContainer(containerName);
+        if (firstLoad) {
+            await store.dropContainer(containerName);
+        }
         const cont = await store.putContainer(conInfo)
         await cont.multiPut(rows);
     } catch (error) {
@@ -108,9 +108,9 @@ const putCont = async () => {
     }
 }
 
-const generateSensors = () => {
+const generateSensors = (sensorCount) => {
 
-    let numSensors = 10
+    let numSensors = sensorCount
     let arr = []
     console.log("Generating sensors")
 
@@ -125,17 +125,28 @@ const generateSensors = () => {
         tmp.push(data)
         tmp.push(temperature)
         arr.push(tmp)
-        
     }
  //   console.log("arr: ", arr)
     return arr;
-
 }
+
+app.get("/create", async (req, res) => {
+    console.log("Creating")
+    try {
+        await putCont(false, 1);
+        console.log("creating row")
+        res.status(200).json(true)
+    } catch (err) {
+        console.log("/create error: ", err)
+    }
+    
+})
 
 app.get("/updateRows", async (req, res) => {
     try {
         let queryStr = "select *"
         var results = await queryCont(queryStr)
+        console.log("updating rows: ", results)
         res.json({
             results
         });
@@ -146,7 +157,7 @@ app.get("/updateRows", async (req, res) => {
 
 app.get('/firstLoad', async (req, res) => {
     try {
-        await putCont();
+        await putCont(true, 10);
         let queryStr = "select *"
         var results = await queryCont(queryStr)
         res.json({
