@@ -8,6 +8,8 @@ In this blog, we will be again showcasing the GERN stack and how to properly imp
 
 To top it all off, we have set up some docker containers which will allow you to run the entirety of this project using a simple `docker-compose` command. These images are all available on Dockerhub as well.
 
+<a href="https://griddb.net/en/wp-content/uploads/2022/07/diagram_react_crud.png"><img src="https://griddb.net/en/wp-content/uploads/2022/07/diagram_react_crud.png" alt="" width="1280" height="720" class="aligncenter size-full wp-image-28591" /></a>
+
 ## Prerequisites
 
 The following prerequisites are required to run this project: 
