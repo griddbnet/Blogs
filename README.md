@@ -39,7 +39,7 @@ Once it's done building the images, the frontend will run and the GridDB DB itse
 
 Here's a quick gif of the running process: 
 
-![img](https://gfycat.com/relievedanguishedboilweevil)
+![](https://thumbs.gfycat.com/RelievedAnguishedBoilweevil-size_restricted.gif)
 
 And if you're wondering how the `docker-compose.yml` file looks: 
 
@@ -462,6 +462,8 @@ Here we calling `queryForRows` again to  make sure the user gets an updated view
 
 ## Conclusion
 
-Here's a gif of the entire project running: ![img](https://gfycat.com/youngnimblearawana)
+Here's a gif of the entire project running: 
+
+![](https://thumbs.gfycat.com/YoungNimbleArawana-size_restricted.gif)
 
 The full source code can be found here:
