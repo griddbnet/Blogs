@@ -95,16 +95,16 @@ The following prerequisites are required to run this project:
         <div class="inner-list">
           <ul style="list-style-type: none !important; padding-left: 9px;">
             <li>
-              <a href="#getting-started">Getting Started</a>
+              <a href="#create">CREATE </a>
             </li>
             <li>
-              <a href="#querying"> How to Query with GridDB's node.js Connector </a>
+              <a href="#read"> READ </a>
             </li>
             <li>
-              <a href="#react"> Using React with GridDB </a>
+              <a href="#update"> UPDATE </a>
             </li>
             <li>
-              <a href="#query-builder"> Creating a Query Builder with React </a>
+              <a href="#delete"> DELETE </a>
             </li>
           </ul>
         </div>
@@ -272,11 +272,11 @@ This is where our webpage is hosted. It will serve up our routes for our CRUD fu
 
 And finally React.js is our frontend, which allows for reactive web pages which can take new data without doing a full page reload. For this particular project, it really helped with sending data back to the backend without needing to navigate away from the home screen which contains all of our information
 
-## <span id="crud"> CRUD Operations
+## <span id="crud"> CRUD Operations </span>
 
 As stated earlier, CRUD stands for CREATE, READ, UPDATE, and DELETE. These are the main operations used for persistant storage apps -- things that will persist even after the user logs off/turns off the app. 
 
-### CREATE
+###  <span id="create"> CREATE</span>
 
 `CREATE` is exactly what it sounds like: this allows the user to add new data onto our container and frontend data table.
 
@@ -417,7 +417,7 @@ Here we again use the `putCont` container but this time we send a `false` flag t
 
 One other note here is that whenever the `handleCreateRow` function is called (whenever a user clicks on the appropriate UI element), you can see that once JavaScript is done `awaiting` for the `createRow` function to resolve itself, it then re-runs the `READ` portion of our CRUD API, the `queryForRows` function.
 
-### READ
+### <span id="read">  READ</span>
 
 To read from GridDB, we simply use a SQL string and the query API call. In this case, we ran `select *` against our container name and then send our results back up to the frontend as json.
 
@@ -425,7 +425,7 @@ Once the frontend gets and transforms the data, it uses a React hook to update t
 
 In this case, we are using the [material ui for React](https://mui.com/material-ui/getting-started/overview/) to make our app nice. 
 
-### UPDATE
+### <span id="update">  UPDATE</span>
 
 To make the app somewhat realistic our LOCATION column is the only one that is updatable. With GridDB to update a row, you simply `put` the row again into your container. If that rowkey already exists, it will simply update the values with the new ones that were pushed out. 
 
@@ -501,7 +501,7 @@ This function is rather simple -- it simply takes the new data and puts the row 
 
 To make sure the row was actually updated, you can of course always query the container `sensorsblog` with the griddb shell. You can also try deleting a container as this will also retrigger a re-read of the container and a refresh of the entire data table.
 
-### DELETE
+### <span id="delete">  DELETE</span>
 
 To delete, we call the GridDB `remove` api key. To do this, we simply feed into the API call the rowkey which we intend to remove. Because we are mimicking an IoT environment, the GridDB container is a time series container, meaning the rowkey is the timestamp. 
 
@@ -579,10 +579,12 @@ The following function is what runs everytime the delete button is clicked:
 Here we calling `queryForRows` again to make sure the user gets an updated view of the contents of the container. Once the rows are deleted, it will re-read the container and transform the data and update the data table with the real contents of our GridDB container.
 
 
-## Conclusion
+## <span id="conclusion">  Conclusion </span>
 
 Here's a gif of the entire project running: 
 
 ![](https://thumbs.gfycat.com/YoungNimbleArawana-size_restricted.gif)
 
-The full source code can be found here:
+### <span id="source-code"> Source Code </span>
+
+The full source code can be found here: [SOURCE CODE HERE](https://github.com/griddbnet/Blogs/tree/react_crud)
