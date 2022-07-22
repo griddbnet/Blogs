@@ -8,24 +8,24 @@ const app = express();
 var jsonParser = bodyParser.json()
 
 app.use(bodyParser.json({ type: 'application/*+json' }))
-app.use(express.static(path.resolve(__dirname, 'frontend/build')));
+app.use(express.static(path.resolve(__dirname, '../frontend/build')));
 
 var factory = griddb.StoreFactory.getInstance();
-store = factory.getStore({
-    "notificationMember": process.argv[2],
-    "clusterName": process.argv[3],
-    "username": process.argv[4],
-    "password": process.argv[5]
-});
-
-
 //store = factory.getStore({
-//    "host": process.argv[2],
-//    "port": parseInt(process.argv[3]),
-//    "clusterName": process.argv[4],
-//    "username": process.argv[5],
-//    "password": process.argv[6]
+//    "notificationMember": process.argv[2],
+//    "clusterName": process.argv[3],
+//    "username": process.argv[4],
+//    "password": process.argv[5]
 //});
+
+
+store = factory.getStore({
+    "host": process.argv[2],
+    "port": parseInt(process.argv[3]),
+    "clusterName": process.argv[4],
+    "username": process.argv[5],
+    "password": process.argv[6]
+});
 
  const queryCont = async (queryStr) => {
 
@@ -93,11 +93,14 @@ function getRandomFloat(min, max) {
   }
 
 
-const putCont = async (sensorCount) => {
+const putCont = async (firstLoad, sensorCount) => {
     console.log("Putting Container")
     const rows = generateSensors(sensorCount);
+    console.log("firstLoad: ", firstLoad)
     try {
-        await store.dropContainer(containerName);
+        if (firstLoad) {
+            await store.dropContainer(containerName);
+        }
         const cont = await store.putContainer(conInfo)
         await cont.multiPut(rows);
     } catch (error) {
@@ -122,15 +125,17 @@ const generateSensors = (sensorCount) => {
         tmp.push(data)
         tmp.push(temperature)
         arr.push(tmp)
-        
     }
  //   console.log("arr: ", arr)
     return arr;
 }
 
 app.get("/create", async (req, res) => {
+    console.log("Creating")
     try {
-        await putCont(1);
+        await putCont(false, 1);
+        console.log("creating row")
+        res.status(200).json(true)
     } catch (err) {
         console.log("/create error: ", err)
     }
@@ -141,6 +146,7 @@ app.get("/updateRows", async (req, res) => {
     try {
         let queryStr = "select *"
         var results = await queryCont(queryStr)
+        console.log("updating rows: ", results)
         res.json({
             results
         });
@@ -151,7 +157,7 @@ app.get("/updateRows", async (req, res) => {
 
 app.get('/firstLoad', async (req, res) => {
     try {
-        await putCont(10);
+        await putCont(true, 10);
         let queryStr = "select *"
         var results = await queryCont(queryStr)
         res.json({
@@ -196,7 +202,7 @@ app.post("/delete", jsonParser, async (req, res) => {
 
 // All other GET requests not handled before will return our React app
 app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
+    res.sendFile(path.resolve(__dirname, '../frontend/build', 'index.html'));
   });
 
 const PORT = process.env.PORT || 2828;

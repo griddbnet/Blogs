@@ -39,18 +39,19 @@ const columns = [
 const App = () => {
   const [selectedRows, setSelectedRows] = useState([]);
 
-  const [snackbar, setSnackbar] = React.useState(null);
+  const [snackbar, setSnackbar] = useState(null);
 
   const handleCloseSnackbar = () => setSnackbar(null);
 
   const [rows, setRows] = useState(
     [
-      { id: 1, timestamp: "Generating Data...", location: "A1", data: 10.10, temperature: 22.22 }
+      { id: "", timestamp: "Generating Data...", location: "", data: "", temperature: "" }
     ]
   )
 
   const queryForRows = (endPoint) => {
     var xhr = new XMLHttpRequest();
+    console.log("endpoint: ", endPoint)
 
     xhr.onreadystatechange = function () {
 
@@ -71,7 +72,7 @@ const App = () => {
           t.push(obj)
         }
         //console.log("rows: ", rows)
-        setRows(t)
+        setRows([...t])
       }
     };
     xhr.open('GET', endPoint);
@@ -82,6 +83,11 @@ const App = () => {
     queryForRows("/firstLoad");
   }, [])
 
+
+  useEffect( () => {
+    console.log("new rows: ", rows)
+    
+  }, [rows])
 
   const updateRow = useCallback((row) => {
     fetch('/update', {
@@ -101,7 +107,7 @@ const App = () => {
       // Make the HTTP request to save in the backend
       console.log("new row: ", newRow)
       const response = await updateRow(newRow);
-      setSnackbar({ children: `Location successfully saved to ${newRow.location}`, severity: 'success' });
+      setSnackbar({ children: `New location of  ${newRow.location} successfully saved to row: ${newRow.id}`, severity: 'success' });
       return newRow;
     },
     [],
@@ -111,6 +117,7 @@ const App = () => {
   const handleProcessRowUpdateError = useCallback((error) => {
     setSnackbar({ children: error.message, severity: 'error' });
   }, []);
+
 
   const deleteRow = useCallback((rows) => {
     console.log("Str: ", rows)
@@ -154,7 +161,7 @@ const App = () => {
   return (
     <div style={{ display: "flex", justifyContent: "center" }}>
       <Box sx={{
-        height: 600,
+        height: 900,
         width: '50%',
         '& .MuiDataGrid-cell--editable': {
           bgcolor: (theme) =>
@@ -163,10 +170,10 @@ const App = () => {
       }}>
         <h1> IoT Web App with GERN stack </h1>
         <Stack direction="row" spacing={1}>
-          <Button size="small" variant="outlined" color="red" onClick={handleDeleteRow}>
+          <Button size="small" variant="outlined" onClick={handleDeleteRow}>
             Delete selected rows
           </Button>
-          <Button size="small" variant="outlined" color="blue" onClick={handleCreateRow}>
+          <Button size="small" variant="outlined" onClick={handleCreateRow}>
             Create Row
           </Button>
         </Stack>
@@ -175,7 +182,7 @@ const App = () => {
           experimentalFeatures={{ newEditingApi: true }}
           isCellEditable={(params) => params.row.location}
           columns={columns}
-          pageSize={10}
+          pageSize={30}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={handleProcessRowUpdateError}
           rowsPerPageOptions={[5]}
