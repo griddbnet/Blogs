@@ -8,24 +8,24 @@ const app = express();
 var jsonParser = bodyParser.json()
 
 app.use(bodyParser.json({ type: 'application/*+json' }))
-app.use(express.static(path.resolve(__dirname, '../frontend/build')));
+app.use(express.static(path.resolve(__dirname, 'frontend/build')));
 
 var factory = griddb.StoreFactory.getInstance();
-//store = factory.getStore({
-//    "notificationMember": process.argv[2],
-//    "clusterName": process.argv[3],
-//    "username": process.argv[4],
-//    "password": process.argv[5]
-//});
-
-
 store = factory.getStore({
-    "host": process.argv[2],
-    "port": parseInt(process.argv[3]),
-    "clusterName": process.argv[4],
-    "username": process.argv[5],
-    "password": process.argv[6]
+    "notificationMember": process.argv[2],
+    "clusterName": process.argv[3],
+    "username": process.argv[4],
+    "password": process.argv[5]
 });
+
+
+//store = factory.getStore({
+//    "host": process.argv[2],
+//    "port": parseInt(process.argv[3]),
+//    "clusterName": process.argv[4],
+//    "username": process.argv[5],
+//    "password": process.argv[6]
+//});
 
  const queryCont = async (queryStr) => {
 
@@ -202,7 +202,7 @@ app.post("/delete", jsonParser, async (req, res) => {
 
 // All other GET requests not handled before will return our React app
 app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend/build', 'index.html'));
+    res.sendFile(path.resolve(__dirname, 'frontend/build', 'index.html'));
   });
 
 const PORT = process.env.PORT || 2828;
