@@ -1,6 +1,6 @@
 In this blog, we will be again showcasing the GERN stack and how to properly implement a CRUD API (Create, Read, Update, Delete) with React, Express, and GridDB. It can be thought of as a loose sequel to our previous blog in which we introduce the GERN stack and run that project on bare metal. You can read more [here](https://griddb.net/en/blog/gern-stack)
 
- To help demonstrate these principles, we will showcase a sort-of IoT-like environment in which a data table is loaded with fake IoT-like sensor data. We will also be creating a docker environment for this simple application so that users may try this on their machine without much hassle.
+ To help demonstrate these principles, we will showcase a sort-of IoT-like environment in which a data table is loaded with fake IoT-like sensor data: the data being generated are both sensor temperature and humidity. We will also be creating a docker environment for this simple application so that users may try this on their machine without much hassle.
 
  To mimic a possible real world scenario, the data and temp values are not able to be updated. Instead, there will be a location column which can be updated (think about a sensor possibly moving to a new building). The create portion of CRUD happens on page load -- all sensors are generated and saved into GridDB on each page load into the container called `sensorsblog`. We will also allow users to add a new sensor to their table which will generate random values (except Time).
 
@@ -8,43 +8,14 @@ In this blog, we will be again showcasing the GERN stack and how to properly imp
 
 To top it all off, we have set up some docker containers which will allow you to run the entirety of this project using a simple `docker-compose` command. These images are all available on Dockerhub as well.
 
+<a href="https://griddb.net/en/wp-content/uploads/2022/07/diagram_react_crud.png"><img src="https://griddb.net/en/wp-content/uploads/2022/07/diagram_react_crud.png" alt="" width="1280" height="720" class="aligncenter size-full wp-image-28591" /></a>
+
 ## Prerequisites
 
 The following prerequisites are required to run this project: 
 
 - docker-engine
 - docker-compose
-
-<style>
-  ul {
-        padding-left: 36px;
-    }
-
-    .toc_container {
-        border: 1px solid #aaa !important;
-        display: table !important;
-        font-size: 95%;
-        margin-bottom: 1em;
-        padding: 20px;
-        width: auto;
-    }
-    
-    .toc_title {
-        font-weight: 700;
-        text-align: center;
-    }
-    
-    .toc_container li,
-    .toc_container ul,
-    .toc_container ul li,
-    .toc_container ol li {
-        list-style: outside none none !important;
-    }
-    
-
-.single-post .post>.entry-content { font-size: 14px !important }
-
-</style>
 
 
 <div id="toc-block"
@@ -113,13 +84,6 @@ The following prerequisites are required to run this project:
         <a href="#conclusion">Conclusion</a>
       </li>
       <li style="list-style: outside none none !important;">
-        <div class="inner-list">
-          <ul style="list-style-type: none !important; padding-left: 9px;">
-            <li>
-              <a href="#source-code">Source Code</a>
-            </li>
-          </ul>
-        </div>
       </li>
     </ul>
   </div>
@@ -457,7 +421,7 @@ For the frontend, we handled editing the location like so:
   );
 ```
 
-In this case, we are using the useCallback React hook to handle the processing of row updates. When the user hits ENTER or clicks away from the editable cell (essentially a `done editing` event), the `processRowUpdate` function will run which then calls the `updateRow` function. This will send over our new row back to our backend with the `/update` endpoint. This endpoint simply expects a singular row being sent back to the backend.
+In this case, we are using the useCallback React hook to handle the processing of row updates. When the user hits ENTER or clicks away from the editable cell (essentially a [`stop editing`](https://mui.com/x/react-data-grid/editing/#stop-editing) event), the `processRowUpdate` function will run which then calls the `updateRow` function. This will send over our new row back to our backend with the `/update` endpoint. This endpoint simply expects a singular row being sent back to the backend.
 
 If the `updateRow` successfully resolves, a snackbar will pop up indicating to the user that the row was successfully updated.
 
@@ -584,7 +548,3 @@ Here we calling `queryForRows` again to make sure the user gets an updated view 
 Here's a gif of the entire project running: 
 
 ![](https://thumbs.gfycat.com/YoungNimbleArawana-size_restricted.gif)
-
-### <span id="source-code"> Source Code </span>
-
-The full source code can be found here: [SOURCE CODE HERE](https://github.com/griddbnet/Blogs/tree/react_crud)
