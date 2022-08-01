@@ -1,0 +1,17 @@
+{
+  "name": "shahzaib",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cjs": "0.0.11",
+    "griddb_node": "^0.8.4",
+    "csv-parser": "^3.0.0",
+     "csv-writer": "^1.6.0"
+  }
+}
