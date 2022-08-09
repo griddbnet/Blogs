@@ -1,899 +1,271 @@
-The understanding of climate change impacts and the associated climate extreme events at regional and local scales is of critical importance for planning and development of feasible adaptation strategies.
+AdaBoost, bagging, stacking, and voting are all ensemble learning methods. Ensemble learning is a machine learning technique in which multiple models, popularly referred to as *weak learners* or *base models*, are trained to solve a particular problem and combined to give better results. It works on the hypothesis that when weak models are combined correctly, we can end up with more accurate or robust models.
 
-Climate change is without a doubt the most serious threat to humanity in the modern era. To have any hope of mitigating the harmful effects of climate change, the global mean temperature should be limited to 1.5 degrees Celsius above pre-industrial levels, according to the IPCC.
+Let's discuss the ensemble learning methods that we will be using in this article:
 
-In this article, I am going to analyse how to create map charts and animations of temperature variability, by using Python and the power of GridDB.
+1.  **Bagging**
 
-The outline of the tutorial is as follows:
+Bagging stands for "Boostrap Aggregation". Bootstrapping is the technique of sampling different sets of data from a particular training set using replacement. Bagging is an ensemble learning technique where a single training algorithm is applied on different subsets of training data, and the subset sampling is done using replacement (bootstrap).
 
- 1. Dataset overview
- 2. Importing required libraries
- 3. Loading the dataset
- 4. Data Cleaning and Preprocessing
- 5. Analysing with data visualization
- 6. Conclusion
+After the algorithm has been trained with all the subsets, bagging makes a prediction by aggregating the predictions made by the algorithm using the different subsets. To aggregate the outputs of base learners, the algorithm uses majority voting for classification and averaging for regression problems.
 
-## Prerequisites and Environment setup
+1.  **AdaBoost**
 
-This tutorial is carried out in Anaconda Navigator (Python version – 3.8.5) on Windows Operating System. The following packages need to be installed before you continue with the tutorial –
+AdaBoost is a family of algorithms that convert weak learners into strong learners. This ensemble method improves the model predictions of any learning algorithm. In AdaBoost, the weak learners are trained sequentially, with each learner trying to correct its predecessor. So, the weak learners are corrected by their predecessors, converting them into strong learners. The corrections are made by reducing bias.
 
-1. Pandas
+1.  **Stacking**
 
-2. NumPy
+This ensemble learning method combines many machine learning algorithms through *meta-learning*. Base level algorithms are trained using a complete training dataset, and the meta-model is trained on the results of all base-level model as a feature. It improves the accuracy of predictions by using the predictions of not so good models as the input to a better model.
 
-3. plotly
+In this article, we will be implementing these ensemble learning methods using Java and GridDB.
 
-4. Matplotlib
+## Data Description
 
-5. Seaborn
+The data to be used in this article shows different weather conditions and whether an individual can play or not. The dataset has 5 attributes namely outlook, temperature, humidity, windy, and play. The first 4 attributes are the independent variables while the last attribute is the dependent variable. The data has been stored in a CSV file named `weather.csv`.
 
-6. griddb_python
+## Store the Data in GridDB
 
-You can install these packages in Conda’s virtual environment using `conda install package-name`. In case you are using Python directly via terminal/command prompt, `pip install package-name` will do the work.
+GridDB offers a number of benefits over a CSV file. For example, queries offer a faster performance. Thus, it will be good for us to move the data from the CSV file and store it in GridDB.
 
-### GridDB installation
-
-While loading the dataset, this tutorial will cover two methods – Using GridDB as well as Using Pandas. To access GridDB using Python, the following packages also need to be installed beforehand:
-
-1. [GridDB C-client](https://github.com/griddb/c_client)
-2. SWIG (Simplified Wrapper and Interface Generator)
-3. [GridDB Python Client](https://github.com/griddb/python_client)
-
-## Dataset Overview
-
-The dataset contains information about visits to GStore (Google swag online store), each row is a unique visit and each user has a unique 'fullVisitorId'.
-
-Global Land and Ocean-and-Land Temperatures (GlobalTemperatures.csv):
-
-Date: starts in 1750 for average land temperature and 1850 for max and min land temperatures and global ocean and land temperatures
-LandAverageTemperature: global average land temperature in celsius
-
-https://www.kaggle.com/datasets/berkeleyearth/climate-change-earth-surface-temperature-data
-
-## Importing Required Libraries
-
-
+Let's first import the libraries to help us achieve this in our Java code:
 
 <div class="clipboard">
-<pre><code class="language-python"># import griddb_python as griddb
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import plotly
-import plotly.graph_objs as go
-import plotly.tools as tls
-import plotly.express as px
-import plotly.graph_objs as go
-import seaborn as sns
-import time
-import warnings
-warnings.filterwarnings('ignore')
-%matplotlib inline</code></pre>
+  <pre><code class="language-java">import java.io.File;
+import java.util.Scanner;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Properties;
+
+import com.toshiba.mwcloud.gs.Query;
+import com.toshiba.mwcloud.gs.RowKey;
+import com.toshiba.mwcloud.gs.RowSet;
+import com.toshiba.mwcloud.gs.GridStore;
+import com.toshiba.mwcloud.gs.Collection;
+import com.toshiba.mwcloud.gs.GSException;
+import com.toshiba.mwcloud.gs.GridStoreFactory;</code></pre>
 </div>
 
-## Loading the Dataset
-
-Let’s proceed and load the dataset into our notebook.
-
-
-### Using GridDB
-
-Toshiba GridDB™ is a highly scalable NoSQL database best suited for IoT and Big Data. The foundation of GridDB’s principles is based upon offering a versatile data store that is optimized for IoT, provides high scalability, tuned for high performance, and ensures high reliability.
-
-
-To store large amounts of data, a CSV file can be cumbersome. GridDB serves as a perfect alternative as it in open-source and a highly scalable database. GridDB is a scalable, in-memory, No SQL database which makes it easier for you to store large amounts of data. If you are new to GridDB, a tutorial on  [reading and writing to GridDB](https://griddb.net/en/blog/using-pandas-dataframes-with-griddb/)  can be useful.
-
-Assuming that you have already set up your database, we will now write the SQL query in python to load our dataset.
-
+GridDB stores data in containers. Let's create a static Java class to represent the GridDB container to be used for the storage of the data. We will give it the name `Weather`:
 
 <div class="clipboard">
-<pre><code class="language-python">factory = griddb.StoreFactory.get_instance()
-
-Initialize the GridDB container (enter your database credentials)
-try:
-    gridstore = factory.get_store(host=host_name, port=your_port, 
-            cluster_name=cluster_name, username=admin, 
-            password=admin)
-
-    info = griddb.ContainerInfo("GlobalTemperatures",
-                    [["dt", griddb.Type.TIMESTAMP],["LandAverageTemperature", griddb.Type.DOUBLE],
-                     ["LandAverageTemperatureUncertainty", griddb.Type.DOUBLE],
-                     ["LandMaxTemperature", griddb.Type.DOUBLE],
-                     ["LandMaxTemperatureUncertainty", griddb.Type.DOUBLE],
-                     ["LandMinTemperature", griddb.Type.DOUBLE],
-                     ["LandMinTemperatureUncertainty", griddb.Type.DOUBLE],
-                     ["LandAndOceanAverageTemperature", griddb.Type.DOUBLE],
-                     ["LandAndOceanAverageTemperatureUncertainty", griddb.Type.DOUBLE],
-                     , True)
-                     
-    cont = gridstore.put_container(info) 
-    data = pd.read_csv("GlobalTemperatures.csv")
-    #Add data
-    for i in range(len(data)):
-        ret = cont.put(data.iloc[i, :])
-        print("Data added successfully")
-                     
-                     
-try:
-    gridstore = factory.get_store(host=host_name, port=your_port, 
-            cluster_name=cluster_name, username=admin, 
-            password=admin)
-
-    info = griddb.ContainerInfo("GlobalLandTemperaturesByCity",
-                    [["dt", griddb.Type.TIMESTAMP],["AverageTemperature", griddb.Type.DOUBLE],
-                     ["AverageTemperatureUncertainty", griddb.Type.DOUBLE],
-                     ["City", griddb.Type.STRING],["Country", griddb.Type.STRING], 
-                     ["Latitude", griddb.Type.STRING], ["Longitude", griddb.Type.STRING],True)
-                     
-    cont = gridstore.put_container(info) 
-    data = pd.read_csv("GlobalLandTemperaturesByCity.csv")
-    #Add data
-    for i in range(len(data)):
-        ret = cont.put(data.iloc[i, :])
-        print("Data added successfully")
-                     
-                     
-try:
-    gridstore = factory.get_store(host=host_name, port=your_port, 
-            cluster_name=cluster_name, username=admin, 
-            password=admin)
-
-    info = griddb.ContainerInfo("GlobalLandTemperaturesByState",
-                    [["dt", griddb.Type.TIMESTAMP],["AverageTemperature", griddb.Type.DOUBLE],["AverageTemperatureUncertainty", griddb.Type.DOUBLE],
-                     ["State", griddb.Type.STRING],["Country", griddb.Type.STRING], True)
-    cont = gridstore.put_container(info) 
-    data = pd.read_csv("GlobalLandTemperaturesByState.csv")
-    #Add data
-    for i in range(len(data)):
-        ret = cont.put(data.iloc[i, :])
-        print("Data added successfully")</code></pre>
+  <pre><code class="language-java">public static class Weather {
+     @RowKey String outlook;
+     String temperature; 
+     String humidity;
+     String windy;
+     String play;
+}  </code></pre>
 </div>
 
-    Data added successfully
-    
+Each of the above variables represents a column in the GridDB container. It is similar to a SQL table.
 
-The read_sql_query function offered by the pandas library converts the data fetched into a panda data frame to make it easy for the user to work.
-
+Next, we can connect to GridDB from Java. We will have to provide authentication and other details for this to be successful. The following code demonstrates this:
 
 <div class="clipboard">
-<pre><code class="language-python">sql_statement1 = ('SELECT * FROM GlobalTemperatures.csv')
-df1 = pd.read_sql_query(sql_statement1, cont)
-
-sql_statement2 = ('SELECT * FROM GlobalLandTemperaturesByCity.csv')
-df2 = pd.read_sql_query(sql_statement2, cont)
-
-sql_statement3 = ('SELECT * FROM GlobalLandTemperaturesByState.csv')
-df3 = pd.read_sql_query(sql_statement3, cont)</code></pre>
+  <pre><code class="language-java">Properties props = new Properties();
+        props.setProperty("notificationAddress", "239.0.0.1");
+        props.setProperty("notificationPort", "31999");
+        props.setProperty("clusterName", "defaultCluster");
+        props.setProperty("user", "admin");
+        props.setProperty("password", "admin");
+        GridStore store = GridStoreFactory.getInstance().getGridStore(props);</code></pre>
 </div>
 
-Note that the `cont` variable has the container information where our data is stored. Replace the `credit_card_dataset` with the name of your container. More info can be found in this tutorial [reading and writing to GridDB](https://griddb.net/en/blog/using-pandas-dataframes-with-griddb/).
-
-When it comes to IoT and Big Data use cases, GridDB clearly stands out among other databases in the Relational and NoSQL space.
-Overall, GridDB offers multiple reliability features for mission-critical applications that require high availability and data retention.
-
-### Using pandas read_csv
-
-We can also use Pandas' `read_csv` function to load our data. Both of the above methods will lead to the same output as the data is loaded in the form of a pandas dataframe using either of the methods.
-
+See that we have specified the name of the cluster, the username as well as the password of the user who is connecting to GriDB. Now that we've established the connection, let's select the container we want to work on:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp_country = pd.read_csv('GlobalLandTemperaturesByCity.csv')</code></pre>
+  <pre><code class="language-java">Collection&lt;String, Weather> coll = store.putCollection("col01", Weather.class);</code></pre>
 </div>
 
+We will be using the name `coll` to refer to the container.
+
+Let's now write data from the CSV file into the GridDB container:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp_country.head()</code></pre>
+  <pre><code class="language-java"> File file1 = new File("weather.csv");
+                Scanner sc = new Scanner(file1);
+                String data = sc.next();
+ 
+                while (sc.hasNext()){
+                        String scData = sc.next();
+                        String dataList[] = scData.split(",");
+                        String outlook = dataList[0];
+                        String temperature = dataList[1];
+                        String humidity = dataList[2];
+                        String windy = dataList[3];
+                        String play = dataList[4];
+                                                
+                        
+                        Weather wc = new Weather();
+                        wc.outlook = outlook;
+                        wc.temperature = temperature;
+                        wc.humidity = humidity;
+                        wc.windy = windy;
+                        wc.play = play;
+                                               
+                        coll.append(wc);
+                 }</code></pre>
 </div>
 
+The code will insert the data into the GridDB container.
 
+## Retrieve the Data
 
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>dt</th>
-      <th>AverageTemperature</th>
-      <th>AverageTemperatureUncertainty</th>
-      <th>City</th>
-      <th>Country</th>
-      <th>Latitude</th>
-      <th>Longitude</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1743-11-01</td>
-      <td>6.068</td>
-      <td>1.737</td>
-      <td>Århus</td>
-      <td>Denmark</td>
-      <td>57.05N</td>
-      <td>10.33E</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1743-12-01</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Århus</td>
-      <td>Denmark</td>
-      <td>57.05N</td>
-      <td>10.33E</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>1744-01-01</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Århus</td>
-      <td>Denmark</td>
-      <td>57.05N</td>
-      <td>10.33E</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>1744-02-01</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Århus</td>
-      <td>Denmark</td>
-      <td>57.05N</td>
-      <td>10.33E</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>1744-03-01</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>Århus</td>
-      <td>Denmark</td>
-      <td>57.05N</td>
-      <td>10.33E</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
+We want to use the data to build different machine learning models using ensemble learning methods. This means that we must pull it from the GridDB container. The following code will help us achieve this:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp=pd.read_csv('GlobalTemperatures.csv')</code></pre>
+  <pre><code class="language-java">Query&lt;weather> query = coll.query("select *");
+                RowSet&lt;/weather>&lt;weather> rs = query.fetch(false);
+            RowSet res = query.fetch();&lt;/weather></code></pre>
 </div>
 
+We have used the `select *` statement to select all data stored in the GridDB container named `Weather`.
+
+## Fit Machine Learning Models
+
+We can now fit machine learning models using the data and ensemble learning methods. The methods to be used include AdaBoost, Bagging, Stacking, and Voting.
+
+Let's first import libraries from the Weka API to help us implement these methods:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp.head()</code></pre>
+  <pre><code class="language-java">import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.meta.Bagging;
+import weka.core.Instances;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import weka.classifiers.functions.Logistic;
+import weka.classifiers.meta.AdaBoostM1;
+import weka.classifiers.meta.Stacking;
+import weka.classifiers.trees.DecisionStump;
+import weka.classifiers.trees.J48;
+import weka.classifiers.meta.Vote;
+import weka.classifiers.trees.RandomForest;
+import weka.classifiers.trees.RandomTree;
+import weka.core.converters.ConverterUtils.DataSource;
+import weka.classifiers.functions.LinearRegression;
+import weka.classifiers.Classifier;</code></pre>
 </div>
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>dt</th>
-      <th>LandAverageTemperature</th>
-      <th>LandAverageTemperatureUncertainty</th>
-      <th>LandMaxTemperature</th>
-      <th>LandMaxTemperatureUncertainty</th>
-      <th>LandMinTemperature</th>
-      <th>LandMinTemperatureUncertainty</th>
-      <th>LandAndOceanAverageTemperature</th>
-      <th>LandAndOceanAverageTemperatureUncertainty</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1750-01-01</td>
-      <td>3.034</td>
-      <td>3.574</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1750-02-01</td>
-      <td>3.083</td>
-      <td>3.702</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>1750-03-01</td>
-      <td>5.626</td>
-      <td>3.076</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>1750-04-01</td>
-      <td>8.490</td>
-      <td>2.451</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>1750-05-01</td>
-      <td>11.573</td>
-      <td>2.072</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
+Next, we create a buffered reader for the dataset:
 
 <div class="clipboard">
-<pre><code class="language-python">GlobalTempState = pd.read_csv('GlobalLandTemperaturesByState.csv') </code></pre>
+  <pre><code class="language-java">BufferedReader bufferedReader
+                = new BufferedReader(
+                    new FileReader(res));
+ 
+            // Create dataset instances
+            Instances datasetInstances
+                = new Instances(bufferedReader);</code></pre>
 </div>
 
+Let's instantiate the`AdaBoost()` function of the Weka API to help us implement a machine learning model on the data using the AdaBoost algorithm:
 
 <div class="clipboard">
-<pre><code class="language-python">GlobalTempState.head()</code></pre>
+  <pre><code class="language-java">datasetInstances.setClassIndex(datasetInstances.numAttributes()-1);
+
+            /**
+         * AdaBoost
+         */
+        AdaBoostM1 learner1 = new AdaBoostM1();
+        learner1.setClassifier(new DecisionStump());
+        learner1.setNumIterations(100);
+        learner1.buildClassifier(datasetInstances);</code></pre>
 </div>
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>dt</th>
-      <th>AverageTemperature</th>
-      <th>AverageTemperatureUncertainty</th>
-      <th>State</th>
-      <th>Country</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1855-05-01</td>
-      <td>25.544</td>
-      <td>1.171</td>
-      <td>Acre</td>
-      <td>Brazil</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1855-06-01</td>
-      <td>24.228</td>
-      <td>1.103</td>
-      <td>Acre</td>
-      <td>Brazil</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>1855-07-01</td>
-      <td>24.371</td>
-      <td>1.044</td>
-      <td>Acre</td>
-      <td>Brazil</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>1855-08-01</td>
-      <td>25.427</td>
-      <td>1.073</td>
-      <td>Acre</td>
-      <td>Brazil</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>1855-09-01</td>
-      <td>25.675</td>
-      <td>1.014</td>
-      <td>Acre</td>
-      <td>Brazil</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-##Data Cleaning and Preprocessing
-
+Next, we will implement a machine learning model on the dataset using the Bagging algorithm:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp_country.isna().sum()</code></pre>
+  <pre><code class="language-java">/**
+         * bagging
+         */
+        Bagging learner2 = new Bagging();
+        learner2.setClassifier(new RandomTree());
+        learner2.setNumIterations(25);
+        learner2.buildClassifier(datasetInstances);</code></pre>
 </div>
 
-
-
-
-    dt                                    0
-    AverageTemperature               364130
-    AverageTemperatureUncertainty    364130
-    City                                  0
-    Country                               0
-    Latitude                              0
-    Longitude                             0
-    dtype: int64
-
-
-
+Let's use the `Stacking()` method of the Weka API to implement a machine learning model using the Stacking algorithm:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp_country.dropna(axis='index',how='any',subset=['AverageTemperature'],inplace=True)</code></pre>
+  <pre><code class="language-java">/**
+         * stacking
+         */
+        Stacking learner3 = new Stacking();
+        learner3.setMetaClassifier(new Logistic());
+        Classifier[] classifiers = {new J48(),new NaiveBayes(),
+                new RandomForest()
+        };
+        learner3.setClassifiers(classifiers);
+        learner3.buildClassifier(datasetInstances);</code></pre>
 </div>
 
+In the above code, we are stacking three models built using the decision tree, Naive Bayes, and Random Forest algorithms.
+
+And finally, let's demonstrate how voting works. We want to aggregate the outputs of the above base learners or classifiers, that is, the Decision Tree, Naive Bayes, and Random Forest learners. We will use the `Vote()` function of the Weka API as shown below:
 
 <div class="clipboard">
-<pre><code class="language-python">def fetch_year(date):
-    return date.split('-')[0]
-global_temp['years']=global_temp['dt'].apply(fetch_year)
-global_temp.head()</code></pre>
+  <pre><code class="language-java"> /**
+         * voting
+         */
+        Vote vote = new Vote();
+        vote.setClassifiers(classifiers);
+        vote.buildClassifier(datasetInstances);</code></pre>
 </div>
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>dt</th>
-      <th>LandAverageTemperature</th>
-      <th>LandAverageTemperatureUncertainty</th>
-      <th>LandMaxTemperature</th>
-      <th>LandMaxTemperatureUncertainty</th>
-      <th>LandMinTemperature</th>
-      <th>LandMinTemperatureUncertainty</th>
-      <th>LandAndOceanAverageTemperature</th>
-      <th>LandAndOceanAverageTemperatureUncertainty</th>
-      <th>years</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1750-01-01</td>
-      <td>3.034</td>
-      <td>3.574</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>1750</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1750-02-01</td>
-      <td>3.083</td>
-      <td>3.702</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>1750</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>1750-03-01</td>
-      <td>5.626</td>
-      <td>3.076</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>1750</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>1750-04-01</td>
-      <td>8.490</td>
-      <td>2.451</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>1750</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>1750-05-01</td>
-      <td>11.573</td>
-      <td>2.072</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>1750</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-## Analysing with data visualization
-
-Let's Calculate average temperature for each country
-
+To evaluate any of the models, you can use the`Evaluation()` function provided by the Weka API. But first, import the function as shown below:
 
 <div class="clipboard">
-<pre><code class="language-python">avg_temp=global_temp_country.groupby(['Country'])['AverageTemperature'].mean().to_frame().reset_index()
-avg_temp</code></pre>
+  <pre><code class="language-java">import weka.classifiers.Evaluation;</code></pre>
 </div>
 
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Country</th>
-      <th>AverageTemperature</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Afghanistan</td>
-      <td>13.816497</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Albania</td>
-      <td>15.525828</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Algeria</td>
-      <td>17.763206</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>Angola</td>
-      <td>21.759716</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>Argentina</td>
-      <td>16.999216</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>154</th>
-      <td>Venezuela</td>
-      <td>25.482422</td>
-    </tr>
-    <tr>
-      <th>155</th>
-      <td>Vietnam</td>
-      <td>24.846825</td>
-    </tr>
-    <tr>
-      <th>156</th>
-      <td>Yemen</td>
-      <td>25.768408</td>
-    </tr>
-    <tr>
-      <th>157</th>
-      <td>Zambia</td>
-      <td>20.937623</td>
-    </tr>
-    <tr>
-      <th>158</th>
-      <td>Zimbabwe</td>
-      <td>19.822971</td>
-    </tr>
-  </tbody>
-</table>
-<p>159 rows × 2 columns</p>
-</div>
-
-
-
+You can then instantiate the function and get the evaluation metrics:
 
 <div class="clipboard">
-<pre><code class="language-python">fig=px.choropleth(avg_temp,locations='Country',locationmode='country names',color='AverageTemperature')
-fig.update_layout(title='Choropleth map of average temperature')
-fig.show()</code></pre>
+  <pre><code class="language-java">Evaluation eval = new Evaluation(datasetInstances);
+        eval.evaluateModel(classifiers, datasetInstances);</code></pre>
 </div>
 
-
-   
+We can then print out a summary of the evaluation metrics:
 
 <div class="clipboard">
-<pre><code class="language-python"># The average temperature and Horizontal Bar sort by countries
-
-sns.barplot(x=avg_temp.sort_values(by='AverageTemperature',ascending=False)['AverageTemperature'][0:20],y=avg_temp.sort_values(by='AverageTemperature',ascending=False)['Country'][0:20])</code></pre>
+  <pre><code class="language-java">System.out.println(eval.toSummaryString());</code></pre>
 </div>
 
+## Make a Prediction
 
-
-
-    <AxesSubplot:xlabel='AverageTemperature', ylabel='Country'>
-
-
-
-
-    
-![png](output_33_1.png)
-    
-
-
-### Is there global warming?
-
+We can make a prediction to know whether one will play or not. We can use the last instance of the dataset for this. We will use the `ClassifyInstance()` function of Weka as shown below:
 
 <div class="clipboard">
-<pre><code class="language-python">data=global_temp.groupby('years').agg({'LandAverageTemperature':'mean','LandAverageTemperatureUncertainty':'mean'}).reset_index()
-data.head()</code></pre>
+  <pre><code class="language-java">Instance pred = datasetInstances.lastInstance();
+        double answer = classifier.classifyInstance(pred);
+        System.out.println(answer);</code></pre>
 </div>
 
+## Compile and Run the Model
 
+To compile and run the model, you will need the Weka API. Download it from the following URL:
 
+http://www.java2s.com/Code/Jar/w/weka.htm
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
+Next, login as the `gsadm` user. Move your `.java` file to the `bin` folder of your GridDB located in the following path:
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
+/griddb_4.6.0-1_amd64/usr/griddb-4.6.0/bin
 
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>years</th>
-      <th>LandAverageTemperature</th>
-      <th>LandAverageTemperatureUncertainty</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>1750</td>
-      <td>8.719364</td>
-      <td>2.637818</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>1751</td>
-      <td>7.976143</td>
-      <td>2.781143</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>1752</td>
-      <td>5.779833</td>
-      <td>2.977000</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>1753</td>
-      <td>8.388083</td>
-      <td>3.176000</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>1754</td>
-      <td>8.469333</td>
-      <td>3.494250</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
+Run the following command on your Linux terminal to set the path for the gridstore.jar file:
 
 <div class="clipboard">
-<pre><code class="language-python">data['Uncertainty top']=data['LandAverageTemperature']+data['LandAverageTemperatureUncertainty']
-data['Uncertainty bottom']=data['LandAverageTemperature']-data['LandAverageTemperatureUncertainty']</code></pre>
+  <pre><code class="language-bash">export CLASSPATH=$CLASSPATH:/home/osboxes/Downloads/griddb_4.6.0-1_amd64/usr/griddb-4.6.0/bin/gridstore.jar</code></pre>
 </div>
 
+Next, use the following command to compile your `.java` file:
 
 <div class="clipboard">
-<pre><code class="language-python">fig=px.line(data,x='years',y=['LandAverageTemperature',
-       'Uncertainty top', 'Uncertainty bottom'],title='Average Land Tmeperature in World')
-fig.show()</code></pre>
+  <pre><code class="language-bash">javac -cp weka-3-7-0/weka.jar EnsembleLearningProject.java</code></pre>
 </div>
 
-
-The charts show that there is currently global warming. The average temperature of the Earth's surface has reached its highest level in three centuries. Temperatures have risen at the fastest rate in the last 30 years. This concerns me; I hope that humanity will soon fully transition to ecological energy sources, which will reduce CO2. We will be in trouble if it does not happen. This chart also includes confidence intervals, indicating that temperature measurement has become more accurate in recent years.
-
-### Average temperature in each season
-
+Run the .class file that is generated by running the following command:
 
 <div class="clipboard">
-<pre><code class="language-python">global_temp = global_temp[['dt', 'LandAverageTemperature']]
-
-global_temp['dt'] = pd.to_datetime(global_temp['dt'])
-global_temp['year'] = global_temp['dt'].map(lambda x: x.year)
-global_temp['month'] = global_temp['dt'].map(lambda x: x.month)
-
-def get_season(month):
-    if month >= 3 and month <= 5:
-        return 'spring'
-    elif month >= 6 and month <= 8:
-        return 'summer'
-    elif month >= 9 and month <= 11:
-        return 'autumn'
-    else:
-        return 'winter'
-    
-min_year = global_temp['year'].min()
-max_year = global_temp['year'].max()
-years = range(min_year, max_year + 1)
-
-global_temp['season'] = global_temp['month'].apply(get_season)
-
-spring_temps = []
-summer_temps = []
-autumn_temps = []
-winter_temps = []
-
-for year in years:
-    curr_years_data = global_temp[global_temp['year'] == year]
-    spring_temps.append(curr_years_data[curr_years_data['season'] == 'spring']['LandAverageTemperature'].mean())
-    summer_temps.append(curr_years_data[curr_years_data['season'] == 'summer']['LandAverageTemperature'].mean())
-    autumn_temps.append(curr_years_data[curr_years_data['season'] == 'autumn']['LandAverageTemperature'].mean())
-    winter_temps.append(curr_years_data[curr_years_data['season'] == 'winter']['LandAverageTemperature'].mean())</code></pre>
+  <pre><code class="language-bash">java -cp .:weka-3-7-0/weka.jar EnsembleLearningProject</code></pre>
 </div>
 
-
-<div class="clipboard">
-<pre><code class="language-python">sns.set(style="whitegrid")
-sns.set_color_codes("pastel")
-f, ax = plt.subplots(figsize=(10, 6))
-
-plt.plot(years, summer_temps, label='Summers average temperature', color='orange')
-plt.plot(years, autumn_temps, label='Autumns average temperature', color='r')
-plt.plot(years, spring_temps, label='Springs average temperature', color='g')
-plt.plot(years, winter_temps, label='Winters average temperature', color='b')
-
-plt.xlim(min_year, max_year)
-
-ax.set_ylabel('Average temperature')
-ax.set_xlabel('Year')
-ax.set_title('Average temperature in each season')
-legend = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=True, borderpad=1, borderaxespad=1)</code></pre>
-</div>
-
-    
-![png](output_41_0.png)
-    
-
-
-<div class="clipboard">
-<pre><code class="language-python"># Statewise scenario of average temperature.
-country_state_temp = GlobalTempState.groupby(by = ['Country','State']).mean().reset_index().sort_values('AverageTemperature',ascending=False).reset_index()
-country_state_temp
-country_state_temp["world"] = "world" 
-fig = px.treemap(country_state_temp.head(200), path=['world', 'Country','State'], values='AverageTemperature',
-                  color='State',color_continuous_scale='RdGr')
-fig.show()</code></pre>
-</div>
-
-
-
-## Conclusion
-
-In this tutorial we analysed the global climate using Python and GridDB. We examined two ways to import our data, using (1) GridDB and (2) Pandas. For large datasets, GridDB provides an excellent alternative to import data in your notebook as it is open-source and highly scalable.
+The project code should run successfully. The output of the prediction should be 1.0, which means that we can play.
