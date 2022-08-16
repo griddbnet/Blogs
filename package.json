@@ -1,0 +1,22 @@
+{
+  "name": "shahzaib",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "griddb_node": "^0.8.4",
+    "http": "0.0.1-security",
+    "http-server": "^14.1.1",
+    "https": "^1.0.0", 
+    "danfojs": "^1.1.1",
+    "danfojs-node": "^1.1.1",
+    "nodemon": "^2.0.16"
+  }
+}
