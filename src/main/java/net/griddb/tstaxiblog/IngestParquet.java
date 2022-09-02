@@ -127,7 +127,7 @@ public class IngestParquet {
 		TimeSeries<TaxiTrip> ts = store.putTimeSeries("NYC_TaxiTrips", TaxiTrip.class);
 
 
-        Path path = new Path("/home/owen/22a-content-creation/blogs/5_ts/yellow_tripdata_2021-01.parquet");
+        Path path = new Path("/tmp/yellow_tripdata_2021-01.parquet");
         Configuration conf = new Configuration();
 
         try {
