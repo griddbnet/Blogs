@@ -59,6 +59,12 @@ Here is the specific file. We are downloading this file into your /tmp directory
   <pre><code class="language-sh">$ wget -O /tmp/yellow_tripdata_2021-01.parquet https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2021-01.parquet</code></pre>
 </div>
 
+## Prerequisites
+
+To follow along with this project, you will need to download and install GridDB: [https://docs.griddb.net/latest/gettingstarted/using-apt/#install-with-deb](https://docs.griddb.net/latest/gettingstarted/using-apt/#install-with-deb)
+
+You will also need to be able to use GridDB with java. To do so: [https://docs.griddb.net/latest/gettingstarted/java/](https://docs.griddb.net/latest/gettingstarted/java/)
+
 ## Ingest Data in Parquet Format
 
 In our past (NYC Taxi Data blog)[/en/blog/geospatial-analysis-of-nyc-crime-data-with-griddb/], the data was available as a CSV which is easy to parse. Now, the NY Taxi Commission releases the data in Parquet format which has its advantages but is more difficult to parse.
