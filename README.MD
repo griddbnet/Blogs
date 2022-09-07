@@ -173,6 +173,12 @@ GridDB's TIME_SAMPLING function returns a linear interpolation of the column val
   <pre><code class="language-sh">TIME_SAMPLING(column, start, end, window_count, window_size)</code></pre>
 </div>
 
+The function works by finding the interpolation of for each request timestamp by using the rows before and after it. The following graphic visualizes the concept. 
+
+<img src="ts_sample.png">
+
+More details can be found in the <a href="https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5/GridDB_ProgrammingGuide.html?#tql-interpolation-operations">GridDB programming guide</a>.
+
 The code simply executes the query and iterates through each window returned.
 
 <div class="clipboard">
@@ -525,7 +531,11 @@ While TIME_SAMPLING is useful, it has has some limitations since it only returns
 
 ## Windowed Aggregations with Multi-Query
 
-To find any aggregation for a set of timeseries windows, we can use GridDB's multi-query function. This runs the aggregation for each time window separately. You might think performing the operations like this would be slow, but by using multi-query we can optimize sending the queries to GridDB and the data retrieval. The database performs the same operations as it would if the function were built-in.
+To find any aggregation for a set of timeseries windows, we can use GridDB's multi-query function. This runs the specifieed aggregation for each time window separately. The following graphic shows the queries for each window:
+
+<img src="ts_window.png">
+
+You might think performing the operations like this would be slow, but by using multi-query we can optimize sending the queries to GridDB and the data retrieval. The database performs the same operations as it would if the function were built-in.
 
 The first steps in our generic windowed aggregation function is to open the container and create a query for each window and add it to the list of queries that will be executed by GridDB. Each query is built by using Java's Calendar class and incrementing the interval by the specified Calendar ENUM value such as Calendar.HOUR or Calendar.DATE.
 
@@ -1224,6 +1234,18 @@ We can also see the number of rows by calling `windowAggregate(store, "count(*)"
   </table>
 </div>
 
+
+If you wanted to run the window query daily to get hourly aggregates, you could set up a cronjob or loop the program with a sleep():
+
+<div class="clipboard">
+  <pre><code class="language-java">Calendar c = Calendar.getInstance();
+Date now = new Date();
+Date start = c.add(Calendar.DATE, -1).getTIme(); 
+c.add(windowsize, 1);
+windowAggregate(store, "avg(*)", start, now, Calendar.HOUR);
+</code></pre></div>
+
+
 ## Conclusion
 
 As shown, it's easy to perform time window aggregation with GridDB. The complete source code for this blog can be found on GridDB.net's GitHub page [here][2].
@@ -1237,6 +1259,20 @@ To run this project, you can use maven; first to ingest:
 <div class="clipboard">
   <pre><code class="language-bash">mvn package exec:java -Dexec.mainClass="net.griddb.tstaxiblog.IngestParquet"</code></pre>
 </div>
+
+After ingest completes, it will show the number of taxi trips ingested or errors that it couldn't find the parquet file. It is also normal to see this error caused by the Parquet Libraries:
+
+<div class="clipboard">
+  <pre><code>java.lang.InterruptedException
+    at java.lang.Object.wait(Native Method)
+    at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:144)
+    at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:165)
+    at org.apache.hadoop.fs.FileSystem$Statistics$StatisticsDataReferenceCleaner.run(FileSystem.java:3693)
+    at java.lang.Thread.run(Thread.java:748)
+</code></pre>
+</div>
+
+You can use gs_sh and TQL "select count(*) NYC_TaxiTrips" to confirm the data was ingested properly.  
 
 And then to run the analysis:
 

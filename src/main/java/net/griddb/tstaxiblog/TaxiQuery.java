@@ -38,6 +38,8 @@ public class TaxiQuery {
 
     }
     public static void windowAggregate(GridStore store, String aggregation, Date start, Date end, int windowsize) throws GSException {
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyy");  
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));  
         Calendar c = Calendar.getInstance();
         ArrayList<Query<AggregationResult>> queryList = new ArrayList<Query<AggregationResult>>();
         ArrayList<Date> dates = new ArrayList<Date>();
@@ -63,19 +65,21 @@ public class TaxiQuery {
             RowSet<AggregationResult> rs = query.getRowSet();
             while (rs.hasNext()) {
                 AggregationResult result = rs.next();
-//                long value = result.getLong();
                 double value = result.getDouble();
                 if (value != 0)
-                    System.out.println("|"+dates.get(i)+" | "+ value+"|");
+                    System.out.println("|"+sdf.format(dates.get(i))+" | "+ value+"|");
             }
         }
 
 
     }
     public static void timeSampling(GridStore store, String column, Date start, Date end, String windowstr) throws GSException {
-
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyy");  
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));  
+        Calendar c = Calendar.getInstance();
+ 
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:00'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:00'Z'"); 
         df.setTimeZone(tz);
 		Container<?, Row> ts = store.getContainer("NYC_TaxiTrips");
 
@@ -85,7 +89,7 @@ public class TaxiQuery {
         RowSet<Row> rs = q.fetch();
         while (rs.hasNext()) {
             Row result = rs.next();
-            System.out.println("|"+ result.getTimestamp(0)+" | "+result.getDouble(10) +"|");
+            System.out.println("|"+ sdf.format(result.getTimestamp(0))+" | "+result.getDouble(10) +"|");
         }
 
     }
@@ -114,24 +118,21 @@ public class TaxiQuery {
 
 		TimeSeries<TaxiTrip> ts = store.putTimeSeries("NYC_TaxiTrips", TaxiTrip.class);
 
-		Query<TaxiTrip> query = ts.query("select * limit 10");
-
-		// Fetch and update the searched Row
-		RowSet<TaxiTrip> rs = query.fetch(false);
-		while (rs.hasNext()) {
-			// Update the searched Row
-			TaxiTrip t = rs.next();
-            System.out.println(t);
-        }	
-
         Date start=new Date(1609459200000L);
         Date end=new Date((long)1640995200000L);
-//        genQuery(store, "avg(fare_amount)", getDate(ts, "asc"), getDate(ts, "desc"), Calendar.DATE);
-//        genQuerySample(store, "fare_amount", getDate(ts, "asc"), getDate(ts, "desc"), "DAY");
-        windowAggregate(store, "count(*)", start, end, Calendar.DATE);
+
+        System.out.println("# TIME SAMPLING");
+        System.out.println("|---|---|");
         timeSampling(store, "fare_amount", start, end, "DAY");
+
+        System.out.println("# Time Window Count");
+        System.out.println("|---|---|");
+        windowAggregate(store, "count(*)", start, end, Calendar.DATE);
+     
+        System.out.println("# Time Window Average");
+        System.out.println("|---|---|");
+        windowAggregate(store, "avg(fare_amount)", start, end, Calendar.DATE);
         
-        time_avg(store);
     }
 
 

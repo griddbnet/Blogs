@@ -30,10 +30,11 @@ import com.toshiba.mwcloud.gs.RowSet;
 public class IngestParquet {
 
 
-    private static void writeGroup(TimeSeries ts, Group g) throws GSException {
+    private static int writeGroup(TimeSeries ts, Group g) throws GSException {
 
         int fieldCount = g.getType().getFieldCount();
         int valueCount = g.getFieldRepetitionCount(0);
+        int rowcount=0;
         for (int index = 0; index < valueCount; index++) {
             TaxiTrip r = new TaxiTrip();
             for (int field = 0; field < fieldCount; field++) {
@@ -108,9 +109,11 @@ public class IngestParquet {
                 } catch (Exception e) {
                 }
             }
+            rowcount++;
             ts.put(r);
             //System.out.println("r="+r);
         }
+        return rowcount;
     }
 
     public static void main(String[] args) throws IllegalArgumentException, GSException {
@@ -130,6 +133,7 @@ public class IngestParquet {
         Path path = new Path("/tmp/yellow_tripdata_2021-01.parquet");
         Configuration conf = new Configuration();
 
+        int rowCount=0;
         try {
             ParquetMetadata readFooter = ParquetFileReader.readFooter(conf, path, ParquetMetadataConverter.NO_FILTER);
             MessageType schema = readFooter.getFileMetaData().getSchema();
@@ -145,7 +149,7 @@ public class IngestParquet {
                     final RecordReader recordReader = columnIO.getRecordReader(pages, new GroupRecordConverter(schema));
                     for (int i = 0; i < rows; i++) {
                         final Group g = (Group)recordReader.read();
-                        writeGroup(ts, g);
+                        rowCount += writeGroup(ts, g);
 
                     }
                 }
@@ -156,5 +160,11 @@ public class IngestParquet {
             System.out.println("Error reading parquet file.");
             e.printStackTrace();
         }
+
+        if (rowCount == 0)
+            System.out.println("Did not ingest any Taxi Trips, please check the path for your Parquet file");
+        else {      
+            System.out.println("Ingested "+rowCount+" taxi trips");
+        }      
     }
 }
