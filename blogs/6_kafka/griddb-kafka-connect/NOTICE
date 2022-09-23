@@ -1,0 +1,8 @@
+GridDB Kafka Connector
+
+Copyright (c) 2021 TOSHIBA Digital Solutions Corporation
+Copyright (c) 2015 Confluent Inc.
+
+This product includes software developed by Confluent Inc. 
+(https://github.com/confluentinc/kafka-connect-jdbc/archive/refs/tags/v5.0.4.zip (Apache-2.0))
+And it is modified by TOSHIBA Digital Solutions Corporation for GridDB.
