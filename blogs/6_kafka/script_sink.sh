@@ -1,13 +1,13 @@
 #!/bin/bash
 
 function echo_payload {
-    echo '{ "payload": {  "datetime": "'$1 $2'",  "sensor": "'$3'",  "translate01": "'$4'",  "translate02": "'$5'",  "message": "'$6'",  "sensoractivity": "'$7'" }, "schema": {  "fields": [   {    "field": "datetime",    "optional": false,    "type": "string"   },   {    "field": "sensor",    "optional": false,    "type": "string"   },   {    "field": "translate01",    "optional": false,    "type": "string"   },   {    "field": "translate02",    "optional": false,    "type": "string"   },   {    "field": "message",    "optional": false,    "type": "string"   },   {    "field": "sensoractivity",    "optional": false,    "type": "string"   }   ],  "name": "sample",  "optional": false,  "type": "struct" }}'
+    echo '{"payload":{"ts":"'$1$2'","co":"'$3'","humidity":"'$4'","light":"'$5'","lpg":"'$6'","motion":"'$7'","smoke":"'$7'","temp":"'$7'"},"schema":{"fields":[{"field":"ts","optional":false,"type":"string"},{"field":"co","optional":false,"type":"FLOAT64"},{"field":"humidity","optional":false,"type":"FLOAT64"},{"field":"light","optional":false,"type":"BOOLEAN"},{"field":"lpg","optional":false,"type":"FLOAT64"},{"field":"motion","optional":false,"type":"BOOLEAN"}{"field":"smoke","optional":false,"type":"FLOAT64"},{"field":"temp","optional":false,"type":"FLOAT64"}],"name":"iot","optional":false,"type":"struct"}}'
 
 }
 
 TOPICS=()
 
-for file in `find $1 -name \*rawdata.txt` ; do
+for file in `find $1 -name \*simulate_sensor.txt` ; do
     echo $file
     LOCATION="topic"
     head -10 $file |while read -r line ; do
