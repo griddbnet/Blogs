@@ -111,14 +111,13 @@ Next create a bash script called `script_sink.sh`
   <pre><code class="language-sh">#!/bin/bash
 
 function echo_payload {
-    echo '{"payload": {"ts": "'$1$2'","sensor":"'$3'","co": "'$4'","humidity": "'$5'","light": "'$6'","lpg": "'$7'","motion": "'$8'","smoke": "'$9'","temp": "'$10'"},"schema": {"fields": [{"field": "ts","optional": false,"type": "string"},{"field": "sensor","optional": false,"type": "string"},{"field": "co","optional": false,"type": "float64"},{"field": "humidity","optional": false,"type": "string"},{"field": "light","optional": false,"type": "string"},{"field": "lpg","optional": false,"type": "string"},{"field": "motion","optional": false,"type": "string"},{"field": "smoke","optional": false,"type": "string"},{"field": "temp","optional": false,"type": "string"}],"name": "iot","optional": false,"type": "struct"}}'
+    echo '{"payload": {"ts": "'$1 $2'","co": "'$4'","humidity": "'$5'","light": "'$6'","lpg": "'$7'","motion": "'$8'","smoke": "'$9'","temp": "'{$10}'"},"schema": {"fields": [{"field": "ts","optional": false,"type": "string"},{"field": "co","optional": false,"type": "string"},{"field": "humidity","optional": false,"type": "string"},{"field": "light","optional": false,"type": "string"},{"field": "lpg","optional": false,"type": "string"},{"field": "motion","optional": false,"type": "string"},{"field": "smoke","optional": false,"type": "string"},{"field": "temp","optional": false,"type": "string"}],"name": "iot","optional": false,"type": "struct"}}'
 }
 
 TOPICS=()
 
 for file in `find $1 -name \*simulate_sensor.txt` ; do
     echo $file
-    LOCATION="topic"
     head -10 $file |while read -r line ; do
         SENSOR=`echo ${line} | awk '{ print $3 }'`
         if [[ ! " ${TOPICS[@]} " =~ " ${SENSOR} " ]]; then
@@ -128,10 +127,17 @@ for file in `find $1 -name \*simulate_sensor.txt` ; do
         fi
         echo_payload ${line} | kafka-console-producer.sh --topic ${SENSOR} --bootstrap-server localhost:9092
     done
-done</code></pre>
+done
+</code></pre>
 </div>
 
 This script will read in our raw data text file and generate our topics with our data and send it to the proper kafka process.
+
+A small tip: if a topic ends up malformed and does not allow you to fix it, you can delete a topic to restart the process: 
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic device7</code></pre>
+</div>
 
 ## Running And Reading
 
