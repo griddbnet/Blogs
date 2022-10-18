@@ -4,6 +4,12 @@ Rust's growing popularity is exactly why the GridDB development team has written
 
 For this article, we will discuss installing Rust, the Rust client, and then go over a simple example of ingesting a `.csv` file using the newly downloaded client. The GitHub repo also contains some sample code which can be ran to see how to do things which aren't included in our working example, such as querying your [containers](https://docs.griddb.net/latest/architecture/data-model/#container)
 
+Before we dive into the article, you can follow along here: 
+
+```bash
+$ git clone --branch griddb_rust_client_blog https://github.com/griddbnet/Blogs/tree/griddb_rust_client_blog/blogs/1_rust_client
+```
+
 ## Getting Started
 
 To get started, you will need to have GridDB up and running either via [direct installation](https://docs.griddb.net/latest/gettingstarted/using-apt/#install-with-deb), or through [Docker](https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/).
@@ -33,13 +39,13 @@ Once you have these prereqs ready on your machine, you can navigate into the `ru
 $ cargo build
 ```
 
-This command is a part of the Rust toolchain which will read the `Cargo.toml` file and build out the project for you. From here you can run the sample code included in the repo to see if everything is working as intended.
+This command is a part of the Rust toolchain which will read the `Cargo.toml` file and build out the project for you. From here you can run the sample code included in the repo to see if everything is working as intended. If instead you have cloned the repo for this project instead, please hang on and we will discuss a bit further before we include how to run the included code.
 
 ### Running The Sample Code 
 
-Once the project has been built, you can run the sample code by using the Rust toolchain commands. 
+Once the project has been built, you can run the sample code by using the Rust toolchain commands. Again, this is assuming you cloned the official github repo and have built the project. If you don't want to clone the official repo and instead and only need to follow along with this article, you can skip this section.
 
-If you're running your GridDB server in fixed_list mode (chances are you are if you are running GridDB as a daemon), you will need to edit the sample source dode before running. 
+Anyway, if you are running your GridDB server in `fixed_list mode` (the chances say are you are, if you decided to run GridDB as a daemon), you will need to edit the sample source code before running the commands.
 
 For example, please open up `sample1.rs` and change the following: 
 
@@ -68,6 +74,8 @@ fn main() {
     ];
 ```
 
+All we have changed here is removed `notification_port` and changed `notification_address` to `notification_member`.
+
 And now you can run this particular code: 
 
 ```bash
@@ -84,6 +92,8 @@ To begin writing Rust source code to interface with your GridDB server, we will 
 
 So, to start, let's import the library and then import the functions we aim to use in our code.
 
+And note: we are now working out of the source code included at the top and bottom of this article; we are no longer using the official repo.
+
 ```rust
 #![allow(non_snake_case)]
 extern crate griddb_rust_client_blog;
@@ -96,18 +106,25 @@ use griddb_rust_client_blog::griddb::Value::*;
 use griddb_rust_client_blog::gsvec;
 ```
 
-The first line of this snippet is grabbing the source code from the crate we built with the Rust toolchain.
+The first line of this snippet is grabbing our project name which is included inside our `Cargo.toml` file.
+
+```bash
+[package]
+name = "griddb_rust_client_blog"
+version = "0.1.0"
+edition = "2021"
+```
 
 ### Using the GridDB Rust Client
 
-To add the GridDB Rust client into your own repo/project, you will need to add the following to your `Cargo.toml` file and then copy over the proper directories (griddb-sys and the src): 
+To add the GridDB Rust client into your own repo/project, you will need to add the following to your `Cargo.toml` file and then copy over the proper directories (griddb-sys and the src from the official repo): 
 
 ```bash
 [dependencies]
 griddb-sys = { version = "5.0.0", path = "griddb-sys" }
 ```
 
-This simply means that the Rust toolchain will make sure this gets built with our project during compile time when we run `cargo build` or `cargo run`. 
+This simply means that the Rust toolchain will make sure the GridDB rust connector source code gets built and included with our project during compile time when we run `cargo build` or `cargo run`. 
 
 ### Connecting to GridDB
 
@@ -136,7 +153,7 @@ Once we have the proper connection details, we can establish our connection and 
         };
 ```
 
-Here we are using Rust's `match statement`, which works a bit like the classic `switch` statement found in `C` and `JavaScript`. The first arm of the match is evaluated, `get_store` in this case, if all goes well, it returns `OK` and we return the result into `store`, if it fails, the program will throw an error and print out the error.
+Here we are using Rust's `match statement`, which works a bit like the classic `switch` statement found in `C` and `JavaScript`. The first arm of the match is evaluated, `get_store` in this case, if all goes well, it returns `OK` and we return the `result` into `store`; if it fails, the program will throw an error, panic, and then print out the error.
 
 Once that store variable is populated, we are connected to our database and we can start creating containers.
 
@@ -144,9 +161,9 @@ Once that store variable is populated, we are connected to our database and we c
 
 To showcase the Rust Client, we wanted to show a typical usecase, such as ingesting historical data for analysis. In this case, we are ingesting a "fun" dataset from Kaggle which has some easy-to-digest information on American breakfast cereals found here: [Kaggle - 80 Cereals](https://www.kaggle.com/datasets/crawford/80-cereals).
 
-To ingest with Rust, it's not so different than the other programming languages, we set the schema by greating a `colinfo` variable with all of the fields. To actually parse the CSV, we also create a `Rust struct` which will also tell our program the datatypes for each field.
+To ingest with Rust, it's not so different than the other programming languages:  we set the schema by creating a `colinfo` variable with all of the fields. To actually parse the CSV, we also create a `Rust struct` which will also tell our program the datatypes for each field.
 
-To parse the csv, we are using a library called [serde](https://serde.rs/) which will handle deserealizing our data.
+To parse the csv, we are using a library called [serde](https://serde.rs/) which will handle deserializing our data.
 
 Before I get into how we will use `serde`, let's again take a look at our `Cargo.toml` file. This time I will show the whole file which will showcase all of the dependencies we are using: 
 
@@ -192,7 +209,7 @@ struct Record {
 }
 ```
 
-A couple of things to notice here: the datatypes are *very* particular. To get an idea of what translates into what, you can look at the API documentation: [here](https://griddb.org/rust_client/RustAPIReference.htm). 
+A couple of things to notice here: the datatypes are *very* particular. To get an idea of what translates into what, you can look at the API documentation: [here](https://griddb.org/rust_client/RustAPIReference.htm), namely the Data-Type Mapping section.
 
 When you are making your `colinfo` variable which will house your GridDB container schema, please be mindful that the data types match up with the Rust ones. For example, a GridDB DOUBLE datatype must be `f64` and so forth. 
 
@@ -234,9 +251,9 @@ And once the schema and all information is set, we do more of the usual GridDB s
 
 ### Reading A CSV File
 
-To read the CSV file, we will send the contents of our downloaded file via stdin through the command line. So when we run our program, we will send in the connection details and then pipe in the file contents. 
+To read the CSV file, we will send the contents of our downloaded file via stdin through the command line. So when we run our program, we will send in the connection details and then pipe in the csv file contents. 
 
-Once we have the contents, our program will use `serde` to deserialize and then iterate through each record as a our `struct` called `Record` and then finally `put` each row into the DB, one by one: 
+Once we have the contents read in by our program, we will use `serde` to deserialize and then iterate through each record as a datatype of our created `struct` called `Record` and then finally `put` each row into the DB, one by one: 
 
 ```rust
         let mut rdr = csv::Reader::from_reader(io::stdin());
@@ -285,3 +302,5 @@ $  ./target/debug/griddb_rust_client_blog 127.0.0.1:10001 myCluster admin admin 
 ## Conclusion
 
 And with that, we have installed and explored using the brand new GridDB rust client. If you are interested in learning more, I recommend looking at the other example code in the official repository and creating your own applications.
+
+Full source can be found here: [GitHub](https://github.com/griddbnet/Blogs/tree/griddb_rust_client_blog/blogs/1_rust_client)
