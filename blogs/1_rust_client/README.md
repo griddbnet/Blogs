@@ -7,7 +7,7 @@ For this article, we will discuss installing Rust, the Rust client, and then go 
 Before we dive into the article, you can follow along here: 
 
 ```bash
-$ git clone --branch griddb_rust_client_blog https://github.com/griddbnet/Blogs/tree/griddb_rust_client_blog/blogs/1_rust_client
+$ git clone --branch griddb_rust_client_blog git@github.com:griddbnet/Blogs.git
 ```
 
 ## Getting Started
