@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 extern crate griddb_rust_client_blog;
 
-use griddb_rust_client_blog::get_value;
 use griddb_rust_client_blog::griddb::ContainerInfo::*;
 use griddb_rust_client_blog::griddb::StoreFactory::*;
 use griddb_rust_client_blog::griddb::Type::*;

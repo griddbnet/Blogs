@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 griddb-sys = { version = "5.0.0", path = "griddb-sys" }
+chrono = "0.4"
+convert_case = "^0.3.0"
 csv = "1.1"
 serde = { version = "1", features = ["derive"] }
 tuple-conv = "1.0.1"
