@@ -1,47 +1,25 @@
 #![allow(non_snake_case)]
 extern crate griddb_rust_client_blog;
 
+use std::time::Duration;
+use griddb_rust_client_blog::get_value;
 use griddb_rust_client_blog::griddb::ContainerInfo::*;
 use griddb_rust_client_blog::griddb::StoreFactory::*;
 use griddb_rust_client_blog::griddb::Type::*;
 use griddb_rust_client_blog::griddb::Value::*;
 use griddb_rust_client_blog::gsvec;
-use std::env;
-use std::io;
-use std::process;
+use chrono:: Utc;
 
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-struct Record {
-    Name: String,
-    Mfr: String,
-    Type: String,
-    Calories: i32,
-    Protein: i32,
-    Fat: i32,
-    Sodium: i32,
-    Fiber: f64,
-    Carbo: f64,
-    Sugars: i32,
-    Potass: i32,
-    Vitamins: i32,
-    Shelf: f64,
-    Cups: f64,
-    Rating: f64,
-}
 
 fn main() {
 
         // get default factory
         let factory = StoreFactory::get_instance();
-        let args: Vec<_> = env::args().collect();
         let properties = vec![
-            ("notification_member", args[1].as_str()),
-            ("cluster_name", args[2].as_str()),
-            ("user", args[3].as_str()),
-            ("password", args[4].as_str()),
+            ("notification_member", "127.0.0.1:10001"),
+            ("cluster_name", "myCluster"),
+            ("user", "admin"),
+            ("password", "admin"),
         ];
         // get gridstore function
         let store = match factory.get_store(properties) {
@@ -49,29 +27,23 @@ fn main() {
             Err(error) => panic!("Error factory get_store() with error code: {:?}", error),
         };
     
+        // Create Collection container (schema)
         let colinfo = ContainerInfo::ContainerInfo(
-            "cereal",
+            "cereal3",
             vec![
                 ("name", Type::String),
                 ("mfr", Type::String),
-                ("type", Type::String),
                 ("calories", Type::Integer),
                 ("protein", Type::Integer),
-                ("fat", Type::Integer),
-                ("sodium", Type::Integer),
-                ("fiber", Type::Double),
-                ("carbo", Type::Double),
-                ("sugar", Type::Integer),
-                ("potass", Type::Integer),
-                ("vitamins", Type::Integer),
-                ("shelf", Type::Double),
-                ("cups", Type::Double),
-                ("rating", Type::Double),
             ],
             ContainerType::Collection,
             true,
         );
-    
+
+        // Drop container if already exists
+        store.drop_container("cereal3");
+
+        // Create Container
         let con = match store.put_container(&colinfo, false) {
             Ok(result) => result,
             Err(error) => panic!("Error store put_container() with error code: {:?}", error),
@@ -79,38 +51,140 @@ fn main() {
         con.set_auto_commit(false);
         con.create_index("name", IndexType::Default);
 
-        let mut rdr = csv::Reader::from_reader(io::stdin());
-        for result in rdr.deserialize() {
-            match result {
-                Ok(record) => {
-                    let records: Record = record;
-                    let err = con.put(gsvec![
-                        records.Name,
-                        records.Mfr,
-                        records.Type,
-                        records.Calories,
-                        records.Protein,
-                        records.Fat,
-                        records.Sodium,
-                        records.Fiber,
-                        records.Carbo,
-                        records.Sugars,
-                        records.Potass,
-                        records.Vitamins,
-                        records.Shelf,
-                        records.Cups,
-                        records.Rating,
-                        ]);
-                        println!("Error: {}", err);
-                        con.commit();
-                }
-            
-            Err(err) => {
-                println!("error reading CSV from <stdin>: {}", err);
-                process::exit(1);
-            }
+        //Put 3 rows of data
+        con.put(gsvec!["cheerios".to_string(), "kellog".to_string(), 100i32, 3i32]);
+        con.put(gsvec!["wheaties".to_string(), "general mills".to_string(), 130i32, 3i32]);
+        con.put(gsvec!["honey nut cheerios".to_string(), "general mills".to_string(), 140i32, 3i32]);
 
+        con.commit();
+
+        let row = match con.get("cheerios") {
+            Ok(result) => result,
+            Err(error) => panic!("Error container get row with error code: {:?}", error),
+        };
+
+        println!(" Singular row of cheerios: {:?}", row);
+
+        // Delete row using rowkey
+        con.remove("cheerios");
+
+        let query = match con.query("select *") {
+            Ok(result) => result,
+            Err(error) => panic!("Error container query data with error code: {:?}", error),
+        };
+        let row_set = match query.fetch() {
+            Ok(result) => result,
+            Err(error) => panic!("Error query fetch() data with error code: {:?}", error),
+        };
+
+        // Row with rowkey Cheerios will not show up
+        while row_set.has_next() {
+            let row_data = match row_set.next() {
+                Ok(result) => result,
+                Err(error) => panic!("Error row set next() row with error code: {:?}", error),
+            };
+            let name: String = get_value![row_data[0]];
+            let mfr: String = get_value![row_data[1]];
+            let calories: i32 = get_value![row_data[2]];
+            let protein: i32 = get_value![row_data[3]];
+            let tup_query = (name, mfr, calories, protein);
+            println!(
+                "Cereal: name={0} mfr={1} calories={2} protein=[{3}]",
+                tup_query.0,
+                tup_query.1,
+                tup_query.2,
+                tup_query.3
+            );
         }
-    }
+
+        // Creating Time Series Container
+        let tsinfo = ContainerInfo::ContainerInfo(
+            "device13",
+            vec![
+                ("ts", Type::Timestamp),
+                ("co", Type::Double),
+                ("humidity", Type::Double),
+                ("light", Type::Bool),
+                ("lpg", Type::Double),
+                ("motion", Type::Bool),
+                ("smoke", Type::Double),
+                ("temp", Type::Double),
+            ],
+            ContainerType::TimeSeries,
+            true,
+        );
+
+        store.drop_container("device13");
+    
+        let ts = match store.put_container(&tsinfo, false) {
+            Ok(result) => result,
+            Err(error) => panic!("Error store put_container() with error code: {:?}", error),
+        };
+        // Grab current time to use as time value for container
+        let timestamp: Timestamp = Timestamp {
+            value: Utc::now().timestamp_millis(),
+        };
+
+        ts.put(gsvec![timestamp, 0.004342, 49.0, false, 0.00753242, false, 0.0212323, 23.2]);
+
+        let timestamp_second: Timestamp = Timestamp {
+            value: Utc::now().timestamp_millis() + 1000,
+        };
+        ts.put(gsvec![timestamp_second, 0.0065342, 31.0, false, 0.753242, false, 0.02653323, 27.2]);
+        ts.commit();
+
+        let ts_row = match ts.get(timestamp) {
+            Ok(result) => result,
+            Err(error) => panic!("Error container get row with error code: {:?}", error),
+        };
+        println!("Singular get row of ts: {:?}", ts_row);
+
+        let agg_query_str = match ts.query("select * from device13 where temp > 24") {
+            Ok(result) => result,
+            Err(error) => panic!("Error container query data with error code: {:?}", error),
+        };
+        let agg_row_set = match agg_query_str.fetch() {
+            Ok(result) => result,
+            Err(error) => panic!("Error query fetch() data with error code: {:?}", error),
+        };
+        let mut agg_query;
+        let mut agg_ts;
+        while agg_row_set.has_next() {
+            let agg_row = match agg_row_set.next() {
+                Ok(result) => result,
+                Err(error) => panic!("Error row set next() row with error code: {}", error),
+            };
+            let timestamp: Timestamp = get_value![agg_row[0]];
+            agg_ts = timestamp.value;
+            println!("{:?}", agg_ts);
+            let average_query = format!("select AVG(temp) from device13 where ts > TIMESTAMPADD(MINUTE, TO_TIMESTAMP_MS({agg_ts}), -10) AND ts < TIMESTAMPADD(MINUTE, TO_TIMESTAMP_MS({agg_ts}), 10)");
+            agg_query = match ts.query(&average_query[..]) {
+                Ok(result) => result,
+                Err(error) => panic!(
+                    "Error container query aggregation data with error code: {}",
+                    error
+                ),
+            };
+            let agg_result = match agg_query.fetch() {
+                Ok(result) => result,
+                Err(error) => panic!(
+                    "Error query fetch() aggregation data with error code: {}",
+                    error
+                ),
+            };
+            let agg_data = match agg_result.next_aggregation() {
+                Ok(result) => result,
+                Err(error) => panic!(
+                    "Error row set next() aggregation row with error code: {}",
+                    error
+                ),
+            };
+            println!(
+                "[Timestamp = {:?}] temp = {:.2}",
+                agg_ts,
+                agg_data.get_as_f64().1
+            );
+        }
+
 
 }
