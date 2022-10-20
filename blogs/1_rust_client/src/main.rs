@@ -41,7 +41,7 @@ fn main() {
         );
 
         // Drop container if already exists
-        store.drop_container("cereal3");
+        store.drop_container("cereal");
 
         // Create Container
         let con = match store.put_container(&colinfo, false) {
@@ -64,6 +64,9 @@ fn main() {
         };
 
         println!(" Singular row of cheerios: {:?}", row);
+
+        con.put(gsvec!["cheerios".to_string(), "kellog".to_string(), 150i32, 3i32]);
+        println!(" Updated row of cheerios: {:?}", row);
 
         // Delete row using rowkey
         con.remove("cheerios");
