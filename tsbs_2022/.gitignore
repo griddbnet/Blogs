@@ -1,0 +1,9 @@
+*.out
+*.log
+.DS_Store
+.idea
+.vscode
+*~
+
+# High Dynamic Range (HDR) Histogram files
+*.hdr
