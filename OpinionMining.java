@@ -17,11 +17,9 @@ import weka.classifiers.meta.FilteredClassifier;
 import weka.core.Instances;
 
 
-
 import java.io.File;
 import java.util.Scanner;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Properties;
 
 import com.toshiba.mwcloud.gs.Query;
@@ -49,14 +47,14 @@ public class OpinionMining {
      */
     public static void main(String[] args) {
         
+
         Properties props = new Properties();
-        props.setProperty("notificationAddress", "239.0.0.1");
-        props.setProperty("notificationPort", "31999");
-        props.setProperty("clusterName", "defaultCluster");
+        props.setProperty("notificationMember", "127.0.0.1:10001");
+        props.setProperty("clusterName", "myCluster");
         props.setProperty("user", "admin");
         props.setProperty("password", "admin");
-        GridStore store = GridStoreFactory.getInstance().getGridStore(props);
-        
+        GridStore store = GridStoreFactory.getInstance().getGridStore(props);       
+ 
         Collection<String, OpinionData> coll = store.putCollection("col01", OpinionData.class);
         
         File file1 = new File("Reviews.csv");
