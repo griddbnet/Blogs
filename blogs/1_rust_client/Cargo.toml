@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-griddb-sys = { version = "5.0.0", path = "griddb-sys" }
+konektor_db = "0.5.0"
 chrono = "0.4"
 convert_case = "^0.3.0"

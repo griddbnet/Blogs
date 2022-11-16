@@ -235,20 +235,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
-name = "griddb-sys"
-version = "5.0.0"
-dependencies = [
- "bindgen",
- "clang-sys",
-]
-
-[[package]]
 name = "griddb_rust_client_blog"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "convert_case",
- "griddb-sys",
+ "konektor_db",
 ]
 
 [[package]]
@@ -297,6 +289,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49409df3e3bf0856b916e2ceaca09ee28e6871cf7d9ce97a692cacfdb2a25a47"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "konektor_db"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85e56df826e5bfad28578652704fc8606ffa439e4ef628c17bc9213e01a1331b"
+dependencies = [
+ "chrono",
+ "convert_case",
+ "konektor_db-sys",
+]
+
+[[package]]
+name = "konektor_db-sys"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1032514785e6236a1c9a075a390631ed581dc2ee8aea6beceeb71468cbfd344"
+dependencies = [
+ "bindgen",
+ "clang-sys",
 ]
 
 [[package]]

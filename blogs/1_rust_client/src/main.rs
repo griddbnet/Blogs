@@ -1,13 +1,11 @@
 #![allow(non_snake_case)]
-extern crate griddb_rust_client_blog;
-
 use std::time::Duration;
-use griddb_rust_client_blog::get_value;
-use griddb_rust_client_blog::griddb::ContainerInfo::*;
-use griddb_rust_client_blog::griddb::StoreFactory::*;
-use griddb_rust_client_blog::griddb::Type::*;
-use griddb_rust_client_blog::griddb::Value::*;
-use griddb_rust_client_blog::gsvec;
+use konektor_db::get_value;
+use konektor_db::griddb::ContainerInfo::*;
+use konektor_db::griddb::StoreFactory::*;
+use konektor_db::griddb::Type::*;
+use konektor_db::griddb::Value::*;
+use konektor_db::gsvec;
 use chrono:: Utc;
 
 
