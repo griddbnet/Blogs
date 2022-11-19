@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function echo_payload {
-    echo '{"payload": {"ts": "'$1 $2'","co": "'$4'","humidity": "'$5'","light": "'$6'","lpg": "'$7'","motion": "'$8'","smoke": "'$9'","temp": "'{$10}'"},"schema": {"fields": [{"field": "ts","optional": false,"type": "string"},{"field": "co","optional": false,"type": "string"},{"field": "humidity","optional": false,"type": "string"},{"field": "light","optional": false,"type": "string"},{"field": "lpg","optional": false,"type": "string"},{"field": "motion","optional": false,"type": "string"},{"field": "smoke","optional": false,"type": "string"},{"field": "temp","optional": false,"type": "string"}],"name": "iot","optional": false,"type": "struct"}}'
+    echo '{"payload": {"ts": "'$1 $2'","sensor": "'$3'","co": '$4',"humidity": '$5',"light": "'$6'","lpg": '$7',"motion": "'$8'","smoke": '$9',"temp": '${10}'},"schema": {"fields": [{"field": "ts","optional": false,"type": "string"},{"field": "sensor","optional": false,"type": "string"},{"field": "co","optional": false,"type": "double"},{"field": "humidity","optional": false,"type": "double"},{"field": "light","optional": false,"type": "boolean"},{"field": "lpg","optional": false,"type": "double"},{"field": "motion","optional": false,"type": "boolean"},{"field": "smoke","optional": false,"type": "double"},{"field": "temp","optional": false,"type": "double"}],"name": "iot","optional": false,"type": "struct"}}'
 }
 
 TOPICS=()

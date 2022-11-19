@@ -80,10 +80,18 @@ notification.provider.url=
 
 #topics.regex=csh(.*)
 #topics.regex=topic.(.*)
-topics=device7,device8,device9,device10</code></pre>
+topics=device7,device8,device9,device10
+
+transforms=TimestampConverter
+transforms.TimestampConverter.type=org.apache.kafka.connect.transforms.TimestampConverter$Value
+transforms.TimestampConverter.format=yyyy-MM-dd hh:mm:ss.SSS
+transforms.TimestampConverter.field=ts
+transforms.TimestampConverter.target.type=Timestamp</code></pre>
 </div>
 
 Here we are explicitly telling our GridDB Sink Connector to look for these exact topics. We of course could simply use regex if we wanted to be more general, but for demo purposes, this is okay.
+
+We also need to change our format for the timestamp to include milliseconds at the end and we need to set our timestamp's column name, in this case `ts`.
 
 ### Setting Up Our Simulated Sensor Data
 
@@ -111,7 +119,7 @@ Next create a bash script called `script_sink.sh`
   <pre><code class="language-sh">#!/bin/bash
 
 function echo_payload {
-    echo '{"payload": {"ts": "'$1 $2'","co": "'$4'","humidity": "'$5'","light": "'$6'","lpg": "'$7'","motion": "'$8'","smoke": "'$9'","temp": "'{$10}'"},"schema": {"fields": [{"field": "ts","optional": false,"type": "string"},{"field": "co","optional": false,"type": "string"},{"field": "humidity","optional": false,"type": "string"},{"field": "light","optional": false,"type": "string"},{"field": "lpg","optional": false,"type": "string"},{"field": "motion","optional": false,"type": "string"},{"field": "smoke","optional": false,"type": "string"},{"field": "temp","optional": false,"type": "string"}],"name": "iot","optional": false,"type": "struct"}}'
+    echo '{"payload": {"ts": "'$1 $2'","sensor": "'$3'","co": '$4',"humidity": '$5',"light": "'$6'","lpg": '$7',"motion": "'$8'","smoke": '$9',"temp": '${10}'},"schema": {"fields": [{"field": "ts","optional": false,"type": "string"},{"field": "sensor","optional": false,"type": "string"},{"field": "co","optional": false,"type": "double"},{"field": "humidity","optional": false,"type": "double"},{"field": "light","optional": false,"type": "boolean"},{"field": "lpg","optional": false,"type": "double"},{"field": "motion","optional": false,"type": "boolean"},{"field": "smoke","optional": false,"type": "double"},{"field": "temp","optional": false,"type": "double"}],"name": "iot","optional": false,"type": "struct"}}'
 }
 
 TOPICS=()
@@ -127,17 +135,12 @@ for file in `find $1 -name \*simulate_sensor.txt` ; do
         fi
         echo_payload ${line} | kafka-console-producer.sh --topic ${SENSOR} --bootstrap-server localhost:9092
     done
-done
-</code></pre>
+done</code></pre>
 </div>
 
 This script will read in our raw data text file and generate our topics with our data and send it to the proper kafka process.
 
-A small tip: if a topic ends up malformed and does not allow you to fix it, you can delete a topic to restart the process: 
-
-<div class="clipboard">
-  <pre><code class="language-sh">$ ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic device7</code></pre>
-</div>
+So essentially with one step we are creating the topics (device7, device8, device9, device10) and then also sending some payloads of data into them to play around with them.
 
 ## Running And Reading
 
@@ -166,6 +169,7 @@ $ ./script_sink.sh</code></pre>
 
 And now that Kafka has these topics and their payloads queued up and ready to go, we can finally start up the Kafka server with the GridDB sink connector.
 
+
 To do, from the kafka directory, run:
 
 <div class="clipboard">
@@ -176,6 +180,12 @@ $ ./bin/connect-standalone.sh config/connect-standalone.properties PATH_TO_GRIDD
 From the large amounts of output this command will generate, you should be able to see something resembling topics being placed into GridDB:
 
     Put records to GridDB with number records 9 (com.github.griddb.kafka.connect.sink.GriddbSinkTask:54)
+
+A small tip: if a topic ends up malformed and does not allow you to fix it, you can delete a topic to restart the process: 
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic device7</code></pre>
+</div>
     
 
 ### Reading
@@ -192,8 +202,24 @@ gs[public]> sql select * from device7;</code></pre>
 
 ### Inserting Live Payloads
 
-Next, we will try sending off payloads after topic creation and after we get our GridDB sink running. The goal will be showcaasing live payloads being inserted into GridDB. So leave the Sink running and let's try to create a payload to send: 
-    
+Next, we will try sending off payloads after topic creation and after we get our GridDB sink running. The goal will be showcasing live payloads being inserted into GridDB. So leave the Sink running and let's try to create a payload to send (in a fourth terminal): 
+
+<div class="clipboard">
+  <pre><code class="language-sh">kafka-console-producer.sh --bootstrap-server --topic device7 127.0.0.1:9092</code></pre>
+</div>
+
+And then the producer will sit there and listen for new payloads to send. Now we can send a payload and check with our running GridDB Sink to see if it receives the data: 
+
+<div class="clipboard">
+  <pre><code class="language-sh">> { "payload": { "ts": "2022-07-12 08:01:34.126", "sensor": "device8", "co": 0.0028400886071015706, "humidity": 76.0, "light": "false", "lpg": 0.005114383400977071, "motion": "false", "smoke": 0.013274836704851536, "temp": 19.700000762939453 }, "schema": { "fields": [ { "field": "ts", "optional": false, "type": "string" }, { "field": "sensor", "optional": false, "type": "string" }, { "field": "co", "optional": false, "type": "double" }, { "field": "humidity", "optional": false, "type": "double" }, { "field": "light", "optional": false, "type": "boolean" }, { "field": "lpg", "optional": false, "type": "double" }, { "field": "motion", "optional": false, "type": "boolean" }, { "field": "smoke", "optional": false, "type": "double" }, { "field": "temp", "optional": false, "type": "double" } ], "name": "iot", "optional": false, "type": "struct" } }</code></pre>
+</div>
+
+If you send this, in the running GridDB Sink, it should receive the change to the topic and register it directly to GridDB: 
+
+    [2022-11-18 17:40:07,168] INFO [griddb-kafka-sink|task-0] Put 1 record to buffer of container device7 (com.github.griddb.kafka.connect.sink.GriddbBufferedRecords:75)
+    [2022-11-18 17:40:07,169] INFO [griddb-kafka-sink|task-0] Get Container info of container device7 (com.github.griddb.kafka.connect.dialect.GriddbDatabaseDialect:130)
+    [2022-11-18 17:40:07,201] INFO [griddb-kafka-sink|task-0] Get Container info of container device7 (com.github.griddb.kafka.connect.dialect.GriddbDatabaseDialect:130)
+
 
 ## Using GridDB Source Connector
 
