@@ -198,7 +198,13 @@ $ gs_sh
 gs[public]> sql select * from device7;</code></pre>
 </div>
 
-    2 results. (4 ms)
+    3 results. (25 ms)
+    gs[public]> get
+    ts,sensor,co,humidity,light,lpg,motion,smoke,temp
+    2020-07-12T00:01:34.735Z,device7,0.0028400886071015706,76.0,false,0.005114383400977071,false,0.013274836704851536,19.700000762939453
+    2020-07-12T00:02:19.641Z,device7,0.0028400886071015706,76.0,false,0.005114383400977071,false,0.013274836704851536,19.799999237060547
+    2020-07-12T00:02:47.256Z,device7,0.0029050147565559603,75.9000015258789,false,0.005198697479294309,false,0.013508733329556249,19.700000762939453
+    The 3 results had been acquired.
 
 ### Inserting Live Payloads
 
