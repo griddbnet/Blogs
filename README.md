@@ -19,6 +19,14 @@ To follow along, please have the following ready:
 *   [Kafka][3]
 *   [GridDB][4]
 
+To follow along with this blog, you can take a look at the full source code here: https://github.com/griddbnet/Blogs/tree/kafka
+
+<div class="clipboard">
+  <pre><code class="language-sh">$ git clone https://github.com/griddbnet/Blogs.git --branch kafka</code></pre>
+</div>
+
+
+
 ### Installing Kafka
 
 To install kafka: 
@@ -39,11 +47,14 @@ Head over to the Connector's repo and clone it:
 $ cd griddb-kafka-connect/</code></pre>
 </div>
 
-Once you have downloaded the Kafka connector, we can build it and move the resulting file into the proper location. To build:
+Once you have downloaded the Kafka connector, we can build it or download it directely from our https://griddb.net and move the resulting file into the proper location. To build:
 
 <div class="clipboard">
   <pre><code class="language-sh">$ mvn clean install</code></pre>
 </div>
+
+To download, simply open up the following URL in your browser for an automatic download of the `.jar`: [https://griddb.net/en/download/28912/](https://griddb.net/en/download/28912/)
+
 
 From there, simply copy over the `.jar` file from `./target/griddb-kafka-connector-X.X.X.jar` to your kafka directory `./libs` directory.
 
@@ -76,7 +87,7 @@ cluster.name=myCluster
 user=admin
 password=admin
 notification.member=127.0.0.1:10001
-notification.provider.url=
+#notification.provider.url=
 
 #topics.regex=csh(.*)
 #topics.regex=topic.(.*)
