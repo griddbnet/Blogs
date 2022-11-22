@@ -78,7 +78,7 @@ And now our Kafka is mostly ready to go. To continue, please open up a third ter
 
 Please edit the config file to enter in your running GridDB's servers credentials as well as the topics we aim to take in via Kafka topics. The file in question is: `GRIDDB_KAFKA_CONNECTOR_FOLDER/config/griddb-sink.properties`
 
-And now we can submit our GridDB server information. And because we are running in FIXED_LIST mod, we will edit the notification member as well and remove the host and port. Lastly, let's add in the topics we mean to ingest into our GridDB server:
+And now we can submit our GridDB server information. And because we are running in FIXED_LIST mode, we will edit the notification member as well and remove the host and port. Lastly, let's add in the topics we mean to ingest into our GridDB server:
 
 <div class="clipboard">
   <pre><code class="language-sh">#host=239.0.0.1
