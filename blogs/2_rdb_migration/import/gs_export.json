@@ -1,0 +1,25 @@
+{
+    "version":"5.0.0",
+    "address":"127.0.0.1:10001",
+    "user":"admin",
+    "containerCount":3,
+    "rowFileType":"csv",
+    "parallel":1,
+    "container":[
+        {
+            "database":"public",
+            "name":"device1",
+            "metafile":"public.device1_properties.json"
+        },
+        {
+            "database":"public",
+            "name":"device2",
+            "metafile":"public.device2_properties.json"
+        },
+        {
+            "database":"public",
+            "name":"device3",
+            "metafile":"public.device3_properties.json"
+        }
+    ]
+}
