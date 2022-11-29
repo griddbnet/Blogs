@@ -39,4 +39,27 @@ fn main() {
         Ok(result) => result,
         Err(error) => panic!("Error store put_container() with error code: {:?}", error),
     };
+    println!("Successfully created Time Series container: device13");
+
+    // Creating Collection Container
+    let colinfo  = ContainerInfo::ContainerInfo(
+        "deviceMaster2",
+        vec![
+            ("sensorID", Type::String),
+            ("location", Type::String),
+        ],
+        ContainerType::Collection,
+        true,
+    );
+
+    store.drop_container("deviceMaster2");
+
+    let con = match store.put_container(&colinfo, false) {
+        Ok(result) => result,
+        Err(error) => panic!("Error store put_container() with error code: {:?}", error),
+    };
+    con.set_auto_commit(false);
+    con.create_index("sensorID", IndexType::Default);
+    con.commit();
+    println!("Successfully created Collection container: deviceMaster2");
 }

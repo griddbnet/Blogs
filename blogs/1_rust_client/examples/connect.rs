@@ -10,9 +10,14 @@ fn main() {
         ("password", "admin"),
     ];
     // get gridstore function
-    let _store = match factory.get_store(properties) {
-        Ok(_result) => println!("Successfully Connected to GridDB"),
+    let store = match factory.get_store(properties) {
+        Ok(result) => result,
         Err(error) => panic!("Error factory get_store() with error code: {:?}", error),
+    };
+
+    let _con = match store.get_container("point01") {
+        Ok(_result) => println!("Successfully Connected to GridDB"),
+        Err(error) => panic!("Error store get_container() with error code: {:?}", error),
     };
 
 }
