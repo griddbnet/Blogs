@@ -30,7 +30,7 @@ With GridDB on the other hand, the considerations switch; GridDB was developed w
 
 So when we decide to migrate to GridDB, instead of the sensors sharing the same table, we will split out each sensor into its own table like so: 
 
-![Picture2.png]
+![Image of Schema](Picture2.png)
 
 This means that though each table may still grow large over time, it will always be much smaller than the alternative.
 
