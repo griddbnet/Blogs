@@ -1,8 +1,8 @@
-In this article, we would like to showcase how easy it can be to migrate from Timescaledb, over to GridDB. [Timescale](https://www.timescale.com/) describes itself as "Postgresql for Time Series". This means that though it is well suited for time series datasets, it is based entirely on a SQL-made database (Postgresql).
+In this article, we would like to showcase how easy it can be to migrate from Timescaledb over to GridDB. If you are unfamiliar with the time-based database, [Timescale](https://www.timescale.com/) describes itself as "Postgresql for Time Series". This means that though it is well suited for time series datasets, it is based entirely on a SQL-made database (Postgresql).
 
-This article will refrain from directly comparing GridDB and Timescaledb and will instead focus on the schema differences between the two databases and how to safely move over your data from the Relational database over to GridDB. 
+This article will refrain from directly comparing GridDB and Timescaledb and will instead focus on the schema differences between the two databases and how to safely move your data from the relational database over to GridDB. 
 
-Another item to note is that though GridDB can be considered a NoSQL database, it still has SQL available to it and has some roots in SQL, so importing our data from Timescale will not require too much finessing of data types.
+Another item to note is that though GridDB can be considered a NoSQL database, it still has SQL available for use and has some roots in SQL. This luckily means that importing our data from Timescale will not require too much finessing of data types.
 
 ## Exporting Timescale Tables into CSV
 
@@ -16,13 +16,25 @@ COPY device15 TO '/tmp/devices_db.csv' DELIMITER ',' CSV HEADER;
 
 Once the command is finished, we will have a .csv file for the table we would like to export. 
 
-In this case, my device15 table was a direct representation of this [Kaggle IoT Dataset](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k).
+In this case, my `device15` table was a direct representation of this [Kaggle IoT dataset](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k).
 
 ## Schema Differences Between RDB And GridDB
 
-In my original Timescale table, I used what is considered a normal RDB Schema -- that is all of my data is one big table. This schema also has a column for the sensor name. This means that though there are 3 different sensors within our dataset, we are using one singular table for all sensors.
+In my original Timescale table, I used what is considered a normal RDB Schema -- that is all of my data is one big table; incidentally, this schema is also how the data was made available to us directly from the source.  And because all data for all sensors in this schema share the same table, there must be an included column which names the sensor for each row. To drive the point home: though there are 3 different sensors within our dataset, we are using one singular table for all sensors.
 
-When migrating to GridDB, I would to use a more IoT-friendly schema which is more commonly used on the GridDB side; I would like to separate out the devices from within the table to make 3 separate tables (or in GridDB's case, containers)
+When migrating to GridDB, it is imperative that we switch over to what is a more "IoT-friendly" schema. So before we get into the particulars, let's talk about what the schema change will be and why it's more useful in an IoT world.
+
+As discussed, in a relational table, all sensors will likely share the same table, same as the `.csv` file we downloaded from the Kaggle. This is done because SQL databases and schema-building are largely legacy and do not necessarily consider the amount of data produced in the modern era. 
+
+With GridDB on the other hand, the considerations switch; GridDB was developed with big data and IoT in mind. If building out a schema and database for large IoT environments, the logical way to divide out the data is to rethink grouping all sensors into the same table. The issue being that once your data has been accuring for long enough, your RDB table will become unwieldy and cumbersome to use. 
+
+So when we decide to migrate to GridDB, instead of the sensors sharing the same table, we will split out each sensor into its own table like so: 
+
+![Picture2.png]
+
+This means that though each table may still grow large over time, it will always be much smaller than the alternative.
+
+A second benefit is that because we are dealing with time-series data here, we could also set up data retention policies to future proof our tables from becoming too large. For example, we can set it so that though our data is set to expire once it gets to 2 years old, meaning that though our sensors are emitting data every 1 second and building up into large containers, we will still eventually get them turned stale and keep the table smaller.
 
 ## Importing with GridDB
 
