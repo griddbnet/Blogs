@@ -56,6 +56,8 @@ In the following section, we will now begin the process of shifting data from on
 
 ### Exporting PostgreSQL Tables into CSV
 
+For this PostgreSQL section, we will assume that you already have some dataset within your database which you wish to migrate. For this demo, we have ingested the Kaggle dataset and will be showcasing using that.
+
 To export my data from PostgreSQL over to GridDB, we can use PostgreSQL's copy function to export a table at a time into a CSV file. With this method, though we can only export data one table at a time, it helps ensure that our data will be accurate and easy to import directly into GridDB. 
 
 For example, this is the command I used to export my data into a csv file for use later with GridDB: 
