@@ -1,26 +1,38 @@
-In this article, we would like to showcase how easy it can be to migrate from Timescaledb over to GridDB. If you are unfamiliar with the time-based database, [Timescale](https://www.timescale.com/) describes itself as "Postgresql for Time Series". This means that though it is well suited for time series datasets, it is based entirely on a SQL-made database (Postgresql).
+In this article, we would like to showcase how easy it can be to migrate from PostgreSQL over to GridDB. If you are unfamiliar with the relational database, [PostgreSQL](https://www.postgresql.org/) describes itself as "The World's Most Advanced Open Source Relational Database". 
 
-This article will refrain from directly comparing GridDB and Timescaledb and will instead focus on the schema differences between the two databases and how to safely move your data from the relational database over to GridDB. 
+This article will refrain from directly comparing GridDB and PostgreSQL and will instead focus on the schema differences between the two databases and how to safely move your data from the relational database over to GridDB. We will also previously touch on some reasons why you may consider the move from PostgreSQL to GridDB.
 
-Another item to note is that though GridDB can be considered a NoSQL database, it still has SQL available for use and has some roots in SQL. This luckily means that importing our data from Timescale will not require too much finessing of data types.
+Another item to note is that though GridDB can be considered a NoSQL database, it still has SQL available for use and has some roots in SQL. This luckily means that importing our data from "traditional" relational databases will not require too much finessing of data types.
 
-## Exporting Timescale Tables into CSV
+## Non-Technical Section
 
-To export my data from Timescale over to GridDB, we can use PostgreSQL's copy function to export a table at a time into a CSV file. With this method, though we can only export data one table at a time, it helps ensure that our data will be accurate and easy to import directly into GridDB. 
+This is section is more theoretical. If you're solely interested in the HOW, please skip to the next section
 
-For example, this is the command I used to export my data into a csv file for use later with GridDB: 
+### Precursor 
 
-```bash
-COPY device15 TO '/tmp/devices_db.csv' DELIMITER ',' CSV HEADER;
-```
+Just as an aside, we have previously touched on this topic before in a couple of previous blogs: [Migrating from MySQL to GridDB using Java](https://griddb.net/en/blog/migrating-from-mysql-to-griddb/) & [Migrating from PostgreSQL to GridDB via Python](https://griddb.net/en/blog/migrating-from-postgresql-to-griddb/). Both of these blogs do a great job of teaching the readers how to technically migrate the data over using various methods. 
 
-Once the command is finished, we will have a .csv file for the table we would like to export. 
+And though those blogs are still sources of good information for the task, this blog will A. showcase the official GridDB Import/Export tool and B. Will discuss the WHY of migrating from PostgreSQL over to GridDB.
 
-In this case, my `device15` table was a direct representation of this [Kaggle IoT dataset](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k).
+And so with that out of the way, let's begin.
 
-## Schema Differences Between RDB And GridDB
+### Why Migrate?
 
-In my original Timescale table, I used what is considered a normal RDB Schema -- that is all of my data is one big table; incidentally, this schema is also how the data was made available to us directly from the source.  And because all data for all sensors in this schema share the same table, there must be an included column which names the sensor for each row. To drive the point home: though there are 3 different sensors within our dataset, we are using one singular table for all sensors.
+As stated above, before we get into the technical aspect of physically migrating your data from PostgreSQL over to GridDB via the GridDB Import/Export tool, let's briefly discuss the WHY; as in, WHY should you go through the process of moving your data over from the relational database over to the Time-Series based GridDB?
+
+Well for one, let's get the obvious out of the way: if your workload/dataset is based on time-series data, then shifting over to a database purpose-built to deal with time-series datasets makes perfect sense. GridDB excels at handling time series workloads as explained in the documentation here: [What is a Time Series Database](https://docs.griddb.net/about/what-is-time-series-database/). 
+
+In addition to the time series functionalities, GridDB also has a rather major performance advantage when compared to SQL databases as seen by previous benchmarks published in this whitepaper: [Benchmarking a Sensor Billing Application using GridDB and MariaDB](https://griddb.net/en/docs/Benchmarking_Application_GridDB_MariaDB.pdf). The benchmark covers a wide range of queries, but if one wanted a quick and succinct takeaway: GridDB was able to ingest data 13x faster than MariaDB.
+
+Sometimes performance is not the only metric that matters -- sometimes what matters more is the ability to prototype quickly and efficiently. If this wasn't the case, C++ would be the dominant programming language for all use cases and Python would be  fairly niche standing. Where GridDB has the leg up here is that though it has a usable SQL interface via [JDBC (Java Database Connectivity)](https://en.wikipedia.org/wiki/Java_Database_Connectivity), it also has a NoSQL interface that can be used to interact with the database. 
+
+The GridDB NoSQL interface allows for quickly and easily building applications centered around using GridDB as the main backend. This means that if you need to quickly analyze a large dataset from GridDB (example: [Geospatial Analysis of NYC Crime Data with GridDB](https://griddb.net/en/blog/geospatial-analysis-of-nyc-crime-data-with-griddb/)), you can write some python code and directly query your dataset from within your Python script. And the same goes for many other language interfaces which GridDB has connectors for (which can be found in its [Github page](https://github.com/griddb)).
+
+### Schema Differences Between RDB And GridDB
+
+A quick note before we get into the schema differences: this is not applicable to every single situation. This just happens to be the best way to organize this particular dataset. You can read more about schema differences here: [Wide vs. Narrow Data Tables](https://docs.griddb.net/tutorial/wide-narrow/#overview).
+
+In my original PostgreSQL table, I used what is considered a normal RDB Schema -- that is all of my data is one big table; incidentally, this schema is also how the data was made available to us directly from the source.  And because all data for all sensors in this schema share the same table, there must be an included column which names the sensor for each row. To drive the point home: though there are 3 different sensors within our dataset, we are using one singular table for all sensors.
 
 When migrating to GridDB, it is imperative that we switch over to what is a more "IoT-friendly" schema. So before we get into the particulars, let's talk about what the schema change will be and why it's more useful in an IoT world.
 
@@ -34,9 +46,30 @@ So when we decide to migrate to GridDB, instead of the sensors sharing the same 
 
 This means that though each table may still grow large over time, it will always be much smaller than the alternative.
 
+And because GridDB is a scalable database which can be N-clusters big, with this sort of schema, we can ensure that different nodes in our cluster house different containers, allowing for easy parallelization and allowing for an overall more efficient database.
+
 A second benefit is that because we are dealing with time-series data here, we could also set up data retention policies to future proof our tables from becoming too large. For example, we can set it so that though our data is set to expire once it gets to 2 years old, meaning that though our sensors are emitting data every 1 second and building up into large containers, we will still eventually get them turned stale and keep the table smaller.
 
-## Importing with GridDB
+## Technical Section: Using the Official GridDB Import/Export Tools
+
+In the following section, we will now begin the process of shifting data from one database to the other. We will assume that you have GridDB installed: [Installing via apt](https://docs.griddb.net/gettingstarted/using-apt/) and of course have a running PostgreSQL server.
+
+### Exporting PostgreSQL Tables into CSV
+
+To export my data from PostgreSQL over to GridDB, we can use PostgreSQL's copy function to export a table at a time into a CSV file. With this method, though we can only export data one table at a time, it helps ensure that our data will be accurate and easy to import directly into GridDB. 
+
+For example, this is the command I used to export my data into a csv file for use later with GridDB: 
+
+```bash
+COPY device15 TO '/tmp/devices_db.csv' DELIMITER ',' CSV HEADER;
+```
+
+Once the command is finished, we will have a .csv file for the table we would like to export. 
+
+In this case, my `device15` table was a direct representation of this [Kaggle IoT dataset](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k).
+
+
+### Importing with GridDB
 
 To import using GridDB we can use the official import/export tool. In this case, we are of course going to be utilizing the import portion of the tool. It can be downloaded from here: [GridDB Export Import](https://github.com/griddb/expimp).
 
@@ -57,7 +90,7 @@ For instance, here what the file looks like at the top
 
 This is how the file comes out directly from the top of the file. So first let's get the tools ready and then we can get our data ready and run the import.
 
-### Installing the Tools
+#### Installing the Tools
 
 So first up, we will need to clone the export/import repo and then build our files.
 
@@ -122,7 +155,7 @@ $ gs_stat -u admin/admin
 
 And another note about this is that if you are running GridDB as a service, then you are running in FIXED_LIST mode and can safely use the above config on your own machine.
 
-### Shifting the Data for Import Tool
+#### Shifting the Data for Import Tool
 
 Next we will need to directly edit our CSV file to morph it into a a structure that our GridDB Import tool will like and with the schema we will like. To do so, you can create a simple Python script to separate out the program to create separate CSV files which will utilize the more efficient GridDB data model of having each sensor have its own container/table.
 
@@ -338,4 +371,4 @@ gs> select * from device1;
 
 ## Conclusion
 
-And with that, we have finished up being able to fully import our data directly from Timescale over to GridDB, complete with even making a new, more suitable schema for ourselves.
+And with that, we have finished up being able to fully import our data directly from PostgreSQL over to GridDB, complete with even making a new, more suitable schema for ourselves.
