@@ -15,7 +15,7 @@ And because it does get a bit confusing trying to follow along with this written
 
 ## Installing and Setting up Environment/Terminals
 
-Continuing on with this article, we will install all prereqs and get the proper servers/scripts running, create our Kafka ["topics"](https://kafka.apache.org/intro#intro_concepts_and_terms), and finally push and save the data to our GridDB server.
+Continuing on with this article, we will install all prereqs and get the proper servers/scripts running, create our Kafka ["topics"](https://kafka.apache.org/intro#intro_concepts_and_terms), push and save the data to our GridDB server (Sink Connector), do a live showcase, and then finally pull data from GridDB directly into our Kafka topics (Source Connector)
 
 ### Preqs
 
