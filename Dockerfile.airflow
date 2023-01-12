@@ -1,0 +1,27 @@
+FROM apache/airflow:latest-python3.10
+COPY requirements.txt /requirements.txt
+
+USER root
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+         default-jre  wget build-essential swig \
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://repo1.maven.org/maven2/com/github/griddb/gridstore-jdbc/5.1.0/gridstore-jdbc-5.1.0.jar -P /usr/share/java
+
+# Install GridDB c_client
+WORKDIR /
+RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.0.0/griddb-c-client_5.0.0_amd64.deb
+RUN dpkg -i griddb-c-client_5.0.0_amd64.deb
+
+USER airflow
+
+RUN pip install --user --upgrade pip
+RUN pip install --no-cache-dir --user -r /requirements.txt
+RUN pip install --no-cache-dir apache-airflow-providers-common-sql
+RUN pip install --no-cache-dir apache-airflow-providers-jdbc
+RUN pip install --no-cache-dir griddb-python
+
+ENV JAVA_HOME=/usr/share/java/gridstore-jdbc-5.1.0.jar
