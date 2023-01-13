@@ -2,15 +2,8 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-
-from airflow.operators.postgres_operator import PostgresOperator
 from airflow.hooks.postgres_hook import PostgresHook
-from airflow.providers.jdbc.operators.jdbc import JdbcOperator
-from airflow.providers.jdbc.hooks.jdbc import JdbcHook
-
 from airflow.operators.python import PythonOperator
-
-from airflow.decorators import task
 
 import griddb_python as griddb
 
@@ -80,43 +73,45 @@ def main():
     d3_result = cursor.fetchall()
 
     if not d1_result:
-        print("d1 is empty")
+        print("Device1 contains 0 new rows to add")
     else:
+        print(d1_latest_time)
+        print(d1_sql)
+        print("Device1 contains " + str(len(d1_result)) + " new rows to add")
         for row in d1_result:
-            print("putting Device 1 to GridDB")
-            print(d1_latest_time)
-            print(d1_sql)
+            print("putting row to device1 in GridDB")
             row = list(row)
             del row[1] #get rid of device name
             print(row)
             d1_cont.put(row)
 
     if not d2_result:
-        print("d2 is empty")
+        print("Device2 contains 0 new rows to add")
     else:
+        print(d2_latest_time)
+        print(d2_sql)
+        print("Device2 contains " + str(len(d2_result)) + " new rows to add")
         for row in d2_result:
-            print("putting Device 2 to GridDB")
+            print("putting row to device2 in GridDB")
             row = list(row)
-            print(d2_latest_time)
-            print(d2_sql)
             del row[1] #get rid of device name
             print(row)
             d2_cont.put(list(row))
 
     if not d3_result:
-        print("d3 is empty")
+        print("Device3 contains 0 new rows to add")
     else:
+        print("Device3 contains " + str(len(d3_result)) + " new rows to add")
+        print(d3_latest_time)
+        print(d3_sql)
         for row in d3_result:
-            print("putting Device 3 to GridDB")
+            print("putting row to device3 in GridDB")
             row = list(row)
-            print(d3_latest_time)
-            print(d3_sql) #get rid of device name
             del row[1]
             print(row)
             d3_cont.put(list(row))
-
 with DAG(
-    dag_id='griddb_postgres_migration_v03',
+    dag_id='griddb_postgres_migration_continuous',
     default_args=default_args,
     start_date=datetime(2022, 12, 19),
     schedule_interval='0 * * * *'

@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.hooks.postgres_hook import PostgresHook
-
 from airflow.operators.python import PythonOperator
 
 import griddb_python as griddb
@@ -64,6 +62,7 @@ def migrate_from_postgres_to_griddb(**context):
     device1 = dfs['b8:27:eb:bf:9d:51']
     device1 = device1.drop([1], axis=1)
     device1 = device1.values.tolist()
+    print(device1)
 
     device2 = dfs['00:0f:00:70:91:0a']
     device2 = device2.drop([1], axis=1)
@@ -78,22 +77,16 @@ def migrate_from_postgres_to_griddb(**context):
     for container_name in container_name_list:
         create_container(gridstore, container_name)
 
-
     try: 
         d1_cont = gridstore.get_container("device1")
         d1_cont.multi_put(device1)
 
         d2_cont = gridstore.get_container("device2")
-        d2_cont.multi_put(device1)
+        d2_cont.multi_put(device2)
 
         d3_cont = gridstore.get_container("device3")
-        d3_cont.multi_put(device1)
-
-        print("checking if data is here")
-        query = d1_cont.query("SELECT *")
-        rs = query.fetch()
-        row = rs.next()
-        print(row)
+        d3_cont.multi_put(device3)
+        
     except griddb.GSException as e:
         for i in range(e.get_error_stack_size()):
             print("[", i, "]")
@@ -102,7 +95,7 @@ def migrate_from_postgres_to_griddb(**context):
             print(e.get_message(i))
 
 with DAG(
-    dag_id='dag_migrating_postgres_to_griddb_v04',
+    dag_id='griddb_postgres_migration_initial',
     default_args=default_args,
     start_date=datetime(2021, 12, 19),
     schedule_interval='@once'
