@@ -10,6 +10,8 @@ Before we dive into the article, you can follow along with the full source code 
 $ git clone --branch griddb_rust_client_blog https://github.com/griddbnet/Blogs.git
 ```
 
+Also a quick note: we are using a dataset of which we have been using in the most recent blogs that was taken from Kaggle. You can read more about it in our [PostgreSQL to GridDB Migration blog](https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/)
+
 ## Getting Started
 
 To get started, you will need to have GridDB up and running either via [direct installation](https://docs.griddb.net/latest/gettingstarted/using-apt/#install-with-deb), or through [Docker](https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/).
