@@ -26,11 +26,18 @@ To follow along, please have the following ready:
 *   [Kafka][3]
 *   [GridDB][4]
 
- As another resource, you can also take a look at the source code here: https://github.com/griddbnet/Blogs/tree/kafka. From within this repo, you will have access to the basics (ie. the config files, the data, and the bash script), but will still need to download GriDB, Kafka and the GridDB Kafka connector.
+ As another resource, you can also take a look at the source code here: https://github.com/griddbnet/Blogs/tree/kafka. From within this repo, you will have access to the basics (ie. the config files, the data, and the bash script), but will still need to download GridDB, Kafka and the GridDB Kafka connector.
 
 <div class="clipboard">
   <pre><code class="language-sh">$ git clone https://github.com/griddbnet/Blogs.git --branch kafka</code></pre>
 </div>
+
+Another thing I would recommend to do is to add the path to your kafka bin directory into your PATH. You can do everytime you open up a  terminal, or you can add it to your profile: `$ vim ~/.bashrc` And add to your path: 
+
+```bash
+export PATH=$PATH:/home/israel/kafka_project/kafka_2.13-3.2.1/bin
+```
+And now you should have the kafka script available whenever you open up a new terminal. And if the worst case it doesn't work, you can force it: `$ source ~/.bashrc`.
 
 ### GridDB Kafka Connector (Installation)
 
@@ -62,7 +69,7 @@ $ cd kafka_2.12-3.2.0
 $ export PATH=$PATH:$PWD/bin</code></pre>
 </div>
 
-A quick note: adding kafka to your PATH environment variable is only done in that specific terminal session; if you open up a second (or third, etc) terminal, you will need to re-export the environment variable or just manually use the enter path to the scripts.
+A quick note: adding kafka to your PATH environment variable is only done in that specific terminal session; if you open up a second (or third, etc) terminal, you will need to re-export the environment variable or just manually use the enter path to the scripts. Of course, you can also add it your user's `.basrc` or `.bash_profile` file.
 
 ### Setting up GridDB Sink Config File
 
@@ -96,6 +103,8 @@ Here we are explicitly telling our GridDB Sink Connector to look for these exact
 
 We also need to change our format for the timestamp to include milliseconds at the end and we need to set our timestamp's column name, in this case `ts`.
 
+Once this file is edited, please make a copy into your `kafka_2.13-3.2.1/config` directory.
+
 ### Setting up GridDB Source Config File
 
 If you wanted to do the reverse of what was described (ie. pushing saved GridDB containers out onto Kafka), you will instead use the GridDB source connector. Firstly, you will need to edit the config file: `griddb-source.properties` in GRIDDB_KAFKA_CONNECTOR_FOLDER/config. You will need to change the GridDB connection details as well as the containers/topics. Of course, similiar to the previous config file, the version we used for this article is included with the GitHub repository: [here](https://github.com/griddbnet/Blogs/blob/kafka/griddb-source.properties)
@@ -103,7 +112,7 @@ If you wanted to do the reverse of what was described (ie. pushing saved GridDB 
 For the containers section, let's change them directly to these large datasets we ingested from [Kaggle][6].
 
 <div class="clipboard">
-  <pre><code class="language-sh">containers=device1,device2,device3</code></pre>
+  <pre><code class="language-sh">containers=device1,device2,device3,device4</code></pre>
 </div>
 
 And one of the major differences between these two files (sink vs source) is that the source will need the following parameter (mandatory) `timestamp.column.name`. For this, we set it to our Timestamp row key, which in the device7 is `ts`
@@ -117,6 +126,8 @@ Note: you could also use `mode=batch` which will not use the `timestamp.column.n
 
 And with that, we should be ready to start our processes/servers.
 
+Again, please make a copy into your `kafka_2.13-3.2.1/config` directory.
+
 ## Starting Up Necessary Servers/Systems
 
 Since everything is in place now, let's do a quick recap of our current dir structure. So, if following along, there should be three directories ready for use: 
@@ -126,17 +137,25 @@ Since everything is in place now, let's do a quick recap of our current dir stru
 ├─ griddb-kafka-connect/
 ├─ Blogs/
 
-The first directory (`kafka_2.13-3.2.1`) is the main kafka directory. The 2nd directory (`griddb-kafka-connect/`) is the GridDB kafka connector directory; this directory contains our GridDB-specific config files (either manually edited or taken directly from GitHub). And the third directory (`Blogs`) is the one built for this blog, it contains the kafka settings which should be copied over to the Kafka directory where applicable. 
+The first directory (`kafka_2.13-3.2.1`) is the main kafka directory. The 2nd directory (`griddb-kafka-connect/`) is the GridDB kafka connector directory; this directory contains our GridDB-specific config files (either manually edited or taken directly from GitHub, though these files should be copied over to your kafka directory). And the third directory (`Blogs`) is the one built for this blog, it contains the kafka settings which should be copied over to the Kafka directory where applicable. 
 
 Now let's finally get this running.
 
-### Start GridDB Server 
+### Start GridDB Server (Terminal 1)
 
 First and foremost, we will need to run GridDB. To do so, you can follow the documentation: [https://docs.griddb.net/gettingstarted/using-apt/](https://docs.griddb.net/gettingstarted/using-apt/)
 
 Once installed, start GridDB.
 
     $ sudo systemctl start gridstore
+
+You can keep this terminal open to run `gs_sh` to be able to interact with GridDB through the terminal. To do so:
+
+```bash
+$ sudo su gsadm
+$ gs_sh
+gs> 
+```
 
 ### Kafka Prep
 
@@ -146,23 +165,43 @@ Next, to get this to work, you will also need to add the kafka directory to your
   <pre><code class="language-sh">$ export PATH=$PATH:/path/to/kafka_2.13-3.2.1/bin</code></pre>
 </div>
 
-### Starting Kafka
+### Starting Kafka (Terminal 2 & 3)
 
-Let's start the kafka zookeeper and server. From the `kafka_2.13-3.2.1` directory: 
+Let's start the kafka zookeeper and server with terminal 2. From the `kafka_2.13-3.2.1` directory: 
 
 <div class="clipboard">
   <pre><code class="language-sh">$ zookeeper-server-start.sh config/zookeeper.properties</code></pre>
 </div>
 
-And then in another terminal (again, from the `kafka_2.13-3.2.1` directory):
+And then in another terminal (3) (again, from the `kafka_2.13-3.2.1` directory):
 
 <div class="clipboard">
   <pre><code class="language-sh">$ kafka-server-start.sh config/server.properties</code></pre>
 </div>
 
-And now our Kafka is mostly ready to go. To continue, please open up a third terminal.
+And now our Kafka is mostly ready to go. To continue, please open up a fourth terminal.
 
-###  Setting Up Our Simulated Sensor Data
+### Run GridDB Kafka Connectors (Terminal 4)
+
+Let's now start up our we can finally start up the GridDB sink and source connectors in the same terminal with one command.
+
+To do so, from the kafka directory, run:
+
+<div class="clipboard">
+  <pre><code class="language-sh"> 
+$ connect-standalone.sh config/connect-standalone.properties PATH_TO_KAFKA/config/griddb-sink.properties PATH_TO_KAFKA/config/griddb-source.properties</code></pre>
+</div>
+    
+
+## Using the GridDB Sink Connector
+
+As explained before, the SINK connector pulls data from Kafka topics directly INTO GridDB. Keep that in mind to understand how this section works and then remember it again for the SOURCE Connector section. For this portion, we will go through and do a batch ingestion and then showcase a live ingestion using the SINK.
+
+### Batch Ingestion (Sink Connector)
+
+Now with the sink connector running, let's take a look at batch usage. First, let's get some data going.
+
+####  Setting Up Our Simulated Sensor Data
 
 Because Kafka operates with its topics as its data payloads, we have prepared some sample topics to really ensure you can grasp and understand what is going on. So before we move on, let's create some topics using the included script and .txt file.
 
@@ -228,26 +267,10 @@ $ ./script_sink.sh</code></pre>
     Creating topic device8
     Creating topic device9
     Creating topic device10
-    
 
-## Using the GridDB Sink Connector
 
-As explained before, the SINK connector pulls data from Kafka topics directly INTO GridDB. Keep that in mind to understand how this section works and then remember it again for the SOURCE Connector section. For this portion, we will go through and do a batch ingestion and then showcase a live ingestion using the SINK.
 
-### Run GridDB Kafka Connector 
-
-Okay, with that out of that way and now that Kafka has topics and their payloads queued up and ready to go, we can finally start up the GridDB sink connector.
-
-#### Batch Usage (Sink Connector)
-
-To do so, from the kafka directory, run:
-
-<div class="clipboard">
-  <pre><code class="language-sh"> 
-$ connect-standalone.sh config/connect-standalone.properties PATH_TO_GRIDDB_KAFKA/config/griddb-sink.properties</code></pre>
-</div>
-
-Now with the sink connector running, let's take a look at batch usage. When using Kafka in this manner, we are basically sending payloads to a Kafka topic and letting them build up, and then once Kafka is available (or in this case, we run the Kafka process), it will receive the topics and push it directly to GridDB.
+When using Kafka in this manner, we are basically sending payloads to a Kafka topic and letting them build up, and then once Kafka is available (or in this case, we run the Kafka process), it will receive the topics and push it directly to GridDB.
 
 From the large amounts of output this command will generate, you should be able to see something resembling topics being placed into GridDB:
 
@@ -259,7 +282,7 @@ A small tip: if a topic ends up malformed and does not allow you to fix it, you 
   <pre><code class="language-sh">$ kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic device7</code></pre>
 </div>
 
-#### Live Usage (Sink Connector)
+#### Single Usage (Sink Connector)
 
 Next, we will try sending off payloads after topic creation and after we get our GridDB sink running. The goal will be showcasing live payloads being inserted into GridDB. So leave the Sink running and let's try to create a payload to send.
 
@@ -286,13 +309,7 @@ If you send this, in the running GridDB Sink, it should receive the change to th
 
 ## Running the GridDB Source Connector
 
-The Source Connector will do the opposite of the Sink Connector -- it will pull data from GridDB and deliver them into our Kafka Topics. So for this demo, we already have three rather large GridDB containers (device1, device2, device3) which contain data from [Kaggle](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k). If you remember, when we were editing our Source Connectoer config file, we explicitly stated we wanted to take from those specific containers. The idea is that once we run the Source Connector, Kafka will pull in all relevant data from our GridDB Database into topics. 
-
-So, to run this, it is similar to the sink connector (after declaring your PATH and navigating to the kafka directory):
-
-<div class="clipboard">
-  <pre><code class="language-sh"> $ connect-standalone.sh config/connect-standalone.properties PATH_TO_GRIDDB_KAFKA/config/griddb-source.properties</code></pre>
-</div>
+The Source Connector will do the opposite of the Sink Connector -- it will pull data from GridDB and deliver them into our Kafka Topics. So for this demo, we already have three rather large GridDB containers (device1, device2, device3) which contain data from [Kaggle](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k). If you remember, when we were editing our Source Connector config file, we explicitly stated we wanted to take from those specific containers. The idea is that once we run the Source Connector, Kafka will pull in all relevant data from our GridDB Database into topics. 
 
 #### Batch Usage (Source Connector)
 
@@ -327,6 +344,21 @@ try:
     # Fixed list method
     gridstore = factory.get_store(
         notification_member=DB_HOST, cluster_name=DB_CLUSTER, username=DB_USER, password=DB_PASS)
+
+    # (2) Create a timeseries container - define the schema
+    conInfo = griddb.ContainerInfo(name="device4",
+                                   column_info_list=[["ts", griddb.Type.TIMESTAMP],
+                                                     ["co", griddb.Type.DOUBLE],
+                                                     ["humidity", griddb.Type.DOUBLE],
+                                                     ["light", griddb.Type.BOOL],
+                                                     ["lpg", griddb.Type.DOUBLE],
+                                                     ["motion", griddb.Type.BOOL],
+                                                     ["smoke", griddb.Type.DOUBLE],
+                                                     ["temperature", griddb.Type.DOUBLE]],
+                                   type=griddb.ContainerType.TIME_SERIES)
+    # Create the container
+    ts = gridstore.put_container(conInfo)
+    print(conInfo.name, "container succesfully created")
 
     now = datetime.utcnow()
 
