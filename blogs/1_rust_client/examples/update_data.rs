@@ -1,9 +1,9 @@
-use konektor_db::get_value;
-use konektor_db::griddb::ContainerInfo::*;
-use konektor_db::griddb::StoreFactory::*;
-use konektor_db::griddb::Type::*;
-use konektor_db::griddb::Value::*;
-use konektor_db::gsvec;
+use griddb::get_value;
+use griddb::griddb::ContainerInfo::*;
+use griddb::griddb::StoreFactory::*;
+use griddb::griddb::Type::*;
+use griddb::griddb::Value::*;
+use griddb::gsvec;
 use chrono::Utc;
 
 fn main() {

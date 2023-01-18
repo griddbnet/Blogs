@@ -1,6 +1,6 @@
-use konektor_db::griddb::ContainerInfo::*;
-use konektor_db::griddb::StoreFactory::*;
-use konektor_db::griddb::Type::*;
+use griddb::griddb::ContainerInfo::*;
+use griddb::griddb::StoreFactory::*;
+use griddb::griddb::Type::*;
 fn main() {
     // get default factory
     let factory = StoreFactory::get_instance();

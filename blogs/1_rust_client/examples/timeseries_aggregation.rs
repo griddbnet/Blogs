@@ -1,6 +1,6 @@
-use konektor_db::get_value;
-use konektor_db::griddb::StoreFactory::*;
-use konektor_db::griddb::Value::Timestamp;
+use griddb::get_value;
+use griddb::griddb::StoreFactory::*;
+use griddb::griddb::Value::Timestamp;
 
 fn main() {
     // get default factory

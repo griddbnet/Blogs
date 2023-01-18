@@ -51,12 +51,12 @@ And note: we are now working out of the source code included at the top and bott
 
 ```rust
 use std::time::Duration;
-use konektor_db::get_value;
-use konektor_db::griddb::ContainerInfo::*;
-use konektor_db::griddb::StoreFactory::*;
-use konektor_db::griddb::Type::*;
-use konektor_db::griddb::Value::*;
-use konektor_db::gsvec;
+use griddb::get_value;
+use griddb::griddb::ContainerInfo::*;
+use griddb::griddb::StoreFactory::*;
+use griddb::griddb::Type::*;
+use griddb::griddb::Value::*;
+use griddb::gsvec;
 use chrono:: Utc;
 ```
 
@@ -67,7 +67,7 @@ version = "0.1.0"
 edition = "2021"
 ```
 
-The imports at the top of each file work similarly to other languages (such as Python). Here, we are calling the [konector_db](https://lib.rs/crates/konektor_db) library which is where the GridDB Rust client exists. 
+The imports at the top of each file work similarly to other languages (such as Python). Here, we are calling the [konector_db](https://lib.rs/crates/griddb) library which is where the GridDB Rust client exists. 
 
 As for the package name, you can name it however you like; here we are naming it something generic for this blog.
 
@@ -78,7 +78,7 @@ To add the GridDB Rust client into your own repo/project, you will need to add t
 
 ```bash
 [dependencies]
-konektor_db = "0.5.0"
+griddb = "0.5.0"
 chrono = "0.4"
 convert_case = "^0.3.0"
 ```
@@ -141,7 +141,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-konektor_db = "0.5.0"
+griddb = "0.5.0"
 chrono = "0.4"
 convert_case = "^0.3.0"
 ```

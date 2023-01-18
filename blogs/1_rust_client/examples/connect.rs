@@ -1,4 +1,4 @@
-use konektor_db::griddb::StoreFactory::*;
+use griddb::griddb::StoreFactory::*;
 
 fn main() {
     // get default factory
