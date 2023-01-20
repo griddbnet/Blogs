@@ -10,7 +10,7 @@ And because it does get a bit confusing trying to follow along with this written
 
 - Terminal 1: For GridDB gs_sh (to verify GridDB operations)
 - Terminal 2 & 3: for running Kafka Zookeper and Kafka server
-- Terminal 4: for running GridDB Kafka sink and source connector (we only run at a time)
+- Terminal 4: for running GridDB Kafka sink and source connector
 - Terminal 5: for running and reading the script, and checking data
 
 ## Installing and Setting up Environment/Terminals
@@ -309,7 +309,9 @@ If you send this, in the running GridDB Sink, it should receive the change to th
 
 ## Running the GridDB Source Connector
 
-The Source Connector will do the opposite of the Sink Connector -- it will pull data from GridDB and deliver them into our Kafka Topics. So for this demo, we already have three rather large GridDB containers (device1, device2, device3) which contain data from [Kaggle](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k). If you remember, when we were editing our Source Connector config file, we explicitly stated we wanted to take from those specific containers. The idea is that once we run the Source Connector, Kafka will pull in all relevant data from our GridDB Database into topics. 
+The Source Connector will do the opposite of the Sink Connector -- it will pull data from GridDB and deliver them into our Kafka Topics. For this demo, we already have three rather large GridDB containers (device1, device2, device3) which contain data from [Kaggle](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k) which have been imported from PostgreSQL; you can ingest this data if you follow along in our [previous blog](https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/).
+
+If you remember, when we were editing our Source Connector config file, we explicitly stated we wanted to take from those specific containers. The idea is that once we run the Source Connector, Kafka will pull in all relevant data from our GridDB Database into topics. 
 
 #### Batch Usage (Source Connector)
 
