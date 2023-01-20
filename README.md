@@ -6,9 +6,9 @@ For this article, we will discuss installing Rust, the Rust client, and then go 
 
 Before we dive into the article, you can follow along with the full source code here: 
 
-```bash
-$ git clone --branch griddb_rust_client_blog https://github.com/griddbnet/Blogs.git
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ git clone --branch blog_1_rust https://github.com/griddbnet/Blogs.git</code></pre>
+</div>
 
 Also a quick note: we are using a dataset of which we have been using in the most recent blogs that was taken from Kaggle. You can read more about it in our [PostgreSQL to GridDB Migration blog](https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/)
 
@@ -18,28 +18,28 @@ To get started, you will need to have GridDB up and running either via [direct i
 
 You will also need the [GridDB c_client](https://github.com/griddb/c_client) (NOTE: if you installed GridDB via apt or yum, the c_client is already included in your installation). And lastly you will need to install the Rust programming language as well: 
 
-```bash
-$ curl https://sh.rustup.rs -sSf | sh
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ curl https://sh.rustup.rs -sSf | sh</code></pre>
+</div>
 
 Another thing you will need is to install the compiler clang. 
 
-```bash 
-# Ubuntu
-$ sudo apt-get install clang-10 libclang-10-dev 
-```
+<div class="clipboard">
+<pre><code class="language-sh"> # Ubuntu
+$ sudo apt-get install clang-10 libclang-10-dev </code></pre>
+</div>
 
-```bash 
-# CentOS
+<div class="clipboard">
+<pre><code class="language-sh"> # CentOS
 $ sudo yum install llvm-toolset-7.0
-$ scl enable llvm-toolset-7.0 bash
-```
+$ scl enable llvm-toolset-7.0 bash</code></pre>
+</div>
 
 Once you have these prereqs ready on your machine, you can navigate into the `rust_client` directory and run the Rust build command:
 
-```bash
-$ cargo build
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo build</code></pre>
+</div>
 
 This command is a part of the Rust toolchain which will read the `Cargo.toml` file and build out the project for you. From here you can run the sample code included in the official client's repo to see if everything is working as intended. If instead you have cloned the repo for this project, please hang on and we will discuss a bit further before we include how to run the included code.
 
@@ -51,23 +51,23 @@ So, to start, let's import the library and then import the functions we aim to u
 
 And note: we are now working out of the source code included at the top and bottom of this article. 
 
-```rust
-use std::time::Duration;
+<div class="clipboard">
+<pre><code class="language-rust">use std::time::Duration;
 use griddb::get_value;
 use griddb::griddb::ContainerInfo::*;
 use griddb::griddb::StoreFactory::*;
 use griddb::griddb::Type::*;
 use griddb::griddb::Value::*;
 use griddb::gsvec;
-use chrono:: Utc;
-```
+use chrono:: Utc;</code></pre>
+</div>
 
-```bash
-[package]
+<div class="clipboard">
+<pre><code class="language-sh">[package]
 name = "griddb_rust_client_blog"
 version = "0.1.0"
-edition = "2021"
-```
+edition = "2021"</code></pre>
+</div>
 
 The imports at the top of each file work similarly to other languages (such as Python). Here, we are calling the [konector_db](https://lib.rs/crates/griddb) library which is where the GridDB Rust client exists. 
 
@@ -78,22 +78,22 @@ As for the package name, you can name it however you like; here we are naming it
 
 To add the GridDB Rust client into your own repo/project, you will need to add the following to your `Cargo.toml` file.
 
-```bash
-[dependencies]
+<div class="clipboard">
+<pre><code class="language-sh">[dependencies]
 griddb = "0.5.0"
 chrono = "0.4"
-convert_case = "^0.3.0"
-```
+convert_case = "^0.3.0"</code></pre>
+</div>
 
 This simply means that the Rust toolchain will make sure the GridDB rust connector source code gets built and included with our project during compile time when we run `cargo build` or `cargo run`. 
 
 To run this project, you can clone the repository and then run each of the examples similar to the sample code from the official repo 
 
-```bash
-$ cargo run --example connect
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example connect
 
-Successfully Connected to GridDB
-```
+Successfully Connected to GridDB</code></pre>
+</div>
 
 Our server values are hardcoded into the example files in the `examples` directory, so if the command fails, please make sure you have GridDB up and running and change the DB connection details if needed.
 
@@ -103,28 +103,28 @@ For the source code in this article we will place ALL code inside our `main` fun
 
 Similar to the other GridDB connectors, we will connect to our database using the factory store and by inputting our connection details: 
 
-```rust
-        // get default factory
+<div class="clipboard">
+<pre><code class="language-rust">        // get default factory
         let factory = StoreFactory::get_instance();
         let properties = vec![
             ("notification_member", "127.0.0.1:10001"),
             ("cluster_name", "myCluster"),
             ("user", "admin"),
             ("password", "admin"),
-        ];
-```
+        ];</code></pre>
+</div>
 
 Differing slightly from the GridDB source code examples, we have hardcoded in our GridDB connection details right inside our code to make running and debugging a smoother experience. 
 
 Once we have the proper connection details, we can establish our connection and get our `gridstore` function
 
-```rust
-        // get gridstore function
+<div class="clipboard">
+<pre><code class="language-rust">        // get gridstore function
         let store = match factory.get_store(properties) {
             Ok(result) => result,
             Err(error) => panic!("Error factory get_store() with error code: {:?}", error),
-        };
-```
+        };</code></pre>
+</div>
 
 Here we are using Rust's `match statement`, which works a bit like the classic `switch` statement found in `C` and `JavaScript`. The first arm of the match is evaluated, `get_store` in this case, if all goes well, it returns `Ok` and we return the `result` into `store`; if it fails, the program will throw an error, panic, and then print out the error.
 
@@ -136,8 +136,8 @@ To showcase the Rust Client, we wanted to show the basic functionality of interf
 
 Before I get into the full source code, let's again take a look at our `Cargo.toml` file. This time I will show the whole file which will showcase all of the dependencies we are using: 
 
-```bash
-[package]
+<div class="clipboard">
+<pre><code class="language-sh">[package]
 name = "griddb_rust_client_blog"
 version = "0.1.0"
 edition = "2021"
@@ -145,8 +145,8 @@ edition = "2021"
 [dependencies]
 griddb = "0.5.0"
 chrono = "0.4"
-convert_case = "^0.3.0"
-```
+convert_case = "^0.3.0"</code></pre>
+</div>
 
 ### Create (& Delete)
 
@@ -154,8 +154,8 @@ When you are making your `colinfo` variable which will house your GridDB contain
 
 To get an idea of what translates into what, you can look at the API documentation: [here](https://griddb.org/rust_client/RustAPIReference.htm), namely the Data-Type Mapping section.
 
-```rust
-    // Creating Time Series Container
+<div class="clipboard">
+<pre><code class="language-rust">    // Creating Time Series Container
     let tsinfo = ContainerInfo::ContainerInfo(
         "device13",
         vec![
@@ -170,27 +170,27 @@ To get an idea of what translates into what, you can look at the API documentati
         ],
         ContainerType::TimeSeries,
         true,
-    );
-```
+    );</code></pre>
+</div>
 
 And once the schema and all information is set, we do more of the usual GridDB stuff: `put_container`.
 
 But before we run through actually creating our container (and its schema) inside of our database, we will call `drop_container` on our container first. This ensures that everytime our example source code is run, it is starting from fresh. You will notice that no error is thrown deleting a container that does not exist, so it's similar to the SQL command `DROP TABLE IF EXISTS`.
 
-```rust
-
+<div class="clipboard">
+<pre><code class="language-rust">
     store.drop_container("device13");
 
     match store.put_container(&tsinfo, false) {
         Ok(result) => result,
         Err(error) => panic!("Error store put_container() with error code: {:?}", error),
-    };
-```
+    };</code></pre>
+</div>
 
 We can also create a `Collection` container with a similar set up. In the following snippet, we will create a small "device master" type collection container which will sort of mimic a real-world type schema in which you have a sensor container and a sort-of record-keeping container. 
 
-```rust
-    // Creating Collection Container
+<div class="clipboard">
+<pre><code class="language-rust">    // Creating Collection Container
     let colinfo  = ContainerInfo::ContainerInfo(
         "deviceMaster2",
         vec![
@@ -210,25 +210,25 @@ We can also create a `Collection` container with a similar set up. In the follow
     con.set_auto_commit(false);
     con.create_index("sensorID", IndexType::Default);
     con.commit();
-    println!("Successfully created Collection container: deviceMaster2");
-```
+    println!("Successfully created Collection container: deviceMaster2");</code></pre>
+</div>
 
 The only difference between the time series container and the collection is that we manually created the index for our rowkey here, but in the time series containers, it is auto-made by definition of the container type.
 
 
 And again, to run this example code: 
 
-```bash
-$ cargo run --example create_containers
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example create_containers</code></pre>
+</div>
 
 Once you run this, you will now have these two containers created in your running GridDB server. You can verify with the [GridDB CLI](https://github.com/griddb/cli) tool. You can use it like so: 
 
-```bash
-$ sudo su gsadm
+<div class="clipboard">
+<pre><code class="language-sh">$ sudo su gsadm
 $ gs_sh
-gs> showcontainer device13
-```
+gs> showcontainer device13</code></pre>
+</div>
 
     Database    : public
     Name        : device13
@@ -257,8 +257,8 @@ gs> showcontainer device13
 
 Next, let's try pushing some data into our container. We can accomplish this with a rather simple API call of `.put` like so: 
 
-```rust
-        // Grab current time to use as time value for container
+<div class="clipboard">
+<pre><code class="language-rust">        // Grab current time to use as time value for container
         let timestamp: Timestamp = Timestamp {
             value: Utc::now().timestamp_millis(),
         };
@@ -271,24 +271,24 @@ Next, let's try pushing some data into our container. We can accomplish this wit
         };
         ts.put(gsvec![timestamp_second, 0.0065342, 31.0, false, 0.753242, false, 0.02653323, 27.2]);
         // rows aren't pushed until the commit is called
-        ts.commit();
-```
+        ts.commit();</code></pre>
+</div>
 
 Here we are using the variable of `ts`, which now represents our device container, to put data directly into there, we use the `gsvec` from the GridDB client and create a vector with all of the proper data types that our schema expects. We simply enter in all proper data directly into the container. Here we are placing two separate rows into our container, each with different times as the row key (for the 2nd rowkey, we simply add 1000ms to the original timestamp to guarantee a new row is made).
 
-```bash
-$ cargo run --example insert_data
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example insert_data</code></pre>
+</div>
 
 Again, you can verify that the data was actually inserted: 
 
-```bash
-$ sudo su gsadm
+<div class="clipboard">
+<pre><code class="language-sh">$ sudo su gsadm
 $ gs_sh
 gs[public]> select * from device13;
 2 results. (5 ms)
-gs[public]> get
-```
+gs[public]> get</code></pre>
+</div>
 
     ts,co,humidity,light,lpg,motion,smoke,temp
     2022-11-28T21:40:12.250Z,0.004342,49.0,false,0.00753242,false,0.0212323,23.2
@@ -302,8 +302,8 @@ Next, let's try a more complex reading of our data; instead of calling a row dir
 
 First the source code:
 
-```rust
-    let query = match ts.query("select *") {
+<div class="clipboard">
+<pre><code class="language-rust">    let query = match ts.query("select *") {
         Ok(result) => result,
         Err(error) => panic!("Error container query data with error code: {:?}", error),
     };
@@ -339,8 +339,8 @@ First the source code:
             tup_query.6,
             tup_query.7
         );
-    }
-```
+    }</code></pre>
+</div>
 
 Again here we are using the con variable to make our API calls. Because we already know which container is being targeted, there is no need to indicate which container in our query; we simply select which columns we want with no qualifiers. From there, we take the query variable and run fetch against it to perform our search. Our results are saved inside a row_set. 
 
@@ -348,16 +348,16 @@ Once that row_set is populated, we can loop through each row returned and simply
 
 Up to this point, you can run this and you'll end up with two rows in your device container. You can query using this program and you can also view the results using the [GridDB CLI](https://github.com/griddb/cli).
 
-```bash
-$ cargo run --example read_data
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example read_data</code></pre>
+</div>
 
 ###  Update  
 
 Next, let's read from our database. Despite only having two rows inside of our container at this point, I want to do a quick lookup for a specific row of data, grab the timestamp (rowkey) and then follow it up with a row update.
 
-```rust
-
+<div class="clipboard">
+<pre><code class="language-rust">
         let query = match ts.query("select * where temp = 23.2") {
             Ok(result) => result,
             Err(error) => panic!("Error container query data with error code: {:?}", error),
@@ -382,8 +382,8 @@ Next, let's read from our database. Despite only having two rows inside of our c
 
         ts.put(gsvec![timestamp, 0.214342, 43.32, true, 0.00753242, true, 0.0212323, 23.2]);
 
-        ts.commit();
-```
+        ts.commit();</code></pre>
+</div>
 
 There is quite a lot going on here, so let's walk through it. First, we are using `query` again to do a TQL search to look up some data point. We are doing this because we need to grab the rowkey of our row we intend to update.
 
@@ -391,15 +391,15 @@ So in this case, we do a row lookup, if our query is successful, we will iterate
 
 So once we have our rowkey, if we use `.put` on a row that already exists, instead of producing an error, it will simply update that row with the new values that we push onto it.  
 
-```bash
-$ cargo run --example update_data
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example update_data</code></pre>
+</div>
 
 Once this runs, we will update the humidity from our first row which matched our query of finding a row with a temperature of exactly 23.2. So the update will change humidity from 49 to 43.32. We can verify this with our CLI tool or with our `read_data` rust example:
 
-```bash
-$ cargo run --example read_data
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example read_data</code></pre>
+</div>
 
     Finished dev [unoptimized + debuginfo] target(s) in 0.08s
     Running `target/debug/examples/read_data`
@@ -413,8 +413,8 @@ $ cargo run --example read_data
 
 To delete a row, you can easily use the `.remove` API call. Similar to the update call, you will need the rowkey of the row you are targeting. In our case, we will need the precise timestamp of the row we intend to delete. Once we have that information (likely through a query lookup), you can easily delete the row: 
 
-```rust
-        while row_set.has_next() {
+<div class="clipboard">
+<pre><code class="language-rust">        while row_set.has_next() {
             let row_data = match row_set.next() {
                 Ok(result) => result,
                 Err(error) => panic!("Error row set next() row with error code: {:?}", error),
@@ -423,23 +423,23 @@ To delete a row, you can easily use the `.remove` API call. Similar to the updat
         }
 
         ts.remove(timestamp);
-        ts.commit();
-```
+        ts.commit();</code></pre>
+</div>
 
 
-```bash
-$ cargo run --example delete_data
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example delete_data</code></pre>
+</div>
 
 To check we can use CLI or `read_data`. This time, let's use the CLI: 
 
-```bash
-$ sudo su gsadm
+<div class="clipboard">
+<pre><code class="language-sh">$ sudo su gsadm
 $ gs_sh
 gs[public]> select * from device13;
 1 results. (2 ms)
-gs[public]> get
-```
+gs[public]> get</code></pre>
+</div>
 
     ts,co,humidity,light,lpg,motion,smoke,temp
     2022-11-28T21:40:13.251Z,0.0065342,31.0,false,0.753242,false,0.02653323,27.2
@@ -461,8 +461,8 @@ And because our previous working examples of data were very small (~2 rows of da
 
 In this case, we will simply use `device1`.
 
- ```rust
-    let ts = match store.get_container("device1") {
+ <div class="clipboard">
+<pre><code class="language-rust">    let ts = match store.get_container("device1") {
         Ok(result) => result,
         Err(error) => panic!("Error store put_container() with error code: {:?}", error),
     };
@@ -491,15 +491,15 @@ In this case, we will simply use `device1`.
             error
         ),
     };
-    println!(" humidity time avg = {:}",agg_data.get_as_f64().1);
-```
+    println!(" humidity time avg = {:}",agg_data.get_as_f64().1);</code></pre>
+</div>
 
 The above source code looks long but it's no different than what we've already been doing. It simply takes in our TQL query and then prints out the result. First we fetch the results, and then use the `next_aggregation` API call to get our value and print it out into the console.
 
 Next we will try to use the `TIME_SAMPLE` function. 
 
-```rust
-    // TIME SAMPLE from Time Series Aggregation functionality using TQL
+<div class="clipboard">
+<pre><code class="language-rust">    // TIME SAMPLE from Time Series Aggregation functionality using TQL
     let time_sample = format!("select TIME_SAMPLING(humidity, TIMESTAMP('2020-07-18T11:22:33.444Z'), TIMESTAMP('2020-07-22T11:22:33.444Z'), 1, HOUR)");
     println!("Running Query: {}",  time_sample);
     let agg_query_two = match ts.query(&time_sample) {
@@ -544,16 +544,16 @@ Next we will try to use the `TIME_SAMPLE` function.
             tup_query.6,
             tup_query.7
         );
-    }
-```
+    }</code></pre>
+</div>
 
 Here we are essentially running the same code as our `read_data` function, just with a more interesting and complex query. We are looking up the `TIME_SAMPLING` in our `device1` dataset. This actual query string looks like this: `let time_sample = format!("select TIME_SAMPLING(humidity, TIMESTAMP('2020-07-18T11:22:33.444Z'), TIMESTAMP('2020-07-22T11:22:33.444Z'), 1, HOUR)");`. We are telling our program to give us a sampling of the dataset between the explicit values we are giving in the query, in this case four days of data, in intervals of one hour.
 
 And then we are iterating through the returned results and printing out the results to the console. 
 
-```bash
-$ cargo run --example timeseries_aggregation
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cargo run --example timeseries_aggregation</code></pre>
+</div>
 
 Here is what the result looks like (though this is not the entirety of the rows): 
 
@@ -574,22 +574,22 @@ Here is what the result looks like (though this is not the entirety of the rows)
 
 And just for fun, let's take a look at these queries inside of our GridDB CLI: 
 
-```bash
-$ sudo su gsadm
+<div class="clipboard">
+<pre><code class="language-sh">$ sudo su gsadm
 $ gs_sh
 gs[public]> tql device1 select TIME_AVG(humidity);
 1 results. (2 ms)
-gs[public]> get
-```
+gs[public]> get</code></pre>
+</div>
     Result
     50.81422729710963
     The 1 results had been acquired.
 
-```bash
-gs[public]> tql device1 select TIME_SAMPLING(humidity, TIMESTAMP('2020-07-18T11:22:33.444Z'), TIMESTAMP('2020-07-22T11:22:33.444Z'), 1, HOUR);
+<div class="clipboard">
+<pre><code class="language-sh">gs[public]> tql device1 select TIME_SAMPLING(humidity, TIMESTAMP('2020-07-18T11:22:33.444Z'), TIMESTAMP('2020-07-22T11:22:33.444Z'), 1, HOUR);
 37 results. (0 ms)
-gs[public]> get
-```
+gs[public]> get</code></pre>
+</div>
     ts,co,humidity,light,lpg,motion,smoke,temp
     2020-07-18T11:22:33.444Z,0.0030488793379940217,77.0,false,0.005383691572564569,false,0.014022828989540865,19.799999237060547
     2020-07-18T12:22:33.444Z,0.0029050147565559603,76.65528106689453,false,0.005198697479294309,false,0.013508733329556249,19.799999237060547
@@ -603,4 +603,4 @@ gs[public]> get
 
 And with that, we have installed and explored using the brand new GridDB rust client. If you are interested in learning more, I recommend looking at the other example code in the official repository and creating your own applications.
 
-Full source can be found here: [GitHub](https://github.com/griddbnet/Blogs/tree/griddb_rust_client_blog/blogs/1_rust_client)
+Full source can be found here: [GitHub](https://github.com/griddbnet/Blogs/tree/blog_1_rust)
