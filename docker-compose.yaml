@@ -68,25 +68,12 @@ x-airflow-common:
       condition: service_healthy
 
 services:
-  # griddb-server: 
-  #  image: griddbnet/griddb:5.0
-  #  expose: 
-  #    - "10001" 
-  #    - "10010" 
-  #    - "10020"
-  #    - "10040"
-  #    - "20001" 
-  #    - "41999"
-  #  healthcheck:
-  #      test: ["CMD", "tail", "-f", "tail -f /var/lib/gridstore/log/gridstore*.log"]
-  #      interval: 30s
-  #      timeout: 10s
-  #      retries: 5
 
   griddb-server:
     build:
       context: .
       dockerfile: Dockerfile.griddb
+    container_name: griddb-airflow
     expose:
       - "10001"
       - "10010"
@@ -101,6 +88,7 @@ services:
 
   postgres:
     image: postgres:13
+    container_name: postgres-airflow
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow

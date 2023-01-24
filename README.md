@@ -1,8 +1,8 @@
-In a previous blog, we discussed migrating a [sample IoT dataset](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k) from PostgreSQL to GridDB. To accomplish our feat, we used the official GridDB import/export tools, walking through exactly how to use the tool, along with considering WHY a user may want to shift from using PostgreSQL over to GridDB.
+In a previous blog, we discussed migrating a [sample IoT dataset](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k) from PostgreSQL to GridDB. To accomplish our feat, we used the official GridDB import/export tools, walking through exactly how to use the tool, along with considering WHY a user may want to shift from using PostgreSQL over to GridDB. You can read about that process here: [Using the GridDB Import/Export Tools to Migrate from PostgreSQL to GridDB](https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/)
 
 In this article, we will again consider the idea of migrating from PostgreSQL, but rather than stick to the import/export tools, we will be showcasing [Apache Airflow](https://airflow.apache.org/). If you are unfamilar with Airflow, it "is a platform to programmatically author, schedule, and monitor workflows". To put Airflow's description into simpler terms: Airflow allows for you to use python code to schedule workflows -- these worksflows usually are broken up into smaller tasks which can be orchestrated to run in a sequence of your choosing.
 
-For this blog, we will be using Airflow to migrate the same dataset from our previous blog. And then once that feat is accomplished, we will also be scheduling a [DAG ( Directed Acyclic Graph )](https://airflow.apache.org/docs/apache-airflow/1.10.12/concepts.html) to periodically migrate new rows from PostgeSQL over to GridDBm, ensuring that our two databases are always at parity (well, at least after our scheduled intervals).
+For this blog, we will be using Airflow to migrate the same dataset from our previous blog. And then once that feat is accomplished, we will also be scheduling a [DAG ( Directed Acyclic Graph )](https://airflow.apache.org/docs/apache-airflow/1.10.12/concepts.html) to periodically migrate new rows from PostgeSQL over to GridDB, ensuring that our two databases are always at parity (well, at least after our scheduled intervals).
 
 Before we get into the technical aspects of this project, let's first get Airflow installed onto our machine, along with all prerequisites.
 
@@ -14,8 +14,8 @@ As stated, this section will go over installing this project onto your machine. 
 
 To follow along you will need the following: 
 
-- Docker
-- Docker-compose
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker-compose](https://docs.docker.com/compose/install/)
 
 That's it! All other databases and libraries are installed via docker containers.
 
@@ -24,7 +24,7 @@ That's it! All other databases and libraries are installed via docker containers
 To grab all source code for this project, please clone the following repository: [GitHub](https://github.com/griddbnet/Blogs/tree/apache_airflow)
 
 ```bash
-$ git clone https://github.com/griddbnet/Blogs/tree/apache_airflow --branch apache_airflow
+$  git clone https://github.com/griddbnet/Blogs.git --branch apache_airflow
 ```
 
 Once it's cloned, you will have a folder with all of the necessary docker files and code needed to begin.
@@ -220,26 +220,14 @@ This can be verified by running the `process status` command:
 $ docker ps
 ```
 
-    CONTAINER ID   IMAGE                                 COMMAND                  CREATED             STATUS
-                PORTS
-
-                                                                                    NAMES
-    8c0a24ed7cf5   extending_airflow:latest              "/usr/bin/dumb-init …"   48 seconds ago      Up 21 seconds (healthy)            0.0.0.0:8080->8080/tcp, :::8080->8080/tcp
-
-                                                                                    airflow-airflow-webserver-1
-    754c4dc920b9   extending_airflow:latest              "/usr/bin/dumb-init …"   56 seconds ago      Up 21 seconds (health: starting)   8080/tcp
-
-                                                                                    airflow-airflow-worker-1
-    8e270bdb15b6   extending_airflow:latest              "/usr/bin/dumb-init …"   58 seconds ago      Up 21 seconds (healthy)            8080/tcp
-
-                                                                                    airflow-airflow-triggerer-1
-    9b9f903469c0   extending_airflow:latest              "/usr/bin/dumb-init …"   58 seconds ago      Up 21 seconds (healthy)            8080/tcp
-
-                                                                                    airflow-airflow-scheduler-1
-    5d109c0d5812   postgres:13                           "docker-entrypoint.s…"   59 seconds ago      Up 48 seconds (healthy)            0.0.0.0:5432->5432/tcp, :::5432->5432/tcp
-
-                                                                                    airflow-postgres-1
-    2defcd5a15ad   redis:latest                          "docker-entrypoint.s…"   59 seconds ago      Up 48 seconds (healthy)            6379/tcp
+    CONTAINER ID   IMAGE                                      COMMAND                  CREATED              STATUS                          PORTS                                                                                                                                                                                                                                                                                                                NAMES
+    ad1511b22415   extending_airflow:latest                   "/usr/bin/dumb-init …"   About a minute ago   Up About a minute (healthy)     0.0.0.0:8080->8080/tcp, :::8080->8080/tcp                                                                                                                                                                                                                                                                            3_airflow_migration-airflow-webserver-1
+    68bdef86bf4f   extending_airflow:latest                   "/usr/bin/dumb-init …"   About a minute ago   Up About a minute (healthy)     8080/tcp                                                                                                                                                                                                                                                                                                             3_airflow_migration-airflow-scheduler-1
+    b020473ce932   extending_airflow:latest                   "/usr/bin/dumb-init …"   About a minute ago   Up About a minute (healthy)     8080/tcp                                                                                                                                                                                                                                                                                                             3_airflow_migration-airflow-triggerer-1
+    69c99ea8ce87   extending_airflow:latest                   "/usr/bin/dumb-init …"   About a minute ago   Up About a minute (healthy)     8080/tcp                                                                                                                                                                                                                                                                                                             3_airflow_migration-airflow-worker-1
+    9c778c1f1d72   3_airflow_migration_griddb-server          "/bin/bash /start-gr…"   About a minute ago   Up About a minute               10001/tcp, 10010/tcp, 10020/tcp, 10040/tcp, 20001/tcp, 41999/tcp                                                                                                                                                                                                                                                     griddb-airflow
+    921cc78b8c1b   redis:latest                               "docker-entrypoint.s…"   About a minute ago   Up About a minute (healthy)     6379/tcp                                                                                                                                                                                                                                                                                                             3_airflow_migration-redis-1
+    0ba780dd6b99   postgres:13                                "docker-entrypoint.s…"   About a minute ago   Up About a minute (healthy)     0.0.0.0:5432->5432/tcp, :::5432->5432/tcp                                                                                                                                                                                                                                                                            postgres-airflow
 
 ## Using Apache Airflow 
 
@@ -317,7 +305,7 @@ For demo purposes, we will ingest the relevant data that we need into our databa
 First up we will be copying over a `.csv` file over from our local machine to the PostgreSQL container. This can be accomplished by using the image name (airflow-postgres-1, named by our `docker-compose` file) and the `docker cp` command. As for the file we are copying over, you can find it within `dags/data/device.csv`.
 
 ```bash
-$ docker cp dags/data/device.csv airflow-postgres-1:/tmp/
+$ docker cp dags/data/device.csv postgres-airflow:/tmp/
 ```
 
 The `docker cp` command is executed similarly to the `scp` or `cp` command in normal CLI operations.
@@ -325,7 +313,7 @@ The `docker cp` command is executed similarly to the `scp` or `cp` command in no
 Once you copy over the csv file, please ssh into your PostgreSQL container: 
 
 ```bash
-$ docker exec -it airflow-postgres-1 bash
+$ docker exec -it postgres-airflow bash
 ```
 
 Once in there, drop into the `psql shell` as the user airflow.

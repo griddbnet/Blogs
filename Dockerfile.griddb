@@ -2,6 +2,13 @@ from griddb/griddb
 
 USER root
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+         default-jre \
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install GridDB c_client
 WORKDIR /
 RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.0.0/griddb-c-client_5.0.0_amd64.deb
