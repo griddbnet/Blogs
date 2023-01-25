@@ -203,9 +203,9 @@ $ docker-compose up -d
 ```
 
     [+] Running 8/8
-    ⠿ Container airflow-griddb-server-1      Running                                                                  0.0s
+    ⠿ Container griddb-airflow      Running                                                                  0.0s
     ⠿ Container airflow-redis-1              Healthy                                                                 18.6s
-    ⠿ Container airflow-postgres-1           Healthy                                                                 18.6s
+    ⠿ Container postgres-airflow           Healthy                                                                 18.6s
     ⠿ Container airflow-airflow-init-1       Exited                                                                  37.2s
     ⠿ Container airflow-airflow-triggerer-1  Started                                                                 37.9s
     ⠿ Container airflow-airflow-scheduler-1  Started                                                                 37.9s
@@ -255,7 +255,7 @@ Now we can make an explicit connection to our targeted database. For PostgreSQL,
 
 ```bash
 Host: postgres
-Schema: postgres
+Schema: airflow
 Login: airflow
 Password: airflow
 Port: 5432
@@ -302,7 +302,7 @@ The above Python code is only inserted inside the Python DAGs in which you inten
 
 For demo purposes, we will ingest the relevant data that we need into our database by copying over the CSV to our PostgreSQL container and then using the `COPY` command.
 
-First up we will be copying over a `.csv` file over from our local machine to the PostgreSQL container. This can be accomplished by using the image name (airflow-postgres-1, named by our `docker-compose` file) and the `docker cp` command. As for the file we are copying over, you can find it within `dags/data/device.csv`.
+First up we will be copying over a `.csv` file over from our local machine to the PostgreSQL container. This can be accomplished by using the image name (postgres-airflow, named by our `docker-compose` file) and the `docker cp` command. As for the file we are copying over, you can find it within `dags/data/device.csv`.
 
 ```bash
 $ docker cp dags/data/device.csv postgres-airflow:/tmp/
@@ -646,7 +646,7 @@ Luckily for us, it appears as though three containers were successfully made. To
 You can drop into the shell like so: 
 
 ```bash
-$ docker exec -it airflow-griddb-server-1 gs_sh
+$ docker exec -it griddb-airflow gs_sh
 ```
 
     The connection attempt was successful(NoSQL).
@@ -712,7 +712,7 @@ The styling of the schedule_interval is in the style `cron`, but if you are not 
 In any case, let's add some rows to our PostgreSQL database manually and see the continuous migration in action. For now, let's leave this off and put some rows in
 
 ```bash
-$ docker exec -it airflow-postgres-1 bash
+$ docker exec -it postgres-airflow bash
 /# psql -U airflow
 psql (13.9 (Debian 13.9-1.pgdg110+1))
 Type "help" for help.
