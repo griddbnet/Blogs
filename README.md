@@ -716,10 +716,7 @@ $ docker exec -it postgres-airflow bash
 /# psql -U airflow
 psql (13.9 (Debian 13.9-1.pgdg110+1))
 Type "help" for help.
-
-airflow=# \c postgres
 ```
-    You are now connected to database "postgres" as user "airflow".
 
 And now let's add some rows.
 
@@ -729,7 +726,7 @@ postgres=# INSERT INTO device VALUES (now(), 'b8:27:eb:bf:9d:51', 0.003551, 50.0
 ```
     INSERT 0 1
 
-We can do this however many times you'd like as a test. You can try inserting with different sensor names too to try out inserting to different containers.
+You can do this however many times you'd like as a test. You can even try inserting with different sensor names too,to make an attempt at inserting into different containers.
 
 Once we've done that, let's turn on our DAG and check the logs.
 
