@@ -1,0 +1,9 @@
+
+- Add device
+- Update device
+- Get list of devices GET /devices/$id
+- delete device 
+
+- Create TS data POST /data/${id}
+- Get all data for device /data/$id
+- Get data with time range /data/$id?start=TS&end=TS
