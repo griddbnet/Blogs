@@ -8,11 +8,8 @@ import altair as alt
 
 import requests
 
-# header_obj = {"Authorization":"Basic XXX","Content-Type":"application/json; charset=UTF-8","User-Agent":"PostmanRuntime/7.29.0"}
-# base_url = 'https://[host]:[port]/griddb/v2/[clustername]/dbs/[database_name]/'
-header_obj = {"Authorization": "Basic aXNyYWVsOmlzcmFlbA==",
-              "Content-Type": "application/json; charset=UTF-8", "User-Agent": "PostmanRuntime/7.29.0"}
-base_url = 'https://cloud1.griddb.com/trial1602/griddb/v2/gs_clustertrial1602/dbs/streamlit/'
+header_obj = {"Authorization":"Basic XXX","Content-Type":"application/json; charset=UTF-8","User-Agent":"PostmanRuntime/7.29.0"}
+base_url = 'https://[host]:[port]/griddb/v2/[clustername]/dbs/[database_name]/'
 
 
 scoring_threshold = st.slider("Total_Points", 3000, 8000, 3000, 200)
