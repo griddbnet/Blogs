@@ -4,6 +4,31 @@ Instead of using your already spun-up GridDB server as the host for your data, t
 
 If you are unfamiliar with Streamlit, it sells itself like so: "Streamlit turns data scripts into shareable web apps in minutes. All in pure Python. No front‑end experience required". This means that if we get a dataset, wrangle and massage it in the right way, we can build an attractive dashboard without writing any code that isn't Python. 
 
+Here is a quick video showcasing using the chart: 
+
+![streamlit_gif](https://i.imgur.com/XtM4njR.mp4)
+
+
+## Getting Started
+
+To follow along with this article, you can grab the source code from our GitHub page: 
+
+```bash
+$ git clone https://github.com/griddbnet/Blogs.git --branch streamlit_cloud
+```
+
+### Step By Step Instructions
+
+Before following the instructions that follow, please make sure that you go into the source code and edit the variables which contain the URL to your cloud instance and the authentication portion of the header obj.
+
+1. Clone GitHub Repo
+2. Update URL and Header object with your credentials
+3. Install the dependencies
+  A. $ python3 -m pip install streamlit pandas
+4. Ingest data by running the ingest.py file ($ python3 ingest.py)
+5. Run Streamlit app ($streamlit run app.py)
+
+
 ## The dataset
 
 Because we've previously done more "academic" type datasets in our previous attempts, and because this article is mostly focused on the cloud aspect of it, we have opted to choose a more simple and fun dataset. The data for this article is from [Kaggle](https://www.kaggle.com/datasets/isaienkov/nba-top-25-alltime-playoff-scorers); it is a list of the top 25 all-time playoff scorers in NBA history. 
@@ -147,6 +172,7 @@ total_points_query_str = ("select * where total_points > " + str(scoring_thresho
 
 Here with the help of the Streamlit API we create a simple slider which has a default value of 3000 and allows the user to select a bigger number using the created UI element. 
 
+
 ```python
 url_total_points = base_url + 'tql'
 request_body_total_pts = '[{"name":"Playoff_Scorers", "stmt":"' + \
@@ -155,6 +181,8 @@ request_body_total_pts = '[{"name":"Playoff_Scorers", "stmt":"' + \
 res = requests.post(url_total_points, data=request_body_total_pts, headers=header_obj)
 total_points_data = res.json()  
 ```
+
+
 
 Just like with the ingest, we make a POST request with a request body which contains the relevant information, in this case our TQL query with the user-selected scoring threshold. Everytime our user selects a new number, the app reloads and runs the code again, meaning our query is fired off again and we get back a new response from our cloud instance.
 
@@ -168,6 +196,8 @@ dataset_columns = ['rank', 'player', 'position', 'teams', 'total_points', 'total
 scorers = pd.DataFrame(total_points_data[0]["results"], columns=dataset_columns)
 ```
 
+
+
 Now that we have the relevant information as a dataframe, we can try to render our chart.
 
 And as a note, everytime we increase the scoring threshold from our slider, we would like to see the amount of players who have scored that many points change on a bar graph:
@@ -178,11 +208,23 @@ st.bar_chart(data=scorers, x='player', y='total_points')
 ```
 By feeding in the dataframe in the data column, we can now use the column names for the x and y axis. And because our dataframe's data will keep shifting as we make new queries with the slider, our dashboard has become interactive with very little effort.
 
+![playoff_scorers](images/total_points.png)
+
+What the chart is showing off is the number of points by the top 25 nba playoff performers. So if you slide the number, the higher the scoring threshold gets, the less players will have achieved that amount. It's a very cool way of illustrating LeBron James's dominance.
+
 ## More Data And Charts
 
-When taking a look at the full source code int he github page, there are a couple of more charts that you can play around with. These two charts are also very simple: one is total NBA PlayOff games, and the last one is the percentage of a player's career field goals being three pointers.
+When taking a look at the full source code int he github page, there are a couple of more charts that you can play around with. These two charts are also very simple: one is total NBA Playoff games, and the last one is the percentage of a player's career field goals being three pointers.
 
-You are encouraged to use this simple dataset to find more interesting/fun angles with the data and to display them into a chart or some other means.
+![total_games](images/total_games.png)
+
+This one is essentially the same as the previous just new with a column to query and display. But this one also shows the dominance of both Tim Duncan and LeBron James, they are very, VERY ahead of the rest of the competition.
+
+![three_pointers](images/threepointers.png)
+
+And this last chart showcases Total Field Goals & Three Pointers made and percentage of field goals made in the playoffs which are three pointers. Steph Curry by far leads this metric, but I think it is also interesting to illustrade how many more threes are made in today's game versus the older era.
+
+For this article, we have made three charts, but you are highly encouraged to use this simple dataset to find more interesting/fun angles and to display them into a chart or maybe through some other means!
 
 ## Conclusion
 
