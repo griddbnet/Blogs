@@ -4,11 +4,15 @@ In this article, we will go over the new features brought about by this new vers
 
 With the advent of version 1.6, the GridDB Cloud can not be accessible through your local machine via Java, JDBC, ODBC, and C. In this article, we will go over the set up and go over a small example of connecting to the cloud using Java and then JDBC.
 
+```bash
+$ git clone https://github.com/griddbnet/Blogs.git --branch griddb_cloud_1.6
+```
+
 ## Managing the GridDB Cloud's Settings
 
 To begin, we will need to head to the network portion of the cloud's portal. In there, we will see a new setting made fresh to us: "GridDB Access". In this panel, we can add in our public IP Address to the Exceptional List to make a tiny sliver of space to get through the Cloud's firewall. 
 
-![griddb_access]()
+![griddb_access](images/griddb_access.png)
 
 Once we are done with that, we can head to the support section and download the `.jar` files we will need onto our local machine's environment. From the support page, download the files under the heading of "GridDB Cloud Library and Plugin download".
 
@@ -58,7 +62,7 @@ Assuming everything is good, we can run our java code and we will have whatever 
 
 And just to have an easy demo to showcase, the code we are running here is simulating IoT data for Java, meaning we are placing a bunch of different containers into our Cloud with random data. And sure enough, when we check out the Cloud, we can see the containers along with the data in there: 
 
-![query]()
+![query](images/query.png)
 
 ## Connecting to GridDB Cloud using JDBC
 
@@ -100,7 +104,7 @@ Again, when making this JDBC URL, you will need to be sure to include the `sslMo
 
 Once all of that information is OK, it will run whatever SQL code you chose to include with your file onto the cloud. In this case, I made a series of [tpch tables](https://github.com/dragansah/tpch-dbgen) in the cloud:
 
-![jdbc_tables]()
+![jdbc_tables](images/tpch_tables.png)
 
 ## Conclusion
 
