@@ -2,7 +2,7 @@ The web-based GridDB Cloud service has been updated to version 1.6, with GridDB 
 
 In this article, we will go over the new features brought about by this new version, namely a new method of interfacing directly with the cloud. Previously, the [Web API](https://github.com/griddb/webapi) was the only way to access the GridDB Cloud without using an online [cloud virtual network](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview). With the Web API, you could make GET or POST HTTP requests to PUT data into your GridDB database server in the sky. Using this method, you can even run SQL or TQL commands through the Web API.
 
-With the advent of version 1.6, the GridDB Cloud can not be accessible through your local machine via Java, JDBC, ODBC, and C. In this article, we will go over the set up and go over a small example of connecting to the cloud using Java and then JDBC.
+With the advent of version 1.6, the GridDB Cloud is now accessible through your local machine via Java, JDBC, ODBC, and C. In this article, we will go over the set up and go over a small example of connecting to the cloud using Java and then JDBC.
 
 ```bash
 $ git clone https://github.com/griddbnet/Blogs.git --branch griddb_cloud_1.6
