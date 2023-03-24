@@ -126,7 +126,7 @@ From there, you're ready to follow a similar concept to the Java JDBC Connection
 import jaydebeapi
 import urllib.parse
 
-notification_provider = "https://dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json?sv=2015-04-05&sr=b&st=2023-03-14T00%3A00%3A00.0000000Z&se=2073-03-14T00%3A00%3A00.0000000Z&sp=r&sig=h2VJ0xAqsnRsqWV5CAS66RifPIZ1PDCJ0x%2FiXb2FOhA%3D"
+notification_provider = "https://dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json?sv=2015-04-05&sr=b&st=2023-03-14T00%3A00%3A00.00Z&se=2073-03-14T00%3A00%3A00.0000000Z&sp=r&sig=h2VJ0xAqsnfdgfgdfgRsqWVgfgfg5CAS66RifPIZ1PDCJ0x%2FiXb2FOhA%3D"
 np_encode = urllib.parse.quote(notification_provider)
 
 cluster_name = "gs_clustertrial1602"
@@ -179,7 +179,7 @@ Run and verify
 $ python3 app.py
 ```
 
-    JDBC URL = jdbc:gs:///gs_clustertrial1602/public?notificationProvider=https%3A//dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json%3Fsv%3D2015-04-05%26sr%3Db%26st%3D2023-03-14T00%253A00%253A00.0000000Z%26se%3D2073-03-14T00%253A00%253A00.0000000Z%26sp%3Dr%26sig%3Dh2VJ0xAqsnRsqWV5CAS66RifPIZ1PDCJ0x%252FiXb2FOhA%253D%26sslMode%3DVERIFY
+    JDBC URL = jdbc:gs:///gs_clustertrial1602/public?notificationProvider=https%3A//dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json%3Fsv%3D2015-04-05%26sr%3Db%26st%3D2023-03-14T00%253A00%253A00.0000000Z%26se%3D2073-03-14T00%253A00%253A00.0000000Z%26sp%3Dr%26sig%3Dhdfg2VJ0xAqsfdgdnRsqfdgdWV5CAS66RifdPIZ1PDCJ0x%252FiXb2FOhA%253D%26sslMode%3DVERIFY
     SQL Create Table name=Sample
     SQL Insert
     [(3, 'test3'), (4, 'test4')]
@@ -214,7 +214,7 @@ RJDBC is our library to forge our connection to the GridDB cloud instance and th
 All of this code is exactly same as before: 
 
 ```R 
-url <- "https://dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json?sv=2015-04-05&sr=b&st=2023-03-14T00%3A00%3A00.0000000Z&se=2073-03-14T00%3A00%3A00.0000000Z&sp=r&sig=h2VJ0xAqsnRsqWV5CAS66RifPIZ1PDCJ0x%2FiXb2FOhA%3D"
+url <- "https://dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json?sv=2015-04-05&sr=b&st=2023-03-14T00%3A00%3A00.00Z&se=2073-03-14T00%3A00%3A00.0000000Z&sp=r&sig=h2VJ0xAqsnfdgfgdfgRsqWVgfgfg5CAS66RifPIZ1PDCJ0x%2FiXb2FOhA%3D"
 provider_encode <- curlEscape(url)
 
 cluster_name <- "gs_clustertrial1602"
