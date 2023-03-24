@@ -248,6 +248,13 @@ print(rs)
 
 Here we are simply making the same query as our Python file earlier, it should of course spit out the same results.
 
+And of course run it: 
+
+```bash
+$ Rscript jdbc.r
+```
+
+
 ## Conclusion
 
 And with that, we have successfully connected our local machine directly to our instance of the GridDB Cloud. With this set up, you don't need to worry about managing any servers, you can simply write your java/python/R applications and utilize the full, awesome power of GridDB.
