@@ -20,14 +20,15 @@ Though this `.zip` file includes many different files, the relevant files for th
 
 Once these are downloaded, we can add them into our `$CLASSPATH` environment so that when we run our java commands, we have access to these new APIs.
 
+For convenience, if you have cloned this project's repository, we have included a simple bash file which will import the included `.jar` files into your machine's environment variables.
+
+
 ## Connecting to the Cloud via Java
 
-Before we begin, let's add these `.jar` files into our CLASSPATH.
+Before we begin, let's add these `.jar` files into our CLASSPATH. From the root of this directory: 
 
 ```bash
-export CLASSPATH=${CLASSPATH}:$PWD/gridstore-5.2.0.jar
-export CLASSPATH=${CLASSPATH}:$PWD/gridstore-jdbc-5.2.0.jar
-export CLASSPATH=${CLASSPATH}:$PWD/gridstore-advanced-5.2.0.jar
+$ source env.sh
 ```
 
 And now we can write some Java code to make a connection with our GridDB Cloud Server.
@@ -106,7 +107,145 @@ Once all of that information is OK, it will run whatever SQL code you chose to i
 
 ![jdbc_tables](images/tpch_tables.png)
 
+
+## Connecting to GridDB Cloud with Python and JayDeBeApi
+
+In this next section, we will connect to our Cloud instance using Python and the JDBC library called JayDeBeApi. Basic instructions be found in our [previous blog](https://griddb.net/en/blog/using-python-to-interface-with-griddb-via-jdbc-with-jaydebeapi/). 
+
+To start, install the JayDeBeApi package: 
+
+```bash
+$ python3 -m pip install JayDeBeApi
+```
+
+From there, you're ready to follow a similar concept to the Java JDBC Connection: 
+
+```python
+import jaydebeapi
+import urllib.parse
+
+notification_provider = "https://dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json?sv=2015-04-05&sr=b&st=2023-03-14T00%3A00%3A00.0000000Z&se=2073-03-14T00%3A00%3A00.0000000Z&sp=r&sig=h2VJ0xAqsnRsqWV5CAS66RifPIZ1PDCJ0x%2FiXb2FOhA%3D"
+np_encode = urllib.parse.quote(notification_provider)
+
+cluster_name = "gs_clustertrial1602"
+cn_encode = urllib.parse.quote(cluster_name)
+
+database_name = "public"
+dbn_encode = urllib.parse.quote(database_name)
+
+sslMode = "&sslMode=VERIFY"
+sm_encode = urllib.parse.quote(sslMode)
+
+username = "israel"
+password = "israel"
+
+url = "jdbc:gs:///" + cn_encode +  "/" + dbn_encode + "?notificationProvider=" + np_encode + sm_encode 
+```
+
+First, we import the necessary libraries. From there, we can simply encode and build our JDBC Url which we will use to make our connection. And then we simply call the correct API method and add our ever important `connectionRoute` parameter.
+
+```python
+conn = jaydebeapi.connect("com.toshiba.mwcloud.gs.sql.Driver",
+    url, 
+    {'user': username, 'password': password,
+     'connectionRoute': 'PUBLIC'}
+    , "../lib/gridstore-jdbc.jar")
+```
+
+And from there we can run any sort of SQL command we'd like to run: 
+
+```python
+curs = conn.cursor()
+
+curs.execute("DROP TABLE IF EXISTS Sample")
+curs.execute("CREATE TABLE IF NOT EXISTS Sample ( id integer PRIMARY KEY, value string )")
+print('SQL Create Table name=Sample')
+curs.execute("INSERT INTO Sample values (0, 'test0'),(1, 'test1'),(2, 'test2'),(3, 'test3'),(4, 'test4')")
+print('SQL Insert')
+curs.execute("SELECT * from Sample where ID > 2")
+print(curs.fetchall())
+
+curs.close()
+conn.close()
+print('success!')
+
+```
+
+Run and verify
+
+```bash
+$ python3 app.py
+```
+
+    JDBC URL = jdbc:gs:///gs_clustertrial1602/public?notificationProvider=https%3A//dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json%3Fsv%3D2015-04-05%26sr%3Db%26st%3D2023-03-14T00%253A00%253A00.0000000Z%26se%3D2073-03-14T00%253A00%253A00.0000000Z%26sp%3Dr%26sig%3Dh2VJ0xAqsnRsqWV5CAS66RifPIZ1PDCJ0x%252FiXb2FOhA%253D%26sslMode%3DVERIFY
+    SQL Create Table name=Sample
+    SQL Insert
+    [(3, 'test3'), (4, 'test4')]
+    success!
+
+
+## Connecting with R and RJDBC
+
+This section will be extremely similar to the previous two, the chief difference of course being the connecting programming language.
+
+You will need to [install R](https://cran.r-project.org/bin/linux/ubuntu/fullREADME.html) and then install the libraries needed
+
+```bash
+$ R
+> install.packages("RCurl", dependencies = TRUE)
+> install.packages("RJDBC", dependencies = TRUE)
+```
+
+Once your R environment is set, let's set up the (familiar) code.
+
+```R
+library(RJDBC)
+library(RCurl)
+
+drv <- JDBC("com.toshiba.mwcloud.gs.sql.Driver",
+            "../lib/gridstore-jdbc-5.2.0.jar",
+            identifier.quote = "`")
+```
+
+RJDBC is our library to forge our connection to the GridDB cloud instance and the RCurl library is to encode our URLs for our notification provider.
+
+All of this code is exactly same as before: 
+
+```R 
+url <- "https://dbaasshareextconsta.blob.core.windows.net/dbaas-share-extcon-blob/trial1602.json?sv=2015-04-05&sr=b&st=2023-03-14T00%3A00%3A00.0000000Z&se=2073-03-14T00%3A00%3A00.0000000Z&sp=r&sig=h2VJ0xAqsnRsqWV5CAS66RifPIZ1PDCJ0x%2FiXb2FOhA%3D"
+provider_encode <- curlEscape(url)
+
+cluster_name <- "gs_clustertrial1602"
+cn_encode <- curlEscape(cluster_name)
+
+database_name <- "public"
+dbn_encode <- curlEscape(database_name)
+
+sslMode <- "&sslMode=VERIFY"
+sm_encode <- curlEscape(sslMode)
+
+username <- "israel"
+password <- "israel"
+
+protocol <- "jdbc:gs:///"
+```
+
+And then we concatenate our strings, add in our ever-important connectionRoute, and make the connection: 
+
+```R
+jdbc_url <- paste(protocol, cn_encode, "/", dbn_encode, "?notificationProvider=", provider_encode, sm_encode, sep="",collapse=NULL)
+
+print(jdbc_url)
+
+conn <- dbConnect(drv, jdbc_url, username, password, connectionRoute="PUBLIC")
+
+rs <- dbGetQuery(conn, "SELECT * from Sample where ID > 2")
+
+print(rs)
+```
+
+Here we are simply making the same query as our Python file earlier, it should of course spit out the same results.
+
 ## Conclusion
 
-And with that, we have successfully connected our local machine directly to our instance of the GridDB Cloud. With this set up, you don't need to worry about managing any servers, you can simply write your java applications and utilize the full, awesome power of GridDB.
-
+And with that, we have successfully connected our local machine directly to our instance of the GridDB Cloud. With this set up, you don't need to worry about managing any servers, you can simply write your java/python/R applications and utilize the full, awesome power of GridDB.
