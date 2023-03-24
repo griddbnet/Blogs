@@ -8,6 +8,8 @@ With the advent of version 1.6, the GridDB Cloud can not be accessible through y
 $ git clone https://github.com/griddbnet/Blogs.git --branch griddb_cloud_1.6
 ```
 
+NOTE: As of the time of this writing, the GridDB Cloud is only open to Japan.
+
 ## Managing the GridDB Cloud's Settings
 
 To begin, we will need to head to the network portion of the cloud's portal. In there, we will see a new setting made fresh to us: "GridDB Access". In this panel, we can add in our public IP Address to the Exceptional List to make a tiny sliver of space to get through the Cloud's firewall. 
@@ -67,7 +69,7 @@ And just to have an easy demo to showcase, the code we are running here is simul
 
 ## Connecting to GridDB Cloud using JDBC
 
-Of course, using JDBC with GridDB will allow for full use of SQL which has its own benefits and usecases. And luckily for us, using JDBC to connect to the Cloud will be about the same as using Java. The main difference is we need to include the `jdbc jar` to our CLASSPATH (already done), and we need to build out our `jdbc url`.
+Of course, using JDBC with GridDB will allow for full use of SQL which has its own benefits and use cases. And luckily for us, using JDBC to connect to the Cloud will be about the same as using Java. The main difference is we need to include the `jdbc jar` to our CLASSPATH (already done), and we need to build out our `jdbc url`.
 
 ```java
         try {
