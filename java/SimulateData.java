@@ -87,8 +87,9 @@ public class SimulateData {
             Properties props = new Properties();
             props.setProperty("notificationProvider", provider);
             props.setProperty("clusterName", "gs_clustertrial1602");
-            props.setProperty("user", "israel");
-            props.setProperty("password", "israel");
+            props.setProperty("user", "admin");
+            props.setProperty("password", "admin");
+            props.setProperty("database", "israel_db");
             props.setProperty("sslMode", "PREFERRED");
             props.setProperty("connectionRoute", "PUBLIC");
             store = GridStoreFactory.getInstance().getGridStore(props);
