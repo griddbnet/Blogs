@@ -28,7 +28,7 @@ Before we dive into the all-important GridDB Class, we will first start with the
 This class is responsible for housing the schema for the data used in this article, as well as some other helper methods
 
 <div class="clipboard">
-<pre><code class="language-java">class Device {
+<pre><code class="language-java">class Device
 
     @RowKey String id;
     Double lat;
@@ -74,7 +74,7 @@ So, for example, the default constructor of our controller will create an instan
 
 <div class="clipboard">
 <pre><code class="language-java">@RestController
-public class DeviceController {
+public class DeviceController
 
     GridDB gridDb;
 
