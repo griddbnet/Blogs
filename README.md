@@ -12,6 +12,8 @@ To begin, you will need an environment with either Windows 10 or 11. Next, simpl
 
 And that is basically the entirety of it; a much more detailed account of getting started with WSL can be found [here](https://learn.microsoft.com/en-us/windows/wsl/install).
 
+An important note: from my limited testing, it appears as though enabling `systemd` (see below) can only be done when installing Ubuntu from directly inside the Microsoft Store as seen here: https://ubuntu.com/wsl. So if you download Ubuntu from official store, it will appear in your WSL and will work like normal.
+
 Once you install WSL, you will have [Ubuntu](https://en.wikipedia.org/wiki/Ubuntu) available to you and can begin the process of installing GridDB. Though, of course, if you prefer [CentOS](https://en.wikipedia.org/wiki/CentOS) or some other Linux distro, you can run actually run multiple instances of Linux subsystems on your machine -- you simply choose which distro you'd like to run and use.
 
 ## Installing GridDB
