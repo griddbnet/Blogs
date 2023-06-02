@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: griddb-server-deployment
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: griddb-server
+  template:
+    metadata:
+      labels:
+        app: griddb-server
+    spec:
+      volumes:
+        - name: griddb-pv-storage
+          persistentVolumeClaim:
+            claimName: griddb-server-pvc
+      containers:
+        - name: griddbcontainer
+          image: localhost:5000/griddb-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 10001
+          volumeMounts:
+            - mountPath: "/var/lib/gridstore/data"
+              name: griddb-pv-storage
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          env:
+          - name: NOTIFICATION_MEMBER
+            value: '1'
+          - name: GRIDDB_CLUSTER_NAME
+            value: "myCluster"
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: griddb-server
+  labels:
+    app: griddb-server
+spec:
+  type: ClusterIP
+  ports: 
+  - port: 10001
+    name: griddb-server
+    targetPort: 10001
+  selector:
+    app: griddb-server

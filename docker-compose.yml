@@ -1,0 +1,39 @@
+version: '3.9'
+#volumes:
+#  griddb:
+
+services:
+
+  griddb-server:
+    build:
+      context: griddb-server
+      dockerfile: Dockerfile
+    container_name: griddb-server
+    expose:
+      - '10001'
+      - '10010'
+      - '10020'
+      - '10040'
+      - '20001'
+      - '41999'
+    environment:
+      NOTIFICATION_MEMBER: 1
+      GRIDDB_CLUSTER_NAME: myCluster
+
+
+  authentication:
+    build: 
+      context: authentication
+      dockerfile: Dockerfile
+    container_name: authentication
+    ports: 
+      - '2828:2828'
+
+  web-server:
+    build:
+      context: web_server
+      dockerfile: Dockerfile
+    container_name: web-server
+    ports: 
+      - '8000:8000'
+
