@@ -265,9 +265,9 @@ func main() {
 
     srv := &http.Server{
         Handler: router,
-        Addr:    "0.0.0.0:8000",
+        Addr:    "0.0.0.0:8080",
     }
 
-	fmt.Println("Listening on port 8000...")
+	fmt.Println("Listening on port 8080...")
 	log.Fatal(srv.ListenAndServe())
 }
