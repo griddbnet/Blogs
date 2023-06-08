@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -- griddb "$@"
+if [ "${1:0:1}" = '-' ]; then
+    set -- griddb "$@"
+fi
 
 # Save variable and value to config file
 save_config() {
@@ -27,6 +29,9 @@ fixlist_config() {
     # Set IP address
     sed -i -e s/\"address\":\ null/\"address\":\"$ip_address\"/g \/var/lib/gridstore/conf/gs_cluster.json
 }
+
+# First parameter after run images
+if [ "${1}" = 'griddb' ]; then
 
     isSystemInitialized=0
     if [ "$(ls -A /var/lib/gridstore/data)" ]; then
@@ -85,4 +90,7 @@ fixlist_config() {
     cd /var/lib/gridstore
     while ! gs_joincluster -u $GRIDDB_USERNAME/$GRIDDB_PASSWORD -c $GRIDDB_CLUSTER_NAME -w; do sleep 5; done &
     gsserver --conf ./conf
+fi
+exec "$@"
+
 
