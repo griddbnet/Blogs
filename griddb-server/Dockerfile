@@ -11,9 +11,6 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/*
 
 
-ADD gridstore.conf /var/lib/gridstore/conf
-ADD gs_cluster.json /var/lib/gridstore/conf
-
 # Install GridDB c_client
 WORKDIR /
 RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.0.0/griddb-c-client_5.0.0_amd64.deb
