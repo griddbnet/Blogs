@@ -6,6 +6,8 @@ Microservices are also increasingly becoming a popular infrastucture strategy fo
 
 But before we jump into deploying our application onto a cloud service with kubernetes, we will keep this application local, utilizing docker and docker-compose to ship out the code. Again, we will have three working containers in a docker compose yaml.
 
+![diagram](images/griddb_go_crud.png)
+
 ## Prereqs and Docker/Docker Compose
 
 This article will be using GridDB, Go, the GridDB Go Connector, and React.js; if you want to code along, you can download all of these individually and run this project on "bare metal". But because of the magic of [Docker](https://www.docker.com/), if you just want to spin up the project alongside reading this article to confirm how everything works, you will simply only need to download docker, the docker compose plugin, and that's all. 
@@ -15,7 +17,7 @@ This article will be using GridDB, Go, the GridDB Go Connector, and React.js; if
 The repo for this project can be found here: [GitHub]
 
 ```bash
-$ git clone [] --branch golang_crud
+$ git clone [] --branch kubernetes
 ```
 
 In the root of this repository, you will find a `docker-compose.yaml` -- this file contains all instructions for building and running all components of this application. To see the very simple app in action,  simply run the following two commands in sequence: 
@@ -397,7 +399,7 @@ func main() {
 }
 ```
 
-Because HTTP requests from our frontend are happening client side (ie the browser), we cannot query the authentication service directly from our frontend. This means that in order to get our tokens to our frontend, we must receive it in our backend and then serve it up to our frontend when the `/getToken` endpoint is called.
+Because HTTP requests from our frontend are happening client side (ie the browser), we cannot query the authentication service directly from our frontend. This means that in order to get our tokens to our frontend, we must receive it in our backend and then serve it up to our frontend when the `/getToken` endpoint is called. Normally, you'd require some sort of login mechanism (username/password) to not allow just anybody to get tokens, but for demo purposes, this implementation is fine.
 
 #### CRUD Functions
 
@@ -672,6 +674,10 @@ const queryForRows = () => {
 ```
 
 Of course, as explained above, the source code is available on Github, so if you are curious as to how this simple web page works, you can see the code there. 
+
+Here is what it looks like: 
+
+![application_screenshot](images/app_screenshot.png)
 
 ## Next Steps
 

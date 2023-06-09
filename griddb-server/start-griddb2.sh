@@ -93,4 +93,3 @@ if [ "${1}" = 'griddb' ]; then
 fi
 exec "$@"
 
-
