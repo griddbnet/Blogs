@@ -21,7 +21,7 @@ services:
       GRIDDB_CLUSTER_NAME: myCluster
 
 
-  authentication:
+  auth:
     build: 
       context: authentication
       dockerfile: Dockerfile
@@ -35,5 +35,5 @@ services:
       dockerfile: Dockerfile
     container_name: web-server
     ports: 
-      - '8000:8000'
+      - '8080:8080'
 

@@ -29,7 +29,7 @@ $ docker compose up -d
 
 The first command will read the `.yaml` file to figure out how to build each component, and the second command will actually go ahead and run the containers on a shared network; this means that the three services (GridDB, web-server, authentication) can already all communicate with each other via their service names (which are also their hostnames).
 
-Once your project is running, simply navigate to port 8000 of the host machine (ie, http://localhost:8000 if the host machine is the same one as your web browser). And now you can create a TODO item in the box. To toggle as COMPLETED (or vice versa), simply click on the row. And because the data is being saved onto a database (GridDB), the TODO list will persist through shutdowns, etc.
+Once your project is running, simply navigate to port 8080 of the host machine (ie, http://localhost:8080 if the host machine is the same one as your web browser). And now you can create a TODO item in the box. To toggle as COMPLETED (or vice versa), simply click on the row. And because the data is being saved onto a database (GridDB), the TODO list will persist through shutdowns, etc.
 
 ### Docker Compose and Dockerfiles
 
@@ -78,7 +78,7 @@ services:
       dockerfile: Dockerfile
     container_name: web-server
     ports: 
-      - '8000:8000'
+      - '8080:8080'
 ```
 
 This file mostly serves to keep everything organized as a singular project and to provide the shared network for three containers. The instructins for building each individual container is in each service's unique `Dockerfile`.
@@ -171,7 +171,7 @@ RUN go get github.com/gorilla/mux
 RUN go build -o web_server *.go 
 RUN chmod +x /app/web_server/web_server
 
-EXPOSE 8000
+EXPOSE 8080
 
 cmd ["/app/web_server/web_server"]
 ```
@@ -626,10 +626,10 @@ func main() {
 
     srv := &http.Server{
         Handler: router,
-        Addr:    "0.0.0.0:8000",
+        Addr:    "0.0.0.0:8080",
     }
 
-	fmt.Println("Listening on port 8000...")
+	fmt.Println("Listening on port 8080...")
 	log.Fatal(srv.ListenAndServe())
 }
 ```
