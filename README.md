@@ -81,7 +81,7 @@ services:
       - '8080:8080'
 ```
 
-This file mostly serves to keep everything organized as a singular project and to provide the shared network for three containers. The instructins for building each individual container is in each service's unique `Dockerfile`.
+This file mostly serves to keep everything organized as a singular project and to provide the shared network for three containers. The instructions for building each individual container is in each service's unique `Dockerfile`.
 
 #### GridDB Dockerfile
 
@@ -120,7 +120,7 @@ There's not much to this container; we are using the official GridDB image from 
 
 #### Web Server Dockerfile
 
-Next let's look at the web-server service. This container contains our Go backend code which interacts with our GridDB container, and then it also contains our react.js frontend code (static built) which sends HTTP Requests to the Go backend API which will send back relevant information GridDB. 
+Next let's look at the web-server service. This container contains our Go backend code which interacts with our GridDB container, and then it also contains our react.js frontend code (static built) which sends HTTP Requests to the Go backend API which will send back relevant information to GridDB. 
 
 Here is the Dockerfile: 
 
@@ -403,7 +403,7 @@ Because HTTP requests from our frontend are happening client side (ie the browse
 
 #### CRUD Functions
 
-And now finally let's take a look at the Create, Read, Update, and Delete functions for our go code. Create is handled by CreateTodoItem, it will create a row of the end user's choosing. Read is handled by Get(), which simply returns all rows to the user. Update() will toggle a TODO item's "completed" column between truthy or false. And finally DeleteTodoItem() will delete the row once a user is finished with it. 
+And now finally let's take a look at the Create, Read, Update, and Delete functions for our go code. Create is handled by CreateTodoItem, it will create a row of the end user's choosing. Read is handled by Get(), which simply returns all rows to the user. Update() will toggle a TODO item's "completed" column between true or false. And finally DeleteTodoItem() will delete the row once a user is finished with it. 
 
 ```go
 func Get(w http.ResponseWriter, r *http.Request) {
