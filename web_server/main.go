@@ -177,6 +177,8 @@ func DeleteTodoItem(w http.ResponseWriter, r *http.Request) {
 
 	col := GetContainer(gridstore, "todo")
 	defer griddb.DeleteContainer(col)
+	col.SetAutoCommit(false)
+
 
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -205,6 +207,10 @@ func DeleteTodoItem(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Remove err: ", err5)
 		}
 	}
+
+	col.Commit()
+    fmt.Println("Delete Row")
+    fmt.Println("success!")
 
 }
 
