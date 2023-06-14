@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from "axios";
 
 import Box from '@mui/material/Box';
@@ -6,7 +6,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import DeleteIcon from '@mui/icons-material/DeleteOutlined';
+import PanToolAltIcon from '@mui/icons-material/PanToolAlt';
 
 const sampleTodo = [
   { id: 0, title: "Test", completed: false }
@@ -24,50 +24,8 @@ const App = () => {
   const columns = [
     { field: 'Title', headerName: "Title", editable: false, width: 300 },
     { field: 'Completed', headerName: "Completed", editable: false },
-    {
-      field: 'Delete',
-      headerName: 'Delete',
-      width: 150,
-      renderCell: Delete,
-    },
   ]
 
-  function Delete(props) {
-    const { hasFocus, value } = props;
-    const buttonElement = useRef(null);
-    const rippleRef = useRef(null);
-
-    useLayoutEffect(() => {
-      if (hasFocus) {
-        const input = buttonElement.current?.querySelector('input');
-        input?.focus();
-      } else if (rippleRef.current) {
-        rippleRef.current.stop({});
-      }
-    }, [hasFocus]);
-
-    return (
-      <strong>
-        <Button
-          component="button"
-          ref={buttonElement}
-          touchRippleRef={rippleRef}
-          variant="contained"
-          size="small"
-          style={{ marginLeft: 16 }}
-          tabIndex={hasFocus ? 0 : -1}
-          onClick={deleteTodoItem}
-          onKeyDown={(event) => {
-            if (event.key === ' ') {
-              event.stopPropagation();
-            }
-          }}
-        >
-          <DeleteIcon />
-        </Button>
-      </strong>
-    );
-  }
 
 
 
@@ -86,6 +44,10 @@ const App = () => {
     axios.get("/get", { headers: { "Token": token } }).then((response) => {
       let resp = (response.data);
       let lastId = 0
+      console.log("Resp: ", resp)
+      if (resp == null) {
+        alert("No more items in your todo list!")
+      }
       resp.forEach((val, idx) => {
         val["id"] = idx //adding ids for the datagrid (separate from the GridDB rowkey)
         lastId = val.Id // grab last Id
@@ -122,11 +84,8 @@ const App = () => {
     }
   }
 
-  const deleteTodoItem = () => {
-
-    console.log("delete todo row: ", workingRow)
-    if (workingRow.Id > -1) {
-      fetch('/delete/' + workingRow.Id, {
+  const deleteTodoItem = (row) =>  {
+      fetch('/delete/' + row.row.Id, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,14 +95,12 @@ const App = () => {
         console.log("Delete Response: ", response)
         queryForRows();
       });
-    }
+
 
   }
 
-  const [workingRow, setWorkingRow] = useState({ Id: -1, Completed: false })
   const toggleTodo = row => {
     console.log("toggle todo row: ", row.row)
-    setWorkingRow(row.row)
     fetch("/update/" + row.row.Id, {
       method: 'POST',
       headers: {
@@ -168,6 +125,8 @@ const App = () => {
         }
       }}>
         <h1> GridDB Todo App </h1>
+        <p><PanToolAltIcon color="success"  /> Single Click to toggle completeness</p>
+        <p><PanToolAltIcon  sx={{ color: "red" }}/> <PanToolAltIcon  sx={{ color: "red" }}/> Double click to delete item</p>
         <Stack direction="row" spacing={1}>
           <Button size="small" variant="outlined" onClick={createTodoItem} >
             Create Todo Item
@@ -202,6 +161,7 @@ const App = () => {
           hideFooterPagination
           density='compact'
           onCellClick={toggleTodo}
+          onCellDoubleClick={deleteTodoItem}
           getRowClassName={(params) => {
             return params.row.Completed ? "completed" : "incomplete";
           }}
