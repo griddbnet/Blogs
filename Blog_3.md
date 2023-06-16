@@ -71,9 +71,9 @@ And with that, let's push our docker images to our registry -- these images will
 As an example, here is the process of building, tagging, and then pushing images onto our local registry. We will go over these again.
 
 ```bash
-$ docker build . -t web-server:01
-$ docker tag web-server:01 localhost:5000/web-server:01
-$ docker push localhost:5000/web-server:01
+$ docker build . -t web-server:latest
+$ docker tag web-server:latest localhost:5000/web-server:latest
+$ docker push localhost:5000/web-server:latest
 ```
 
 ### The Kubernetes GridDB Object
@@ -93,8 +93,8 @@ $ docker build . -t griddb-server
 And then tag and push to your local docker registry
 
 ```bash
-$ docker tag griddb-server:01 localhost:5000/griddb-server:01
-$ docker push localhost:5000/griddb-server:01
+$ docker tag griddb-server:latest localhost:5000/griddb-server:latest
+$ docker push localhost:5000/griddb-server:latest
 ```
 
 This does exactly what it sounds like, it creates an image of the contents in our Dockerfile and saves it in the local registry.
@@ -124,7 +124,7 @@ spec:
             claimName: griddb-server-pvc
       containers:
         - name: griddbcontainer
-          image: localhost:5000/griddb-server:01
+          image: localhost:5000/griddb-server:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 10001
@@ -229,7 +229,7 @@ spec:
     spec:
       containers:
         - name: webcontainer
-          image: localhost:5000/web-server:01
+          image: localhost:5000/web-server:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
