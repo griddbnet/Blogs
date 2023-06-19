@@ -156,6 +156,21 @@ $ kubectl create -f pv.yaml
 
 And now we can see here that we are mounting both the persistent storage and the claim to our griddb-server deployment.
 
+You can take a look at your created volumes too: 
+
+```bash
+$ kubectl get pv
+```
+    NAME               CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS   REASON   AGE
+griddb-server-pv   1Gi        RWO            Retain           Bound    default/griddb-server-pvc   slow                    62m
+
+```bash
+$ kubectl get pvc
+```
+
+    NAME                STATUS   VOLUME             CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+griddb-server-pvc   Bound    griddb-server-pv   1Gi        RWO            slow           62m
+
 #### Creating Kubernetes a Pod/Deployment (GridDB)
 
 Next we will refer to the local GridDB image in our `yaml` file. First, let's post the entirety of our config file. You will notice that the information regarding the persistent storage is already included.
