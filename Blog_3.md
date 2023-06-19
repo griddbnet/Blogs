@@ -162,14 +162,14 @@ You can take a look at your created volumes too:
 $ kubectl get pv
 ```
     NAME               CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS   REASON   AGE
-griddb-server-pv   1Gi        RWO            Retain           Bound    default/griddb-server-pvc   slow                    62m
+    griddb-server-pv   1Gi        RWO            Retain           Bound    default/griddb-server-pvc   slow                    62m
 
 ```bash
 $ kubectl get pvc
 ```
 
     NAME                STATUS   VOLUME             CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-griddb-server-pvc   Bound    griddb-server-pv   1Gi        RWO            slow           62m
+    griddb-server-pvc   Bound    griddb-server-pv   1Gi        RWO            slow           62m
 
 #### Creating Kubernetes a Pod/Deployment (GridDB)
 
