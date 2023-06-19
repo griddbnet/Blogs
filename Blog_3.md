@@ -99,9 +99,66 @@ $ docker push localhost:5000/griddb-server:latest
 
 This does exactly what it sounds like, it creates an image of the contents in our Dockerfile and saves it in the local registry.
 
+### The Kubernetes Persistent Storage Objects
+
+Because our GridDB Kubernetes Object will need persistent storage, let's create that first.
+
+To create a persistent storage of our GridDB instance, we need to create a file for our persistent volume and the persistent volume claim. Once we do that, we create the PV and then the PVC which will bound together. We then tell our deployment to use that volume if everything goes well, our data will persist, even if the host machine goes down or it needs to be rebooted for maintenance.
+
+#### Persistent Volume
+
+First let's get into the PV: 
+
+```bash
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: griddb-server-pv
+spec:
+  storageClassName: slow
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  hostPath:
+      path: "/mnt/griddb/data"
+```
+
+Here we are setting the storage class name, the kind, and the path on the host machine to use as our path of data. Using the host as the source of the data is only for dev purposes; in a production setting, you would likely set up an azure cloud storage or something similar. 
+
+#### Persistent Volume Claim
+
+Next let's make the volume claim. This kubernetes object will seek out any volumes which match the characteristics it needs and once it finds it, automatically binds itself to that volume, thus allowing it to be mounted onto a deployment/pod.
+
+```bash
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: griddb-server-pvc
+spec:
+  storageClassName: slow
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+The most important thing is that the `storageClassName` match between the two items.
+
+And because these two volume objects share one yaml file, we can simply run this command once; it will create both objects and bound them together.
+
+```bash 
+$ kubectl create -f pv.yaml
+```
+
+And now we can see here that we are mounting both the persistent storage and the claim to our griddb-server deployment.
+
 #### Creating Kubernetes a Pod/Deployment (GridDB)
 
-Next we will refer to the local GridDB image in our `yaml` file. First, let's post the entirety of our config file.
+Next we will refer to the local GridDB image in our `yaml` file. First, let's post the entirety of our config file. You will notice that the information regarding the persistent storage is already included.
 
 ```bash
 apiVersion: apps/v1
@@ -151,7 +208,7 @@ The very last thing to point out is at the top: `Kind`. We are setting the kind 
 
 As explained before, we will also need to create a service to handle the networking.
 
-#### Creating Kubernetes  a Service (GridDB)
+#### Creating a Kubernetes Service (GridDB)
 
 In the same file, let's put in the service information, separated by `---`.
 
@@ -200,13 +257,28 @@ $ kubectl describe pod <pod name>
 $ kubectl describe svc <svc name>
 ```
 
+And as another note, because these kubernetes objects are stateless, if you would like to, for example, restart a pod, you can simply delete that pod; kubernetes will handle auto-restarting the pod, ensuring it's always up and running.
+
+```bash
+$ kubectl delete pod <pod name>
+$ kubectl delete deployment <deployment name>
+```
+
 Okay, now let's repeat the process for the other two parts of our applications
 
 ### The Kubernetes Web-Server Object
 
 This microservice will be our actual todo app's server -- both the backend and the frontend. So we have code in web-server directory which creates a GridDB API and serves up endpoints which are called by the javascript frontend.
 
-First, navigate over to the web-server directory to build, tag, and push your image as explained above. Now let's take a look at creating the objects.
+First, navigate over to the web-server directory to build, tag, and push your image. 
+
+```bash
+$ docker build . -t web-server:latest
+$ docker tag web-server:latest localhost:5000/web-server:latest
+$ docker push localhost:5000/web-server:latest
+```
+
+Now let's take a look at creating the objects.
 
 #### Creating Kubernetes a Pod/Deployment (Web-Server)
 
@@ -232,7 +304,7 @@ spec:
           image: localhost:5000/web-server:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8000
+            - containerPort: 8080
 ```
 There is nothing here we haven't seen yet.
 
@@ -255,7 +327,7 @@ spec:
   ports:
   - port: 8080
     name: web-server
-    targetPort: 8000
+    targetPort: 8080
   selector:
     app: web-server
 ```
@@ -264,7 +336,15 @@ Notice here, instead of using the type of `ClusterIP`, we are using `LoadBalance
 
 ### The Kubernetes Authentication Object
 
-This service handles authentication by issuing out JSON Web Tokens which are required when using the endpoints made by our web-server service. Because the rollout of this object to our kubernetes cluster is identical to our previous efforts, we will not go over it here. Here is the full file: 
+This service handles authentication by issuing out JSON Web Tokens which are required when using the endpoints made by our web-server service. Because the rollout of this object to our kubernetes cluster is identical to our previous efforts, we will not go over it here.
+
+```bash
+$ docker build . -t auth:latest
+$ docker tag auth:latest localhost:5000/auth:latest
+$ docker push localhost:5000/auth:latest
+```
+
+Here is the full file: 
 
 ```bash
 apiVersion: apps/v1
@@ -303,91 +383,6 @@ spec:
   selector:
     app: auth
 ```
-
-### The Kubernetes Persistent Storage Objects
-
-To create a persistent storage of our GridDB instance, we need to create a file for the persistent volume and then another one for the persisten volume claim. Once we do that, we create the PV and then the PVC which will bound together. We then tell our deployment to use that volume if everything goes well, our data will persist, even if the host machine goes down or it needs to be rebooted for maintence.
-
-#### Persistent Volume
-
-First let's get into the PV: 
-
-```bash
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: griddb-server-pv
-spec:
-  storageClassName: standard
-  accessModes:
-  - ReadWriteOnce
-  capacity:
-    storage: 2Gi
-  volumeMode: Filesystem
-  hostPath:
-    path: "/var/lib/gridstore/data"
-```
-
-Here we are setting the storage class name, the kind, and the path on the host machine to use as our path of data. Using the host as the source of the data is only for dev purposes; in a production setting, you would likely set up an azure cloud storage or something similar. 
-
-
-```bash 
-$ kubectl create -f pv.yaml
-```
-
-#### Persistent Volume Claim
-
-Next let's make the volume claim. This kubernetes object will seek out any volumes which match the characteristics it needs and once it finds it, automatically binds itself to that volume, thus allowing it to be mounted onto a deployment/pod.
-
-```bash
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: griddb-server-pvc
-spec:
-  storageClassName: standard
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-```
-
-The most important thing is that the `storageClassName` match between the two items.
-
-```bash 
-$ kubectl create -f pvc.yaml
-```
-
-And now let's add our volume information to our griddb-server deployment.
-
-```bash
-    spec:
-      volumes:
-        - name: griddb-pv-storage
-          persistentVolumeClaim:
-            claimName: griddb-server-pvc
-      containers:
-        - name: griddbcontainer
-          image: localhost:5000/griddb-server:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 10001
-          volumeMounts:
-            - mountPath: "/var/lib/gridstore/data"
-              name: griddb-pv-storage
-```
-
-And now we can see here that we are mounting both the persistent storage and the claim to our griddb-server deployment.
-
-You can delete the svc and then re-make it to reflect the changes.
-
-```bash
-$ kubectl delete deployment griddb-server-deployment
-$ kubectl create -f griddb-server.yaml
-```
-
-You won't need to worry about this messing with the griddb-server svc -- kubernetes will simply reject that because it already exists.
 
 ## Conclusion
 
