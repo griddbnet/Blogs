@@ -19,6 +19,7 @@ RUN dpkg -i griddb-c-client_5.0.0_amd64.deb
 RUN wget --no-check-certificate https://github.com/griddb/cli/releases/download/v5.0.0/griddb-ce-cli_5.0.0_amd64.deb
 RUN dpkg -i griddb-ce-cli_5.0.0_amd64.deb
 
+ADD gridstore.conf /var/lib/gridstore/conf
 
 ADD start-griddb2.sh /
 RUN chmod +x start-griddb2.sh

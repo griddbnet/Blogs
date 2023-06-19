@@ -3,11 +3,24 @@ kind: PersistentVolume
 metadata:
   name: griddb-server-pv
 spec:
-  storageClassName: standard
+  storageClassName: slow
   accessModes:
   - ReadWriteOnce
   capacity:
-    storage: 2Gi
+    storage: 1Gi
   volumeMode: Filesystem
   hostPath:
-    path: "/var/lib/gridstore/data"
+      path: "/mnt/griddb/data"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: griddb-server-pvc
+spec:
+  storageClassName: slow
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
