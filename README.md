@@ -219,6 +219,8 @@ Another section what I will mention is `securityContext` and the `env`. First, t
 
 And so now, when we tell kubernetes to create this pod, kubernetes will ensure that this pod is always up and running; if an error occurs and the container crashes, kubernetes will be aware of the situation and delete and spin up a new pod. It is so robust that if you wish to restart a pod, the way to do so is to delete the pod and let Kubernetes auto-restart it.
 
+The replicas section is also important to note -- it is what allows for robustness of our application. For objects like web-server and authentication, we can set the replica number to something higher than 1, meaning there will be that many pods of the item. This means that if one goes down, you can have redundant pods there to still serve up all of your content. The one caveat is the GridDB pod -- because it is a database, you can not reliably create replica pods of that object. If it goes down, the data will not be available anymore if reading from other pods.
+
 The very last thing to point out is at the top: `Kind`. We are setting the kind of kubernetes object to deployment, which will create a pod. There is an API setting to select `Pod` here but it is mostly relegated to niche situations; deployments are more robust and well-rounded objects.
 
 As explained before, we will also need to create a service to handle the networking.
