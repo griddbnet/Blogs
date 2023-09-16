@@ -2,237 +2,202 @@
 
 We have written articles on how to use python to create no "frontend-code" dashboards: [Create Interactive Dashboard with Streamlit, Python and GridDB](https://griddb.net/en/blog/create-interactive-dashboard-with-streamlit-python-and-griddb/) & [Create an Interactive Dashboard using Python and the GridDB Cloud](https://griddb.net/en/blog/create-an-interactive-dashboard-using-python-and-the-griddb-cloud-no-frontend-code-needed/) and have also tackled articles on how to use node.js and react.js to create simple dashboards: [An Alternative to the MERN Stack: Create a Query Builder with the GERN Stack](https://griddb.net/en/blog/gern-stack/) &  [CRUD Operations with the GERN Stack](https://griddb.net/en/blog/crud-gern-stack/). 
 
-In this article we will be following a similar approach, but will instead be leveraging [bubble](https://bubble.io/), a "no code" solution which allows users to create web pages without fussing without any frontend code at all. This means that once we have set up our backend API with some basic endpoints, we can build a usable dashboard for our IoT data without even touching HTML/CSS/JavaScript.
-
-Despite not needing to use frotnend code, we will still need to tackle using some node.js code for the backend which communicates directly with GridDB. You can of course create your web server in any language you prefer, but for this article we used node.js. 
-
-As for the dataset, we elected to use simulated IoT data that we created in the free udemy course: [Create a working IoT Project - Apache Kafka, Python, GridDB](https://www.udemy.com/course/create-a-working-iot-project-with-iot-database-griddb/learn/lecture/37912776#overview). The quick rundown of it is: we run the project and it will fill up our GridDB docker container with a bunch of simulated IoT data with numerous meter data.
-
-So, the flow of operations are as follows: 
-
-1. Run the IoT Project to ingest data to our GridDB Server
-2. Create node.js server with the GridDB node.js connector
-3. Write endpoints for CRUD (Create, Read, Update, Delete) reading our IoT data
-4. Expose the port of your server
-5. use bubble api connector to reach data points
-6. Create bubble integration frontend (line chart, dropdown menus, tables) 
-
-We will go through each of the numbered list one by one until the project is done, though we will not being too much in-depth with certain aspects.
-
-## Ingesting Data with IoT Project
-
-You can sign up for the free udemy course to learn about this portion more in-depth; it will show you how to connect on the field sensors and send data through Kafka to your GridDB database (among other things). 
-
-If you don't quite have the time for a full course, the source code of this project can be found here: [iot_project](https://github.com/griddbnet/iot_project) with the instructions on how to run this in the README. Once you run it, as explained above, you will have many containers full of various IoT-like data rows which will be the basis of the data we display on Bubble.
-
-Next up will be reading and updating this data with a node.js server.
-
-## Create a node.js Server with a GridDB Connector
-
-Next we will need a way for our Bubble dashboard to communicate with our running GridDB server. On the Bubble side, we can use the API Connector to make HTTP Requests -- this part is easy. From our server side, we will need to create our endpoints to serve up our GridDB Data. We will create a node.js project with express and the GridDB Connector as our packages: 
-
-<div class="clipboard">
-<pre><code class="language-sh">    "dependencies": {
-      "express": "^4.18.2",
-      "griddb-node-api": "^0.8.5"
-    }</code></pre>
-</div>
-
-If are just following along and cloning this repo, you can simply run `npm install` to install the GridDB nodejs connector and express.js. 
-
-## Write Endpoints for CRUD Actions Using our IoT Data
-
-This section will be kind of a rehash of our previous articles so we will not go into much detail here. The basic idea will be as follows: use express.js to create endpoints which will query GridDB and allow the user to make different queries based on different inputs on the Bubble no code frontend. Following CRUD, we will need to make endpoints to fulfill the acronym. Let's take a look at a few functions here for querying GridDB and sending the data to our frontend: 
-
-First, let's look at connecting to our GridDB docker container: 
-
-<div class="clipboard">
-<pre><code class="language-js">const griddb = require('griddb-node-api');
-var factory = griddb.StoreFactory.getInstance();
-var store = factory.getStore({
-    "notificationMember": "griddb-server:10001",
-    "clusterName": "myCluster",
-    "username": "admin",
-    "password": "admin"
-});</code></pre>
-</div>
-
-The node.js code and the GridDB Container share a docker network so we simply connect to the GridDB docker container's hostname/service name ("griddb-server"). Next, let's take a look at some helper functions and then the API endpoints themselves.
-
-The star of this show is a generic funtion to query GridDB. It will take in three parameters: our container name (our IoT data dictates that each sensor gets its own GridDB container), our query string, and lastly, the number of points to display in our frontend. With these parameters we can allow the user to select the sensor ID and the number of points to display on Bubble: 
-
-<div class="clipboard">
-<pre><code class="language-js">const queryCont = async (containerName, queryStr, numOfPoints) => {
-
-    var data = [];
-    try {
-        // console.log("containerName: ", containerName, queryStr, numOfPoints);
-        const col = await store.getContainer(containerName)
-        const query = await col.query(queryStr)
-        const rs = await query.fetch(query)
-        let i = 0;
-        while (rs.hasNext()) {
-            if (i < numOfPoints) {
-                let temp = {}
-                temp["timestamp"] = rs.next()[0]
-                temp["kwh"] = rs.next()[1]
-                temp["temp"] = rs.next()[2]
-                data.push(temp)
-                i++
-            } else {
-                break;
-            }
-        }
-        return data
-    } catch (error) {
-        console.log("error: ", error)
-    }
-}</code></pre>
-</div>
+In this article we will be following a similar approach, but will instead be leveraging [bubble](https://bubble.io/), a "no code" solution which allows users to create web pages without fussing with any code at all. This means that we can create our app without touching any coding language at all; we will be using the GridDB Cloud'd web api to completely omit the need to touch anything besides our Bubble App Editor; indeed, this means we can build a usable Todo application with persistent data without even touching HTML/CSS/JavaScript. 
 
-And here is what the endpoints look like: 
+Because we are utilizing the GridDB Cloud, there is nothing that must be done to prep before beginning this process -- we can simply dive right in. This also means that the only prerequisite tied to this article is an account on Bubble.
 
-<div class="clipboard">
-<pre><code class="language-js">app.get('/get', async (req, res) => {
-    try {
-        var id = req.query.id;
-        var numOfPoints = req.query.points;
-        let queryStr = "select *"
-        let containerName = "meter_" + id;
-        var results = await queryCont(containerName, queryStr, numOfPoints);
-        res.json({
-            results
-        });
-    } catch (error) {
-        console.log("try error: ", error)
-    }
-});
 
-app.put("/update", jsonParser, async (req, res) => {
-    const newRowObj = req.body
-    const id = req.query.id;
-    try {
-        let x = await updateRow(newRowObj, id)
-        console.log("return of update row: ", x)
-        res.status(200).json(true);
-    } catch (err) {
-        console.log("update endpoitn failure: ", err)
-    }
-});</code></pre>
-</div>
+## What We're Building -- Todo Application
 
-The `/get` endpoint will allow the user to select the number of points to display and of the ID which they wish to display. And predictably, `/update` will grab the rowkey of the row and update the values outside of the rowkey based on the user's input. In this case, we will only allow the user to change the kwh.
+As explained above, we will be creating a simple todo app without touching any backend or frontend code. What we expect of a todo app is to be able to write an ad-hoc statement which must be set as either true or false, with false being the default option. With this in mind, to start, this means our application we will need a text input for our user to enter in the task they wish to accomplish. Beyond that, we will also need a simple data table to display the user's todo list, with the crucial ability of being able to toggle its complete-ness.
 
-## Expose the Port 
+We will create this basic premise using the Bubble App editor and make API calls directly to our GridDB Cloud instance. The frontend portions -- the stuff we see -- is handled by the Bubble editor. The data being retrieved from our cloud instance is retrieved using the Bubble API Connector Plugin.
 
-Now that our server is ready to be queried and send back data as an HTTP Response, we can expose our port to be queried by the Bubble API Connector plugin. For this portion, I exposed the port via docker compose and then also expose the port on my Azure firewall (I am running this node.js server on an Azure virtual machine)
+## Sending & Receiving Data -- API Calls
 
-<div class="clipboard">
-<pre><code class="language-sh">  api:
-    build:
-      context: api
-      dockerfile: Dockerfile
-    container_name: api
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
-    depends_on: 
-      - griddb-server
-    links: 
-      - griddb-server</code></pre>
-</div>
+Before we start placing items onto the display side of the application, let's get our API Calls in order. We want to showcase the gamut of CRUD (Create, Read, Update, Delete) operations here, so we will need a minimum of four different API calls. And because we are using a no code environment, we can use HTTP Requests to reach our cloud-based GridDB instance. 
 
-And now we can query our endpoints, for example: `http://serverIP:8080/get`.
+### First Steps
 
-## Bubble.io
+Let's install the Bubble API Connector Plugin and begin creating our API Calls.
 
-And now on to the star of the show: bubble. After initial sign up and creating of a new app, let's get the endpoints set up. To do so, we will need to grab some plugins: API Connector, Chart Element, and Google Material Icons. The API Connector will be how we reach our node.js endpoints to display our data. So to start, let's create our API Calls
+Head over to the Plugins section of the Bubble editor and create a add an API from the API Connector. Let's call this one GridDB Cloud.
 
-### Bubble API Connector HTTP Requests
+Because we already know that each HTTP Request made to the GridDB Cloud will need HTTP Basic Authentication, we can set that at the top. We will also need to include "Content-Type: application/json" as a shared header for all calls.
 
-Let's go through each of the endpoint calls we will need to make before we fiddle around with the frontend design.
+![](./images/General-header.png)
 
-#### Get Rows
+Great! Now every call we make will be sent with our authentication credentials as well as the content type. Next let's create our first API call.
 
-First up: `Get Rows`. We will create this one as "Data" (as opposed to action). We will make a GET HTTP Call to `/get` with two parameters: Id & num, which correspond to container name and number of points. 
+### READ - API Call
 
-![]screenshot
+First up is our GET request. The URL Template for this API call is like this: `https://cloud1.griddb.com/$TrialId/griddb/v2/$ClusterName/dbs/$DatabaseName/containers/#ContainerName/rows`. So let's enter this into our first API Call from the Bubble Editor. The first decision we must make when creating our API call is to choose whether to "use as" `Action` or `Data`. If you choose data, you can directly select to grab the data as a data source for a table for example. But if you choose Action -- which we will be doing here -- it allows you to set in the workflow after an event occurs (ie. run this ACTION once the user clicks that button, etc).
 
-You can see here we are using `[]` as params in our API call. We will be inserting dynamic data based on what the user inputs from the frontend into our endpoint. For now, we will set some default values: id: 0, num: 10. 
+Next we need to select the type of HTTP Request: we select `POST` because we will be sending the limit of how many rows we wish to receive in the body of our request.
 
-And then once we have everything down, we can initialize the call and set the type of data: 
+![](./images/READ-api-call.png)
 
-![]screenshot
+In the body section you can add how many rows to limit to our query. Because our todo app likely won't exceed 10 or so, we can safely set it to 100 and be done with it.
 
-#### Delete Row with Row Key and Container ID
+    {"limit":100}
 
-Next we will want to be able to delete a row. We will have a user click a row on the data table and send back to the server the container name and the rowkey (timestamp) to be deleted. this will call the `/delete` endpoint with a POST request. This API Call will be of type "Action" which means we can call it from the frontend by clicking buttons, etc.
+Once you have entered in your information, click the "initialize call" button to select the type of data we are working with.
 
-![]screenshot
+![](./images/initialize-call.png)
 
-And then of course please initialize it.
+This process also saves the API Call so that we can use it in our design process.
 
-#### Update Row
+### CREATE - Adding a Todo Item
 
-Now let's create the update row Action. The idea behind this call will be to send back an entire row of data with a valid rowkey and container name to the backend. It will update that row with the corresponding rowkey with the new data attached in the body of that API call. 
+Our next API call will be that which will create our todo items. The best way to handle this will be to allow the user to enter text to an input box and then send the HTTP request with the user input somewhere in the request. Let's set this API call as an `Action` and as a PUT request. 
 
-![]screenshot
+Where it gets interesting is the body of our request. Because we need to include our user inputs, we will need set the item name as dynamic, which we can accomplish by using the less than and greater than symbols to encapsulate our variable: 
 
-The JSON Body we send in the HTTP Request will attempt to receive from the parameters from user input from the frontend.
+![](./images/CREATE-api-call.png)
 
-The idea is: the user clicks an edit button on a specific row in the data table and it will allow the user to change the kwh column of that row. We will then send the data to the backend to update the GridDB container data.
+Now we will just need to figure out how to insert dynamic data when making our HTTP request.
 
-#### Create Row
+### DELETE - Deleting a Todo Item
 
-Lastly we will include a simple create row button into the frontend which will simply create a new row with the current time and randomly generated values for kwh and temp. This is the "fakest" implementation of a real IoT usecase because normally you'd be creating new containers for new sensors, but this is just a simple showcase of how you could create new data. So let's make a new API Call action to create this: 
+Delete will be similar to CREATE, just with a different HTTP method (DELETE) and a different body. The body of our request only requires the rowkey of the row in which we wish to delete, or in this case, the name of the todo item.
 
-![]screenshot
+Once again, this value needs to be dynamic so we will figure out how to send the dynamic value with our request later (hint: workflows).
 
-Because the id is generated server side, the only parameter we need is the meter ID number to correspond to the container name in which we will write our new row of generated data into. 
+![](./images/DELETE-api-call.png)
 
-To verify that the data is in the container, you can of course run the GridDB CLI tool on the GridDB docker container to query your container; your new row should be at the bottom as the time of that row will be the most recent.
+### UPDATE - Updating a Todo Item (toggle completeness)
 
-## Bubble Frontend Designing
+Our updating process will be an API call (used as `Action`) as well, but this one will be a lot more involved. The reason for this as that to update to a row from "false" to "true" on whether it's complete or not, requires two dynamic values from different locations. We need the exact rowkey of the item to be toggled, and then we also need the opposite of the current value of completeness. We will go over our approach of handling this portion.
 
-This portion will also not be too in-depth as it's mostly related to using Bubble itself, but here is what I did. I created two input dropdowns which correspond to the meter ID and number of points. 
+But here's what that call looks like, (it is largely the same as our previous efforts):
 
+![](./images/UPDATE-api-call.png)
 
-![]screenshot
+Next let's take a look at our design panel. 
 
-AOnce a user selects both of these, the chart and the table will appear with the GridDB Data: 
+## Designing Our Todo App
 
-![]screenshot
+From the design tab, we will be mostly writing about how to get the data from our cloud instance into the visual part of our app. The way I handled the input portion was with the following elements: two buttons and one text input. We use one button for "get todo items" which triggers our GET API call, and then the other button is responsible for CREATING a todo item based on the text inside the text input. 
 
-The button to generate new rows will also appear once the user has selected the container ID we want to work with
+### Data Formatting Issue
 
-### How to Set Up Bubble Table
+For the data table, you can use the new Bubble data table element. One issue is that you will see that the data source for the data table requires a specific kind of source. If you change our API call of READ to be used as `Data` instead of `Action`, you could use it here, but the data won't be useful. This is because the data to be returned from the GridDB Cloud is simply an array `[[take out trash, false], [read book, true]]`, but Bubble really excels when the data is JSON format with key value pairs: `[{item: take out trash, complete: false}, {item: read book, complete: true}]`. 
 
-As explained earlier, I will not be going too in-depth with how to set up this, just the portions where we make API Calls from the frontend and how to display said data. With that out of the way, let's take a look at building out data table.
+So for now, we will need to go back to our workflow and plugins to alter the data coming back from our GridDB Cloud to be managable for Bubble to be useful.
 
-First we need to set the `type of content` as a Get Rows result. This corresponds to our first endpoint of type "data". We set the data source as `Get Row's results`. From there we set the table column names and then the first row we set as repeating and then enter in text boxes with the value corresponding to the column: for example, the timestamp column will have dynamic data of: `current row's Get Rows result's timestamp:formatted in ISO`. You can do the same for the kwh. Because this row is repeating, every row under this one will copy the format of what we set up, but will go through the entire structure of our data coming from our Get Rows API Call.
+## Toolbox API
 
-![screenshot]
+To alter and massage the data being received by the GridDB Cloud, we will be using this third party plugin called [Toolbox](https://bubble.io/plugin/toolbox-1488796042609x768734193128308700). This plugin allows us to use JavaScript code inside of our no code solution. And though this kind of goes against the NO CODE ethos, there are times when getting your hands a little dirty with some code can make things much simpler in the long run
 
-Beyond that, we will also be including two extra columns: one for the delete button and one for the edit button. The delete button will have an action directly tied to it: delete this row by sending an API Call to /delete with the row key -- we can accomplish this with a workflow. We set one up to occur whenever our delete button is clicked. The trickier of these two actions will be the Edit Button
+### JavaScript in Bubble?
 
-#### Setting up The Update Button and Action
+Once you've got the Plugin installed, we can now worry about taking the data pulled in from our cloud instance and transformed into some structure our Bubble design panel will accept. At first, my instinct was to give key-value pairs as explained above, but once implementing, I realized simple an array with singular values is more than enough (ie. `[[take out trash, read book, write blog], [false, true, false]]` instead of `[[take out trash, false], [read book, true]]`).
 
-Next let's make the edit button. On the design side, let's add another column to the datatable and add in an edit button using the material icon. Now double click it and start/edit the workflow. 
+So now let's create a workflow which will take our data from the API call and transform it. Let's create workflow starting from the event of the "Get Todo Items" button being clicked. Once clicked, step 1 will be to call the GridDB Cloud - Get All Todo Items action. Then in step 2 we use the "Run Javascript" action from our newly installed plugin.
 
-From here we can set it up so that when a user clicks the edit button, it will bring up a popup (which you can set up on the design tab). Ideally the flow works like this: there is a row the user wants to edit, the user clicks the edit button, a pop up appears with an input and a button. The input is already pre-filled with the current kwh value for that row. The user can change that value and click that button, which will then send that data back to the server to update the row with the corresponding row. 
+![](./images/workflow-get.png)
 
-The tricky part of trying to implement this is that when we send our data via our API Call, the Request body needs to have all columns filled, including data we are not displaying (the schema is: timestamp, kwh, temp), but we are only displaying the kwh. So how do we send all relevant data to the API Call when the row is missing the `temp` value? We use states.
+We can set the `paramlist1` as the result of step 1. And now we can manipulate our dataset in the javascript snippet above. 
 
-When the user clicks the edit button, we kick off our workflow to show the popup. We also set the data of our to be displayed inside the popup and then finally the kwh value into the input. The other values we need, timestamp and temp, will be saved states. And so when we make our API call at the end of this workflow, we can pull the user input kwh value from the input, the timestamp (rowkey) from the state, and the temp from the state as well. Now we can send off our HTTP request to our server to update the data.
+```javascript
+console.log(properties);
+var len = properties.paramlist1.length();
+var mylist = properties.paramlist1.get(0,len);
+var items = [];
+var done = [];
+console.log(mylist)
+for (let i = 0; i < mylist.length; i+=2) {
+    items.push(mylist[i]);
+    done.push(mylist[i+1]);
+}
+bubble_fn_todo({
+value_list: items,
+  outputlist1: done});
+```
 
-![]screenshot
+Essentially all we are doing here is creating two new arrays, one for all of the todo item names, and one for the complete-ness of each item. The array position of each row will match, so `items[0]` will match the bool of `done[0]`. Once done, we will call the special Toolbox function called `bubble_fn_$yourname`. We will call our global variable `todo` (hence `bubble_fn_todo`) and we will stick our array values inside of that object. We will give the `value_list` as our item names and the `outputlist1` as our complete-ness array.
 
-### The Line Chart
+Once we have this set, we can head to back to the design portion and grab the values of our arrays.
 
-Much like the datatable, the line chart will be the same. It will use the API Call data "Get Rows" and will use the user inputs from the dropdown for the parameters of our API Call. We will then set the value expression as the current point kwh and the label expression as the row's timestmap
+### JavaScript to Bubble -- Design Element
 
-![]screenshot
+In the design element, we will need to place an element called `Javascript to Bubble` into our frontend design; you can make it small and put it out of the way if you're worried about it interfering with your design. But the element MUST BE VISIBLE so that we can extract the values for our data table. So create this element and edit (double click the element in the design panel). 
+
+![](./images/js2b-todo.png)
+
+While editing add in the suffix we chose for our bubble_fn_suffix (`todo`) and then select publish value -- this will allow us to see the `value_list` (which we can set as type `text`). We can also set our `outputlist1` as type `text`.
+
+And now when we go back to our data table's data source, we can now select our `Javascript to Bubble`'s value list
+
+![](./images/data-table-value.png)
+
+And now we can set the columns and rows. The columns we set as our column names. The first repeating row, let's add text boxes in there (these will repeat). Now we set the text of the Todo Item as "Current row's text" -- this grabs the value from `value_list`, which if you remember, is the array of todo item names, so it auto populate the entire column full of your data. 
+
+![](./images/current-row-text.png)
+
+The completeness column is a bit more involved.
+
+We need to set this one to `Javascript to Bubble`'s `outputlist1` `:item#` `Current row's index`. We stitch together four items to get our result (remember when I said the array position for the completed array matches our item name array?). Essentially we just saw using that array, use the same index position as the column next to it (the todo item `current row text`) as the basis from our completed array. I hope that makes sense.
+
+![](./images/completed-data-table.png)
+
+## The Rest of the Workflow Items
+
+We have already discussed the workflow item which will grab all todo items and display them in a data table. Here is that screenshot again:
+
+![](./images/workflow-get.png)
+
+Next let's see how to send a todo item to our server with our POST Request.
+
+### Post Todo Items
+
+Whenever the user clicks the "Post Todo Item" button, we will fire off the following workflow: 
+
+![](./images/workflow-create.png)
+
+Essentially, once we click the button, we fire off the Post Todo Item API action we made earlier, but we need to add in the dynamic data from our dropdown menu.  You can see that in the screenshot as `Input A's value`. 
+
+### Delete Items
+
+Again, once the delete button is clicked, we fire off our `Delete Item` API Action. Here we will do a second step of changing the [state](https://manual.bubble.io/help-guides/data/temporary-data/custom-states) of our icon to "delete" to indicate to the user that this current row has been marked for deletion to our server.
+
+![](./images/workflow-delete.png)
+
+### Update Item -- Working with Workflow States
+
+This one was the most complicated as I explained above. The reason is because we need two different dynamic data points from two different locations. We also need to flip the completeness (ie. from false to true or vice versa). To do so we will again be using javascript. 
+
+When the edit button is clicked, we will fire off the workflow to run javascript: 
+
+![](./images/workflow-update.png)
+
+Here is the code: 
+
+```javascript
+let completed = `js2b todo's outputl;ist1:item#Current row's index`
+completed = Boolean(completed)
+completed = !completed
+bubble_fn_bool(completed)
+```
+
+Essentially all we're doing is grabbing the current value of the completed column for the row in which the button was clicked and then flipped. Then we are sending the newly flipped value to the bubble_fn_suffix of `completed`. 
+
+In step 2 of our workflow we will set a custom state called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). 
+
+And now in the design panel let's create the `Javascript to Bubble` design element with the suffix called `bool`
+
+![](./images/js2b-bool.png)
+
+The thing we want to do here is set the checkbox for `trigger event`. This means when we click the edit button it will run the javascript, set the state, and then trigger this event. So now back to the workflow we go: 
+
+![](./images/workflow-update-2.png)
+
+Once that event is triggered, step 1 will call the API Action we set up called Update Row. This one needs two dynamic values, so we will set them as seen in the screenshot above. The Rowkey is the custom state we created, so we set it as `js2b todo's item todo_item` (notice the quotes) and then the completed portion is the value we set in our javascript but from our js2b's bool's value. The one thing to note here is that we set a special formatting rule (`:formatted as text`) because Bubble uses "yes/no" instead of true bool values, but our GridDB Cloud will expect bool values. So we can tell Bubble to format "yes" as "true" and "no" as "false". 
+
+![](./images/workflow-update-3.png)
 
 ## Conclusion
 
-And that's all! With no frontend code whatsoever -- and very minimal backend code -- we were able to display complex data fromn GridDB onto an attractive and interactive dashboard.
+And with that, we have created our (nearly) code-free todo app backed by the robust GridDB cloud database with persistent storage. 
+
+For our next attempt at this, we will plan to attack creating a simple IoT dashboard using no code!
