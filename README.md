@@ -30,7 +30,7 @@ Before we start placing items onto the display side of the application, let's ge
 
 Let's install the Bubble API Connector Plugin and begin creating our API Calls.
 
-Head over to the Plugins section of the Bubble editor and create a add an API from the API Connector. Let's call this one GridDB Cloud.
+Head over to the Plugins section of the Bubble editor and create an API from the API Connector. Let's call this one GridDB Cloud.
 
 Because we already know that each HTTP Request made to the GridDB Cloud will need HTTP Basic Authentication, we can set that at the top. We will also need to include "Content-Type: application/json" as a shared header for all calls.
 
@@ -96,6 +96,12 @@ Here is what it looks like:
 
 ![](./images/ui.png)
 
+### Creating Our GridDB Containers
+
+In GridDB, tables are called containers. Before we begin designing our app, we must create our container in our GridDB Cloud using the schema discussed above. You can create your container in two ways, either by using the Bubble API Calls, but since this only needs to be run once, you can simply use the GridDB Cloud portal to create your collection container: 
+
+![](./images/create-collection.png)
+
 ### Data Formatting Issue
 
 For the data table, you can use the new Bubble data table element. One issue is that you will see that the data source for the data table requires a specific kind of source. If you change our API call of READ to be used as `Data` instead of `Action`, you could use it here, but the data won't be useful. This is because the data to be returned from the GridDB Cloud is simply an array `[[take out trash, false], [read book, true]]`, but Bubble really excels when the data is JSON format with key value pairs: `[{item: take out trash, complete: false}, {item: read book, complete: true}]`. 
@@ -132,13 +138,17 @@ value_list: items,
   outputlist1: done});
 ```
 
-Essentially all we are doing here is creating two new arrays, one for all of the todo item names, and one for the complete-ness of each item. The array position of each row will match, so `items[0]` will match the bool of `done[0]`. Once done, we will call the special Toolbox function called `bubble_fn_$yourname`. We will call our global variable `todo` (hence `bubble_fn_todo`) and we will stick our array values inside of that object. We will give the `value_list` as our item names and the `outputlist1` as our complete-ness array.
+Essentially all we are doing here is creating two new arrays, one for all of the todo item names, and one for the completeness of each item. The array position of each row will match, so `items[0]` will match the bool of `done[0]`. Once done, we will call the special Toolbox function called `bubble_fn_$yourname`. We will call our global variable `todo` (hence `bubble_fn_todo`) and we will stick our array values inside of that object. We will give the `value_list` as our item names and the `outputlist1` as our completeness array.
 
 Once we have this set, we can head to back to the design portion and grab the values of our arrays.
 
 ### JavaScript to Bubble -- Design Element
 
-In the design element, we will need to place an element called `Javascript to Bubble` into our frontend design; you can make it small and put it out of the way if you're worried about it interfering with your design. But the element MUST BE VISIBLE so that we can extract the values for our data table. So create this element and edit (double click the element in the design panel). 
+In the design element, we will need to place an element called `Javascript to Bubble` into our frontend design; you can make it small and put it out of the way if you're worried about it interfering with your design. But the element MUST BE VISIBLE so that we can extract the values for our data table. 
+
+![](./images/js2bubble.png)
+
+So create this element and edit (double click the element in the design panel). 
 
 ![](./images/js2b-todo.png)
 
@@ -209,6 +219,8 @@ In step 2 of our workflow we will create a custom [state](https://manual.bubble.
 
 Essentially what we were doing here is creating a variable to save a value which we can retrieve later. In this case, we are saving the "current row text" (aka the todo item name) into the state `todo_item` (aka variable) to be retrieved later. We need this because we need to pull this value to make our HTTP request and the rowkey is needed.
 
+![](./images/custom-state.png)
+
 And now in the design panel let's create the `Javascript to Bubble` design element with the suffix called `bool`
 
 ![](./images/js2b-bool.png)
@@ -233,4 +245,4 @@ One last note about using Custom States: we can use them to change icons/colors/
 
 And with that, we have created our (nearly) code-free todo app backed by the robust GridDB cloud database with persistent storage. 
 
-For our next attempt at this, we will plan to attack creating a simple IoT dashboard using no code!
+For our next attempt at this, we will plan to attempt to create a simple IoT dashboard using no code!
