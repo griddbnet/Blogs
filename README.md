@@ -174,11 +174,15 @@ Whenever the user clicks the "Post Todo Item" button, we will fire off the follo
 
 Essentially, once we click the button, we fire off the Post Todo Item API action we made earlier, but we need to add in the dynamic data from our dropdown menu.  You can see that in the screenshot as `Input A's value`. This value is selectable from the "dynamic data" part.
 
+Please make note of the double quotation marks around the dynamic value. If left off, this will produce an error. Another note: you can simply add the quotes in the API call rather than in the dynamic insertion. The main point is that the data text should be wrapped in double quotes. (ie. ["laundry"] vs [laundry])
+
 ### Delete Items
 
 Again, once the delete button is clicked, we fire off our `Delete Item` API Action. Here we will do a second step of changing the [state](https://manual.bubble.io/help-guides/data/temporary-data/custom-states) of our icon to "delete" to indicate to the user that this current row has been marked for deletion to our server.
 
 ![](./images/workflow-delete.png)
+
+Same as above: please make note of the double quotation marks around the dynamic value. If left off, this will produce an error. Another note: you can simply add the quotes in the API call rather than in the dynamic insertion. The main point is that the data text should be wrapped in double quotes. (ie. ["laundry"] vs [laundry])
 
 ### Update Item -- Working with Workflow States
 
@@ -199,7 +203,11 @@ bubble_fn_bool(completed)
 
 Essentially all we're doing is grabbing the current value of the completed column for the row in which the button was clicked and then flipped. Then we are sending the newly flipped value to the bubble_fn_suffix of `completed`. 
 
-In step 2 of our workflow we will create a custom [state](https://manual.bubble.io/help-guides/data/temporary-data/custom-states) called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). Essentially what we were doing here is creating a variable to save a value which we can retrieve later. In this case, we are saving the "current row text" (aka the todo item name) into the state `todo_item` (aka variable) to be retrieved later. We need this because we need to pull this value to make our HTTP request and the rowkey is needed.
+In step 2 of our workflow we will create a custom [state](https://manual.bubble.io/help-guides/data/temporary-data/custom-states) called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). It is of type "text"
+
+![](./images/custom_state_todo_item.png)
+
+Essentially what we were doing here is creating a variable to save a value which we can retrieve later. In this case, we are saving the "current row text" (aka the todo item name) into the state `todo_item` (aka variable) to be retrieved later. We need this because we need to pull this value to make our HTTP request and the rowkey is needed.
 
 And now in the design panel let's create the `Javascript to Bubble` design element with the suffix called `bool`
 
@@ -212,6 +220,14 @@ The thing we want to do here is set the checkbox for `trigger event`. This means
 Once that event is triggered, step 1 will call the API Action we set up called Update Row. This one needs two dynamic values, so we will set them as seen in the screenshot above. The Rowkey is the custom state we created, so we set it as `js2b todo's item todo_item` (notice the quotes) and then the completed portion is the value we set in our javascript but from our js2b's bool's value. The one thing to note here is that we set a special formatting rule (`:formatted as text`) because Bubble uses "yes/no" instead of true bool values, but our GridDB Cloud will expect bool values. So we can tell Bubble to format "yes" as "true" and "no" as "false". 
 
 ![](./images/workflow-update-3.png)
+
+
+#### Changing Icon Based on State
+
+One last note about using Custom States: we can use them to change icons/colors/visual details based on the state. For example, the edit doneness button, we change the icon and color based on the value of the "complete" column. If the value in that specific row is "true", it sets to a "stop" icon with red to indicate it can be changed to "false". And then vice-versa: if it's false, it shows a positive green check mark indicating we can flip it to "done".
+
+![](./images/edit-icon-state.png)
+
 
 ## Conclusion
 
