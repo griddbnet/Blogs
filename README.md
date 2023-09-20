@@ -190,7 +190,7 @@ bubble_fn_bool(completed)
 
 Essentially all we're doing is grabbing the current value of the completed column for the row in which the button was clicked and then flipped. Then we are sending the newly flipped value to the bubble_fn_suffix of `completed`. 
 
-In step 2 of our workflow we will create a custom state called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). Essentially what we were doing here is creating a variable to save a value which we can retrieve later. In this case, we are saving the "current row text" (aka the todo item name) into the state `todo_item` (aka variable) to be retrieved later. We need this because we need to pull this value to make our HTTP request and the rowkey is needed.
+In step 2 of our workflow we will create a custom [state](https://manual.bubble.io/help-guides/data/temporary-data/custom-states) called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). Essentially what we were doing here is creating a variable to save a value which we can retrieve later. In this case, we are saving the "current row text" (aka the todo item name) into the state `todo_item` (aka variable) to be retrieved later. We need this because we need to pull this value to make our HTTP request and the rowkey is needed.
 
 And now in the design panel let's create the `Javascript to Bubble` design element with the suffix called `bool`
 
