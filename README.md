@@ -11,7 +11,16 @@ Because we are utilizing the GridDB Cloud, there is nothing that must be done to
 
 As explained above, we will be creating a simple todo app without touching any backend or frontend code. What we expect of a todo app is to be able to write an ad-hoc statement which must be set as either true or false, with false being the default option. With this in mind, to start, this means our application we will need a text input for our user to enter in the task they wish to accomplish. Beyond that, we will also need a simple data table to display the user's todo list, with the crucial ability of being able to toggle its completeness.
 
+The schema for our app will be very simple: it is a COLLECTION container with a two columns, one for the item name, and one for completeness of each item.
+
+| Item Name   | Complete |
+|-------------|----------|
+| @RowKey Clean house | false    |
+
+
 We will create this basic premise using the Bubble App editor and make API calls directly to our GridDB Cloud instance. The frontend portions -- the stuff we see -- is handled by the Bubble editor. The data being retrieved from our cloud instance is retrieved using the Bubble API Connector Plugin.
+
+![](./images/ui.png)
 
 ## Sending & Receiving Data -- API Calls
 
