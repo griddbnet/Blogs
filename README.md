@@ -1,21 +1,21 @@
-# Using A No Code Solution to Display your IoT Data with GridDB
+# How to Utilize GridDB as the Backend to your No-Code Bubble App
 
 We have written articles on how to use python to create no "frontend-code" dashboards: [Create Interactive Dashboard with Streamlit, Python and GridDB](https://griddb.net/en/blog/create-interactive-dashboard-with-streamlit-python-and-griddb/) & [Create an Interactive Dashboard using Python and the GridDB Cloud](https://griddb.net/en/blog/create-an-interactive-dashboard-using-python-and-the-griddb-cloud-no-frontend-code-needed/) and have also tackled articles on how to use node.js and react.js to create simple dashboards: [An Alternative to the MERN Stack: Create a Query Builder with the GERN Stack](https://griddb.net/en/blog/gern-stack/) &  [CRUD Operations with the GERN Stack](https://griddb.net/en/blog/crud-gern-stack/). 
 
-In this article we will be following a similar approach, but will instead be leveraging [bubble](https://bubble.io/), a "no code" solution which allows users to create web pages without fussing with any code at all. This means that we can create our app without touching any coding language at all; we will be using the GridDB Cloud'd web api to completely omit the need to touch anything besides our Bubble App Editor; indeed, this means we can build a usable Todo application with persistent data without even touching HTML/CSS/JavaScript. 
+In this article we will be following a similar approach, but will instead be leveraging [bubble](https://bubble.io/), a "no code" solution which allows users to create web pages without fussing with any code. We will be using the GridDB Cloud Web API to completely omit the need to touch anything besides our Bubble App Editor.
 
 Because we are utilizing the GridDB Cloud, there is nothing that must be done to prep before beginning this process -- we can simply dive right in. This also means that the only prerequisite tied to this article is an account on Bubble.
 
 
 ## What We're Building -- Todo Application
 
-As explained above, we will be creating a simple todo app without touching any backend or frontend code. What we expect of a todo app is to be able to write an ad-hoc statement which must be set as either true or false, with false being the default option. With this in mind, to start, this means our application we will need a text input for our user to enter in the task they wish to accomplish. Beyond that, we will also need a simple data table to display the user's todo list, with the crucial ability of being able to toggle its complete-ness.
+As explained above, we will be creating a simple todo app without touching any backend or frontend code. What we expect of a todo app is to be able to write an ad-hoc statement which must be set as either true or false, with false being the default option. With this in mind, to start, this means our application we will need a text input for our user to enter in the task they wish to accomplish. Beyond that, we will also need a simple data table to display the user's todo list, with the crucial ability of being able to toggle its completeness.
 
 We will create this basic premise using the Bubble App editor and make API calls directly to our GridDB Cloud instance. The frontend portions -- the stuff we see -- is handled by the Bubble editor. The data being retrieved from our cloud instance is retrieved using the Bubble API Connector Plugin.
 
 ## Sending & Receiving Data -- API Calls
 
-Before we start placing items onto the display side of the application, let's get our API Calls in order. We want to showcase the gamut of CRUD (Create, Read, Update, Delete) operations here, so we will need a minimum of four different API calls. And because we are using a no code environment, we can use HTTP Requests to reach our cloud-based GridDB instance. 
+Before we start placing items onto the display side of the application, let's get our API Calls in order. We want to showcase the gamut of CRUD (Create, Read, Update, Delete) operations here, so we will need a minimum of four different API calls. And because we are using a no code environment, we can use HTTP Requests to reach our cloud-based GridDB instance. A quick note: the GridDB Cloud is currently only available for Japanese Users. You can request a free trial here: (https://form.ict-toshiba.jp/download_form_griddb_cloud/)[https://form.ict-toshiba.jp/download_form_griddb_cloud/]. Other users can use the non-cloud GridDB Community Edition's Web API. See how to install GridDB CE here: (YouTube Video)[https://www.youtube.com/watch?v=U1WAezk59pY&list=PLZiizI6Euect9q64akYBkiqLMS78UTwjO&index=6] and the Web API: (YouTube Video)[https://www.youtube.com/watch?v=8-pw93P-lm0&list=PLZiizI6Euect9q64akYBkiqLMS78UTwjO&index=18].
 
 ### First Steps
 
@@ -31,7 +31,7 @@ Great! Now every call we make will be sent with our authentication credentials a
 
 ### READ - API Call
 
-First up is our GET request. The URL Template for this API call is like this: `https://cloud1.griddb.com/$TrialId/griddb/v2/$ClusterName/dbs/$DatabaseName/containers/#ContainerName/rows`. So let's enter this into our first API Call from the Bubble Editor. The first decision we must make when creating our API call is to choose whether to "use as" `Action` or `Data`. If you choose data, you can directly select to grab the data as a data source for a table for example. But if you choose Action -- which we will be doing here -- it allows you to set in the workflow after an event occurs (ie. run this ACTION once the user clicks that button, etc).
+First up is our GET request. The URL Template for this API call is like this: `https://cloud1.griddb.com/$TrialId/griddb/v2/$ClusterName/dbs/$DatabaseName/containers/#ContainerName/rows`. So let's enter this into our first API Call from the Bubble Editor. The first decision we must make when creating our API call is to choose whether to "use as" `Action` or `Data`. If you choose data, you can directly select to grab the data as a data source for a table for example. But if you choose Action -- which we will be doing here -- it allows you to set in the workflow after an event occurs (ie. run this ACTION once the user clicks that button, etc). If you are using the GridDB Community Edition, please refer to this Web API specification (https://github.com/griddb/webapi/blob/master/WebAPISpecification.md)[https://github.com/griddb/webapi/blob/master/WebAPISpecification.md)].
 
 Next we need to select the type of HTTP Request: we select `POST` because we will be sending the limit of how many rows we wish to receive in the body of our request.
 
@@ -55,11 +55,11 @@ Where it gets interesting is the body of our request. Because we need to include
 
 ![](./images/CREATE-api-call.png)
 
-Now we will just need to figure out how to insert dynamic data when making our HTTP request.
+Now we will just need to figure out how to insert dynamic data when making our HTTP request. Another note is that the "private" checkbox needs to be unchecked to allow the values from these API calls to be visible to our Bubble Design elements.
 
 ### DELETE - Deleting a Todo Item
 
-Delete will be similar to CREATE, just with a different HTTP method (DELETE) and a different body. The body of our request only requires the rowkey of the row in which we wish to delete, or in this case, the name of the todo item.
+Delete will be similar to CREATE, just with a different HTTP method (DELETE) and a different body. The body of our request only requires the rowkey of the row in which we wish to delete, or in this case, the name of the todo item. The data received from this API call is empty, so please select that option accordingly.
 
 Once again, this value needs to be dynamic so we will figure out how to send the dynamic value with our request later (hint: workflows).
 
@@ -73,11 +73,19 @@ But here's what that call looks like, (it is largely the same as our previous ef
 
 ![](./images/UPDATE-api-call.png)
 
+Notice the data type in the top right: it also empty.
+
 Next let's take a look at our design panel. 
 
 ## Designing Our Todo App
 
 From the design tab, we will be mostly writing about how to get the data from our cloud instance into the visual part of our app. The way I handled the input portion was with the following elements: two buttons and one text input. We use one button for "get todo items" which triggers our GET API call, and then the other button is responsible for CREATING a todo item based on the text inside the text input. 
+
+Under these elements, we will of course be adding in our data table which will display our actual Todo Items.
+
+Here is what it looks like: 
+
+![](./images/ui.png)
 
 ### Data Formatting Issue
 
@@ -155,7 +163,7 @@ Whenever the user clicks the "Post Todo Item" button, we will fire off the follo
 
 ![](./images/workflow-create.png)
 
-Essentially, once we click the button, we fire off the Post Todo Item API action we made earlier, but we need to add in the dynamic data from our dropdown menu.  You can see that in the screenshot as `Input A's value`. 
+Essentially, once we click the button, we fire off the Post Todo Item API action we made earlier, but we need to add in the dynamic data from our dropdown menu.  You can see that in the screenshot as `Input A's value`. This value is selectable from the "dynamic data" part.
 
 ### Delete Items
 
@@ -174,7 +182,7 @@ When the edit button is clicked, we will fire off the workflow to run javascript
 Here is the code: 
 
 ```javascript
-let completed = `js2b todo's outputl;ist1:item#Current row's index`
+let completed = `js2b todo's outputllist1:item#Current row's index`
 completed = Boolean(completed)
 completed = !completed
 bubble_fn_bool(completed)
@@ -182,7 +190,7 @@ bubble_fn_bool(completed)
 
 Essentially all we're doing is grabbing the current value of the completed column for the row in which the button was clicked and then flipped. Then we are sending the newly flipped value to the bubble_fn_suffix of `completed`. 
 
-In step 2 of our workflow we will set a custom state called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). 
+In step 2 of our workflow we will create a custom state called `todo_item` to save `current row's text` which corresponds to the row's rowkey (which needs to be 100% accurate to update the proper row). Essentially what we were doing here is creating a variable to save a value which we can retrieve later. In this case, we are saving the "current row text" (aka the todo item name) into the state `todo_item` (aka variable) to be retrieved later. We need this because we need to pull this value to make our HTTP request and the rowkey is needed.
 
 And now in the design panel let's create the `Javascript to Bubble` design element with the suffix called `bool`
 
