@@ -27,7 +27,7 @@ Finally, if your data is sparse, the non-aggregate query’s interpolation can b
 
 ## Hands On
 
-Now, let’s get started trying it out. We’ll use the already ingested dataset from GridDB’s Udemy Course. [https://www.udemy.com/course/create-a-working-iot-project-with-iot-database-griddb](https://www.udemy.com/course/create-a-working-iot-project-with-iot-database-griddb).
+Now, let’s get started trying it out. We’ll use the already ingested dataset from GridDB’s 101 Course [https://www.youtube.com/playlist?list=PLZiizI6Euect9q64akYBkiqLMS78UTwjO](https://www.udemy.com/course/create-a-working-iot-project-with-iot-database-griddb). Dataset can be found here on [Kaggle](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k). Code for ingestion can be found on the GitHub page (it's written in node.js.)
 
 As this is a SQL function, it is only available via GridDB’s JDBC or WebAPI interface. In this blog we’ll be using the Python module `jpype.dbapi2` as it natively supports SQL and the Timestamp to Python datetime object conversion. Compare the following two outputs using `jaydebe` and `jpype.dbapi2`: jaydebe outputs a string while jype.dbapi2 outputs a datetime object. 
 
