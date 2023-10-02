@@ -43,7 +43,7 @@ Now let’s try an aggregate query:
 
 If you have a boolean column that represents an event and want to see that happened in each time grouping, you can use the MAX aggregation:
 
-![](./images/groubyrange4.png)
+![TODO MISSING IMAGE](./images/groubyrange4.png)
 
 To count the number of events (or the number times a column is TRUE) in each time window, you need to add an additional clause AND column to your query:
 
@@ -51,10 +51,25 @@ To count the number of events (or the number times a column is TRUE) in each tim
 
 Now that we know how to use the group by range aggregate function, we can build some diagrams that show useful statistics such as a bar chart showing the min and max values of each time group.
 
+First since group b range is typically used to down sample data, lets compare every data point stored versus a daily interpolation:
+
+![TODO ADD IMAGE All points vs Daily interpolation]()
+
+Now we visualize daily minimums and maximums:
+
 ![](./images/groubyrange6.png)
 
 We can expand on the above graph by adding data from the interpolated values too. Note how the interpolated value (red) is slightly different from the AVG aggregate (yellow).
 
 ![](./images/groubyrange7.png)
+
+
+Finally, group by range can also interpolate values between data points with the FILL function. This is useful if data is sparse or at random intervals and you want to build a table. You can see the miissing intervals without using fill and how FILL(PREVIOUS) continues to use the last value until a new value is met while FILL(LINEAR) interpolates the values between data points.
+
+![TODO add no_fill vs prev_fill vs_ linear_fill table](./images/groupbyrange9.png)
+
+Visualizing the above data shows the concept even more clearly with the FILL(PREVIOUS) plot nearly matching the lines drawn by MatPlotLib between unfilled points:
+
+![TODO add Linear vs Previous vs All plot](./images/groupbyrange10.png)
 
 If you’d like to experiment with the group by range function, the above Jupyter notebook can be downloaded from GridDB.net’s GitHub repository here [https://github.com/griddbnet/Blogs/blob/group_by_range/group_by_range.ipynb](https://github.com/griddbnet/Blogs/blob/group_by_range/group_by_range.ipynb).
