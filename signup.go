@@ -105,10 +105,10 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 
 		http.SetCookie(w,
 			&http.Cookie{
-				Name:     "token",
-				Value:    token,
-				Expires:  expirationTime,
-				HttpOnly: true,
+				Name:    "token",
+				Value:   token,
+				Expires: expirationTime,
+                HttpOnly: true,
 			})
 
 		http.Redirect(w, r, "/auth", http.StatusFound)

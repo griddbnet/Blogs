@@ -1,4 +1,4 @@
-In previous articles, we have covered how you can make a REST API with GridDB and various different technologies -- [Java](https://griddb.net/en/blog/create-a-java-web-api-using-griddb-and-spring-boot/), [node.js](https://griddb.net/en/blog/crud-gern-stack/), and even [Go](https://griddb.net/en/blog/crud-gern-stack/). And though we have briefly touched on it before, we have never gotten into specific details on how we could protect our data/endpoints with web-based authentication.
+In previous articles, we have covered how you can make a REST API with GridDB and various different technologies -- [Java](https://griddb.net/en/blog/create-a-java-web-api-using-griddb-and-spring-boot/), [node.js](https://griddb.net/en/blog/crud-gern-stack/), and even [Go](https://griddb.net/en/blog/build-your-own-go-web-app-with-microservices-and-griddb/). And though we have briefly touched on it before, we have never gotten into specific details on how we could protect our data/endpoints with web-based authentication.
 
 In today's article, we will be going over JSON Web Tokens -- what they are, how to implement them, and how to use them to protect your GridDB's REST API.
 
@@ -13,6 +13,15 @@ As explained above, you will need the following:
 - [GridDB Go Connector](https://github.com/griddb/go_client)
 
 All go libraries needed (besides the GridDB Go Connector) will be listed in the `go.mod` file attached to the source code of this project.
+
+## Building Project
+
+To run this project, you will need to have this project inside of your $GOPATH along with the GridDB Go Connector installed and properly working. And then running is easy:
+
+```bash
+$ go build
+$ ./main
+```
 
 ## JSON Web Tokens an Introduction
 
@@ -32,11 +41,12 @@ First, let's allow users to sign up using a very simple html page with two input
 
 #### Sign Up Page
 
-For the Sign in Page, we will be using Go's templating from the standard library. This allows us to easily create HTML pages which will be parsed by our Go compiler and served up by our net/http library. Let's take a look at our Sign Up page first. We will first declare our routes in our main function and then make the function which will handle taking the form data, encrypting the password, making a connection with our GridDB server, and then finally saving the User/Pass combination.
+For the pages which we will sever up to our users, we will be using Go's templating from the standard library. This allows us to easily create HTML pages which will be parsed by our Go compiler and served up by our net/http library. Let's take a look at our Sign Up page first. We will first declare our routes in our main function using the `net/http` package and then make the function which will handle the responses and requests, serving up our html template file which will take the form data, encrypt the password, make a connection with our GridDB server, and then finally save the User/Pass combination into GridDB.
 
-First let's show some of these helper GridDB funtions.
+First let's show some of these helper GridDB functions.
 
 ```golang
+// Connect to GridDB
 func ConnectGridDB() griddb.Store {
 	factory := griddb.StoreFactoryGetInstance()
 
@@ -54,6 +64,7 @@ func ConnectGridDB() griddb.Store {
 	return gridstore
 }
 
+// helper function to "get" container as type griddb.Container
 func GetContainer(gridstore griddb.Store, cont_name string) griddb.Container {
 
 	col, err := gridstore.GetContainer(cont_name)
@@ -82,6 +93,7 @@ func QueryContainer(gridstore griddb.Store, col griddb.Container, query_string s
 	return rs, nil
 }
 
+// simple function used in signup.go in our SignIn function
 func saveUser(username, hashedPassword string) {
 	gridstore := ConnectGridDB()
 	defer griddb.DeleteStore(gridstore)
@@ -97,7 +109,7 @@ func saveUser(username, hashedPassword string) {
 
 }
 ```
-The function names in the above code box should adequetely describe its primary role/duty. We will use all of these functions in our Sign Up http handler function, meaning it will run when the route we declare in the main function receives a request. Here is the main function
+The function names in the above code box should adequately describe its primary role/duty. We will use all of these functions in our Sign Up http handler function, meaning it will run when the route we declare in the main function receives a request. Here is the main function
 
 ```golang
 //main.go
@@ -111,7 +123,7 @@ func main() {
 }
 ```
 
-Now let's take a look at the `SignUp` function. 
+Now let's take a look at the `SignUp` function (again, when we run our server and you make a request to `/signUp` the following function will run and handle our request and response).
 
 ```golang
 //signup.go
@@ -125,17 +137,19 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 
+		// type Credentials of a struct with two fields User & Password
 		creds := &Credentials{}
 		creds.Username = r.FormValue("username")
 		creds.Password = r.FormValue("password")
 
+		// Converting our user Password to a hashed password to save for security
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), 8)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
 		saveUser(creds.Username, string(hashedPassword))
-		http.Redirect(w, r, "/signIn", http.StatusFound)
+		http.Redirect(w, r, "/signIn", http.StatusFound) // redirect to sign in once you successfully sign up
 		return
 	}
 
@@ -183,7 +197,13 @@ And here is the template file:
 &lt;/html&gt;
 ```
 
-So, when we load this up, it will load the html page, prompting the user to create their unique username and password. From the Go code, we receive the two values, hash the password using the bcrypt library, and then save the values into our `Users` collection container (made simply using the GridDB CLI): `gs> createcollection users username string password string`. And then we can verify that our container exists
+
+
+So, when we load this up, it will load the html page, prompting the user to create their unique username and password. From the Go code, we receive the two values, hash the password using the bcrypt library, and then save the values into our `Users` collection container. 
+
+![sign-up-page](images/signup-page-no-token.png)
+
+By the way, if you're wondering how the `users` container was made, it was not made in the Go code. We simply opted to use the GridDB CLI to make it like so: `gs> createcollection users username string password string`. And then we can verify that our container exists
 
 ```bash
 gs[public]> showcontainer users
@@ -235,6 +255,7 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 		defer griddb.DeleteContainer(userCol)
 		userCol.SetAutoCommit(false)
 
+		// Grab the hashed password of the username from the form frontend
 		queryStr := fmt.Sprintf("select * FROM users where username = '%s'", creds.Username)
 		rs, err := QueryContainer(gridstore, userCol, queryStr)
 		defer griddb.DeleteRowSet(rs)
@@ -257,12 +278,14 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 
 		}
 
+		// Compare hashed passwords to ensure the correct rawtext password was entered
 		if err = bcrypt.CompareHashAndPassword([]byte(storedCreds.Password), []byte(creds.Password)); err != nil {
 			fmt.Println("unauthorized")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
+		// if successful,. issue out a token
 		token := IssueToken()
 		expirationTime := time.Now().Add(5 * time.Minute)
 
@@ -274,6 +297,7 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 				HttpOnly: true,
 			})
 
+		// Once given a cookie, we can redirect the user into the webpage which is only granted to users with tokens
 		http.Redirect(w, r, "/auth", http.StatusFound)
 		return
 	}
@@ -292,11 +316,15 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+
 As explained above, we are verifying that the username/password combo exist in our database. If they do, we can issue out a token using the `IssueToken()` function.
+
+![sign-up-page](images/sign-in-page.png)
+
 
 #### Creating and Issuing JSON Web Tokens
 
-Once we know that our user exists, we can issue out a token. The go jwt package does all of the heavy lifting here, all we are required to do is to supply it a secret key which we will get from our environment variables; we will also add some claims to add a bit more security. But overall, the code snippet for this portion is very small and quick
+Once we know that our user exists, we can issue out a token. The go jwt package does all of the heavy lifting here, all we are required to do is to supply it a secret key which we will get from our environment variables; we will also add some claims to add a bit more security. But overall, the code snippet for this portion is very small and quick. And as a note, our secret key is found in the file called key.env. Before you run this binary file, you will need to source the file `$ source key.env` because otherwise you'll have an empty signing key, resulting in an error.
 
 ```golang
 import (
@@ -315,7 +343,7 @@ var claims = &jwt.RegisteredClaims{
 func IssueToken() string {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	key := []byte(os.Getenv("SigningKey"))
+	key := []byte(os.Getenv("SigningKey")) // grabbed from the key.env file
 	if len(key) <= 0 {
 		fmt.Println("Key is less than length 0")
 		return ""
@@ -329,11 +357,20 @@ func IssueToken() string {
 }
 ```
 
-Once we get this token string, we can save it as a cookie to our user's browser. One small note is that we must include the flag when saving our cookie as `httpOnly`, as this prevents `XSRF` (Cross Site Request Forgery) attacks.
+Once we get this token string, we can save it as a cookie to our user's browser. One small note is that we must include the flag when saving our cookie as `HttpOnly`, as this prevents `XSRF` (Cross Site Request Forgery) attacks. You can read more about that here: [https://keeplearning.dev/nodejs-jwt-authentication-with-http-only-cookie-5d8a966ac059](https://keeplearning.dev/nodejs-jwt-authentication-with-http-only-cookie-5d8a966ac059).
+
+Another common (and sometimes recommended) approach of using your Token is to omit saving it in the cookies and instead require every endpoint that you create to need the token in the headers of the request. We took this approach in our previous blog seen here: [https://griddb.net/en/blog/build-your-own-go-web-app-with-microservices-and-griddb/](https://griddb.net/en/blog/build-your-own-go-web-app-with-microservices-and-griddb/).
+
+ As a quick example, here is some React.js code providing the token in our requests (from our previous blog).
+
+```javascript
+  const token = getJWT();
+  axios.get("/getData",{ headers:{"Token": token}}).then(response => response.data);
+```
 
 #### Protecting our GridDB Data
 
-Now that we have a sign up and sign in system in place with valid tokens being issued out once validated, we can now set up a system where certain routes can only be reached with a valid token. To do so, we can simply create a middlweware function which is run for every route we want to protect. Let's see what it looks like.
+Now that we have a sign up and sign in system in place with valid tokens being issued out once validated, we can now set up a system where certain routes can only be reached with a valid token. To do so, we can simply create a middlweware function which is run for every route we want to protect.
 
 ```golang
 //isAuthorized.go
@@ -382,9 +419,9 @@ func isAuthorized(endpoint func(http.ResponseWriter, *http.Request)) func(http.R
 
 ```
 
-Here we have a function which accepts an http handler as its one argument, and then returns one. So, it will take the handler, check the token exists and is valid, and if so, will return the original endpoint requested; if anything fails, we are met with a 400 http error code.
+Here we have a function which accepts an http handler as its one argument, and then returns one. So, it will take the handler, check if the token exists and is valid, and if so, will return the original endpoint requested; if anything fails, we are met with a 40X http error code.
 
-So let's take a look at our main function again which handled our web traffic's different routes
+So let's take a look at our main function again which -- if you remember -- handles our web traffic's different routes:
 
 ```golang
 func main() {
@@ -399,7 +436,15 @@ func main() {
 }
 ```
 
-You can see we added two new routes, `/auth` and `/data`. For auth, it simply renders an HTML page which can only be seen if your browser has a valid JWT in its cookies. In there, there's a button to display data from our GridDB server. This data was previously ingested from previous blogs like this one here: [Exploring GridDB's Group By Range Functionality](https://griddb.net/en/blog/exploring-griddbs-group-by-range-functionality/). 
+You can see we added two new routes, `/auth` and `/data`. For auth, it simply renders an HTML page which can only be seen if your browser has a valid JWT in its cookies.
+
+![auth page](images/auth-page-successful.png)
+
+You can see here that we now have token saved inside of our browser's storage. You will also notice that the `HttpOnly` flag is true! 
+
+The Show Data button will send a request to `/data` which will query GridDB and send back all data from a container called `device2`. This data was previously ingested from many previous blogs, like this one here: [Exploring GridDB's Group By Range Functionality](https://griddb.net/en/blog/exploring-griddbs-group-by-range-functionality/). 
+
+![data successful](images/data-endpoint-successful.png)
 
 You can see the code we use to query that dataset here: 
 
@@ -441,6 +486,8 @@ func DataEndPoints(w http.ResponseWriter, r *http.Request) {
 ```
 
 Once again, if your token is valid and not expired, it will print all of the data onto your web page. If the token is invalid in any way, you will be met with an error code.
+
+![data unsuccessful](images/data-page-unsuccessful.png)
 
 ## Conclusion
 
