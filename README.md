@@ -19,6 +19,7 @@ All go libraries needed (besides the GridDB Go Connector) will be listed in the 
 To run this project, you will need to have this project inside of your $GOPATH along with the GridDB Go Connector installed and properly working. And then running is easy:
 
 ```bash
+$ source key.env
 $ go build
 $ ./main
 ```
