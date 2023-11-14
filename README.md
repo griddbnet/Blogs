@@ -248,11 +248,35 @@ And here is the template file:
 
 
 
-So, when we load this up, it will load the html page, prompting the user to create their unique username and password. From the Go code, we receive the two values, hash the password using the bcrypt library, and then save the values into our `Users` collection container. 
+So, when we load this up, it will load the html page, prompting the user to create their unique username and password. From the Go code, we receive the two values, hash the password using the bcrypt library, and then save the values into our `Users` collection container. This container was created for you when you first ran the binary file: 
+
+```go
+func createUsersContainer() {
+	gridstore := ConnectGridDB()
+	defer griddb.DeleteStore(gridstore)
+	conInfo, err := griddb.CreateContainerInfo(map[string]interface{}{
+		"name": "users",
+		"column_info_list": [][]interface{}{
+			{"username", griddb.TYPE_STRING},
+			{"password", griddb.TYPE_STRING}},
+		"type":    griddb.CONTAINER_COLLECTION,
+		"row_key": true})
+	if err != nil {
+		fmt.Println("Create containerInfo failed, err:", err)
+		panic("err CreateContainerInfo")
+	}
+	_, e := gridstore.PutContainer(conInfo)
+	if e != nil {
+		fmt.Println("put container failed, err:", e)
+		panic("err PutContainer")
+	}
+
+}
+```
 
 ![sign-up-page](images/signup-page-no-token.png)
 
-By the way, if you're wondering how the `users` container was made, it was not made in the Go code. We simply opted to use the GridDB CLI to make it like so: `gs> createcollection users username string password string`. And then we can verify that our container exists
+Using the GridDB CLI, we can easily `showcontainer` for our `users` container -- we can even query it once we create our first user!
 
 ```bash
 gs[public]> showcontainer users
@@ -276,8 +300,6 @@ No  Name
 --------------------------
  0  username
 ```
-
-You can also query your `users` container once you have made a user or two to verify their existence before trying the Sign In Page.
 
 #### Sign In Page
 
