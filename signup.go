@@ -15,6 +15,28 @@ type Credentials struct {
 	Username string `json:"username"`
 }
 
+func createUsersContainer() {
+	gridstore := ConnectGridDB()
+	defer griddb.DeleteStore(gridstore)
+	conInfo, err := griddb.CreateContainerInfo(map[string]interface{}{
+		"name": "users",
+		"column_info_list": [][]interface{}{
+			{"username", griddb.TYPE_STRING},
+			{"password", griddb.TYPE_STRING}},
+		"type":    griddb.CONTAINER_COLLECTION,
+		"row_key": true})
+	if err != nil {
+		fmt.Println("Create containerInfo failed, err:", err)
+		panic("err CreateContainerInfo")
+	}
+	_, e := gridstore.PutContainer(conInfo)
+	if e != nil {
+		fmt.Println("put container failed, err:", e)
+		panic("err PutContainer")
+	}
+
+}
+
 func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("signUp.tmpl")
@@ -105,10 +127,10 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 
 		http.SetCookie(w,
 			&http.Cookie{
-				Name:    "token",
-				Value:   token,
-				Expires: expirationTime,
-                HttpOnly: true,
+				Name:     "token",
+				Value:    token,
+				Expires:  expirationTime,
+				HttpOnly: true,
 			})
 
 		http.Redirect(w, r, "/auth", http.StatusFound)

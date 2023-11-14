@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	createUsersContainer()
 
 	http.HandleFunc("/signUp", SignUp)
 	http.HandleFunc("/signIn", SignIn)

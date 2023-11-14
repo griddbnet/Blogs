@@ -1,6 +1,6 @@
 In previous articles, we have covered how you can make a REST API with GridDB and various different technologies -- [Java](https://griddb.net/en/blog/create-a-java-web-api-using-griddb-and-spring-boot/), [node.js](https://griddb.net/en/blog/crud-gern-stack/), and even [Go](https://griddb.net/en/blog/build-your-own-go-web-app-with-microservices-and-griddb/). And though we have briefly touched on it before, we have never gotten into specific details on how we could protect our data/endpoints with web-based authentication.
 
-In today's article, we will be going over JSON Web Tokens -- what they are, how to implement them, and how to use them to protect your GridDB's REST API.
+In this first part of a two part series, we will be going over JSON Web Tokens -- what they are, how to implement them, and how to use them to protect your GridDB's REST API. In the second part, we will be exploring more of the granularity granted to us by using JSON Web Tokens. So please keep an eye out for that article when it is available.
 
 To follow along, you will simply need to have Go installed on your machine, as well as GridDB and the GridDB Go Connector. All code in this article will be written in Go, except for the templating files which are in HTML.
 
@@ -8,20 +8,68 @@ To follow along, you will simply need to have Go installed on your machine, as w
 
 As explained above, you will need the following: 
 
-- [GridDB Server](https://docs.griddb.net/gettingstarted/using-apt/)
-- [Go](https://go.dev/doc/install)
-- [GridDB Go Connector](https://github.com/griddb/go_client)
+- [GridDB Server (v5.3)](https://docs.griddb.net/gettingstarted/using-apt/)
+- [Go v1.21.4](https://go.dev/doc/install)
 
-All go libraries needed (besides the GridDB Go Connector) will be listed in the `go.mod` file attached to the source code of this project.
+Because of the way the GridDB Go Connector works at the moment, part of the building and using process requires turning off the go 1.11 module feature (`go env -w GO111MODULE=off`). With this feature turned off, we are now expected to build out our project source code inside of the `$GOPATH`. We are also expected to manually `go get` all of our Go libraries associated with this project. We will include all such instructions in the next section `Building Project`.
+
+
 
 ## Building Project
 
-To run this project, you will need to have this project inside of your $GOPATH along with the GridDB Go Connector installed and properly working. And then running is easy:
+To run this project, you will need to have this project inside of your $GOPATH. This is how normal Go projects not utilizing go modules are expected to operate. For me, my project structure looks like so: 
+
+    /home/israel/go/
+                    └─ src
+                        └─ github.com
+                            └─ griddbnet
+                                └─ Blogs
+                                    └─ [all source code]
+
+
+But first, let's take on building the GridDB Go Client
+
+[GridDB Go Connector v0.8.4](https://github.com/griddb/go_client)
+
+First, make sure you download and install SWIG as instructed on the Go Client's README: 
+
+    $ wget https://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
+    $ tar xvfz swig-4.0.2.tar.gz
+    $ cd swig-4.0.2
+    $ ./autogen.sh
+    $ ./configure
+    $ make
+    $ sudo make install
+
+And then start the process of installing the GridDB Go Client. First, it's best if you set the `GOPATH` environment variable. If you type in `go env` into your terminal, it will show you what your Go installation is already using. Just copy that like so: 
+
+    $ export GOPATH=/home/israel/go
+
+And then: 
+
+    1. $ go env -w GO111MODULE=off
+    2. $ go get -d github.com/griddb/go_client
+    3. $ cd $GOPATH/src/github.com/griddb/go_client
+    4. $ ./run_swig.sh
+    5. $ go install
+
+And that's that! The Go Client is now ready to be used. Now let's `get` the source code of this project and the remaining required libraries: 
+
+    $ cd $GOPATH/src/github.com
+    $ mkdir griddbnet
+    $ cd griddbnet
+    $ git clone https://github.com/griddbnet/Blogs.git --branch jwt
+    $ cd Blogs
+    $ go env -w GO111MODULE=on
+    $ go get
+    $ go env -w GO111MODULE=off
+
+And then running is easy:
 
 ```bash
 $ source key.env
 $ go build
-$ ./main
+$ ./Blogs
 ```
 
 ## JSON Web Tokens an Introduction
