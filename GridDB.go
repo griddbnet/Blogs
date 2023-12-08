@@ -37,7 +37,7 @@ func ConnectGridDB() griddb.Store {
 }
 
 func GetContainer(gridstore griddb.Store, cont_name string) griddb.Container {
-
+	fmt.Println("Getting container " + cont_name)
 	col, err := gridstore.GetContainer(cont_name)
 	if err != nil {
 		fmt.Println("getting failed, err:", err)
@@ -62,6 +62,21 @@ func QueryContainer(gridstore griddb.Store, col griddb.Container, query_string s
 		return nil, err
 	}
 	return rs, nil
+}
+
+func saveUser(username, hashedPassword string) {
+	gridstore := ConnectGridDB()
+	defer griddb.DeleteStore(gridstore)
+
+	userCol := GetContainer(gridstore, "users")
+	err := userCol.Put([]interface{}{username, hashedPassword})
+	if err != nil {
+		fmt.Println("error putting new user into GridDB", err)
+	}
+
+	fmt.Println("Saving user into GridDB")
+	userCol.Commit()
+
 }
 
 func DataEndPoints(w http.ResponseWriter, r *http.Request) {

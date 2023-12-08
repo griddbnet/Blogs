@@ -22,10 +22,20 @@ input {
   <button type="submit">Show Data (device2)</button>
  </form>
 
+<br /><br /><br />
+
  <h3> Select your level of clearance </h3>
  <form action="/getToken" method="post">
   <fieldset>
-    <legend>Select Clearance Level</legend>
+    <legend>JSON Web Token Choices</legend>
+
+    <label for="Owner">Expiration in Days</label> 
+    <input type="number" id="expiration" name="expiration" min="1" max="365" />
+    </br>
+
+    <label for="Owner">Token Name</label> 
+    <input type="text" id="name" name="name" required />
+    </br>
 
     <input type="checkbox" id="role" name="basic" value="true" />
     <label for="basic">Basic</label><br />

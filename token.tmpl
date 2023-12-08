@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Token Page</title>
+</head>
+<body>
+    <h1>Token Page</h1>
+    {{ if .Basic }}
+        <p>Congrats, you are basic </p>
+        <a href="/basic"><button> GridDB Container - Basic</button></a>
+    {{ end }}
+
+    {{ if .Advisor }}
+        <p>You are an Advisor -- congrats!</p>
+        <a href="/advisor"><button> GridDB Container - Advisor</button></a>
+    {{ end }}
+
+    {{ if .Admin }}
+        <p>You are an Admin -- congrats!</p>
+        <a href="/admin"><button> GridDB Container - Admin</button></a>
+    {{ end }}
+
+    {{ if .Owner }}
+        <p>You are an Owner -- congrats!</p>
+        <a href="/owner"><button> GridDB Container - Owner</button></a>
+    {{ end }}
+</body>
+</html>

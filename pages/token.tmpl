@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.token {
+    word-wrap: break-word;
+   width: 177.6px;
+
+}
+
+.token-text {
+   color: rebeccapurple;
+   font-weight: bold;
+   }
+
+.route {
+    color: RGB(161, 127, 26);
+}
+
+.role-text {
+    font-size: 1.5em;
+}
+
+</style>
+
+    <title>Token Page</title>
+</head>
+<body>
+    <h1>Token Page</h1>
+    <h2>Token Name: {{ .Name }}</h2>
+    <div class="token">
+        <p class="token-text"> {{ .Value }} </p>
+    </div>
+
+    {{ if .Basic }}
+        <p class="role-text">Congrats, you are basic </p>
+        <p> With this role, you can visit <span class="route">/basic</span> by attaching the token as a bearer token</p>
+    {{ end }}
+
+    {{ if .Advisor }}
+        <p class="role-text"> You are an Advisor -- congrats!</p>
+         <p> With this role, you can visit <span class="route">/advisor</span> by attaching the token as a bearer token</p>
+    {{ end }}
+
+    {{ if .Admin }}
+        <p class="role-text">You are an Admin -- congrats!</p>
+        <p> With this role, you can visit <span class="route">/admin</span> by attaching the token as a bearer token</p>
+    {{ end }}
+
+    {{ if .Owner }}
+        <p class="role-text">You are an Owner -- congrats!</p>
+        <p> With this role, you can visit <span class="route">/owner</span> by attaching the token as a bearer token</p>
+    {{ end }}
+</body>
+</html>

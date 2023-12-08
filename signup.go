@@ -34,12 +34,11 @@ func createUsersContainer() {
 		fmt.Println("put container failed, err:", e)
 		panic("err PutContainer")
 	}
-
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
 
-	tmpl, err := template.ParseFiles("signUp.tmpl")
+	tmpl, err := template.ParseFiles("./pages/signUp.tmpl")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -76,7 +75,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 func SignIn(w http.ResponseWriter, r *http.Request) {
 
-	tmpl, err := template.ParseFiles("signIn.tmpl")
+	tmpl, err := template.ParseFiles("./pages/signIn.tmpl")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -121,13 +120,18 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
-		token := IssueToken()
-		expirationTime := time.Now().Add(5 * time.Minute)
+		expirationTime := time.Now().Add(5 * time.Hour)
+		// sending nil in place of slice of string for roles
+		token, err := IssueToken(Roles{}, expirationTime)
+		if err != nil {
+			fmt.Println("issue getting token", err)
+			fmt.Fprintf(w, "Issue getting token, possible no environment variable set")
+			return
+		}
 
 		http.SetCookie(w,
 			&http.Cookie{
-				Name:     "token",
+				Name:     "login",
 				Value:    token,
 				Expires:  expirationTime,
 				HttpOnly: true,
@@ -151,7 +155,7 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func AuthPage(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("home.tmpl")
+	tmpl, err := template.ParseFiles("./pages/home.tmpl")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -161,19 +165,4 @@ func AuthPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func saveUser(username, hashedPassword string) {
-	gridstore := ConnectGridDB()
-	defer griddb.DeleteStore(gridstore)
-
-	userCol := GetContainer(gridstore, "users")
-	err := userCol.Put([]interface{}{username, hashedPassword})
-	if err != nil {
-		fmt.Println("error putting new user into GridDB", err)
-	}
-
-	fmt.Println("Saving user into GridDB")
-	userCol.Commit()
-
 }
