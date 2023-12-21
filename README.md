@@ -1,421 +1,426 @@
-This is part two of our JSON Web Token series for GridDB. You can read the previous article here: [JSON Web Tokens Part I](). In that article, we went over: what JSON Web Tokens are, how to issue and check them, and how to protect your GridDB endpoints. The web tokens in that article were very simple, they were issued to users with proper username/password combinations and allowed access to the home page and to the `/data` page -- there was no granular control.
+## First Steps with GridDB Cloud
 
-In part two, we will be adding a more granular sort of authentication checking for our GridDB endpoints. Because JSON Web Tokens are simply hashed objects which can contain any sort of information you want to add, we can add any granular authentication we would like. In our case, we will have four different GridDB containers which are all protected via our JSON Web Token's granular token. This means with this new token, you may hace access to one GridDB container/endpoint, but not to another. With part one's tokens, it was all or nothing. 
+Your GridDB Cloud instance can be communicated with via HTTP Requests; every action needed to interact with GridDB will require formulating and issuing an HTTP Request with different URLs, parameters, methods, and payload bodies.
 
-The workflow of our completed project will look like this: the user signs in using their username/password which are saved into GridDB. Once signed in, the user is presented with a quick menu to create a new web token and is required to pick the expiration date of the token, a name for the token, and the various containers/clearance levels that this new token allows. With token in hand, the user is now required to attach it as an authorization bearer token in all requests to the protected routes. If a user tries to attach the bearer token to a route they do not have access to, they will be met with a 401 authentication http error.
+If you haven't already, please whitelist your public IP Address in the network settings of your GridDB Cloud Management dashboard. Alternatively, you can disable the firewall completely and allow free access to the Web API.
 
+### Checking your GridDB Connection
 
-## Prereqs
+Let's start with a sanity check and make sure that we can reach out to the GridDB instance.
 
-To follow along, you will simply need to have Go installed on your machine, as well as GridDB and the GridDB Go Connector. All code in this article will be written in Go, except for the templating files which are in HTML.
+#### Check Connection URL Endpoint
 
-As explained above, you will need the following: 
+The Web API uses a `base url` which we will use and expand upon to build out our requests. The base url looks like this:
 
-- [GridDB Server (v5.3)](https://docs.griddb.net/gettingstarted/using-apt/)
-- [Go v1.21.4](https://go.dev/doc/install)
+`https://cloud<number>.griddb.com/portal<number>/griddb/v2/`
 
-Because of the way the GridDB Go Connector works at the moment, part of the building and using process requires turning off the go 1.11 module feature (`go env -w GO111MODULE=off`). With this feature turned off, we are now expected to build out our project source code inside of the `$GOPATH`. We are also expected to manually `go get` all of our Go libraries associated with this project. We will include all such instructions in the next section `Building Project`.
+To check that our connection exists, we can ammend the following to our base url `/:cluster/dbs/:database/checkConnection`. Because we are not sending any data back to the server, we will use the `GET` HTTP method. 
 
+Lastly, we need to include `basic authentication` in our HTTP Request's headers. For this, we will need to include our username and password encoded into base64. With all that said, here is the final result 
 
+`https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection`
 
-## Building Project
+We can now use this URL with any number of interfaces to communicate with our database.
 
-To run this project, you will need to have this project inside of your $GOPATH. This is how normal Go projects not utilizing go modules are expected to operate. For me, my project structure looks like so: 
+#### cURL Request
 
-    /home/israel/go/
-                    └─ src
-                        └─ github.com
-                            └─ griddbnet
-                                └─ Blogs
-                                    └─ [all source code]
+To check our connection with cURL, you can use the following command 
 
+curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection' \
+--header 'Authorization: Basic YWRtaW46YWRtaW4='
 
-But first, let's take on building the GridDB Go Client
+Because it's a `GET` request, it's rather simple and we only needed to add in the authorization header. You should be able to run this and get an HTTP Response of `200`. If you receive `401 (unauthorized)`, check your credentials. If you recieve `403 (forbidden)`, ensure that your IP address is allowed to pass through the Cloud's firewall.
 
-[GridDB Go Connector v0.8.4](https://github.com/griddb/go_client)
+#### Python Request
 
-First, make sure you download and install SWIG as instructed on the Go Client's README: 
+Here is that same request written in Python 
 
-    $ wget https://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz
-    $ tar xvfz swig-4.0.2.tar.gz
-    $ cd swig-4.0.2
-    $ ./autogen.sh
-    $ ./configure
-    $ make
-    $ sudo make install
+```python
+import requests
 
-And then start the process of installing the GridDB Go Client. First, it's best if you set the `GOPATH` environment variable. If you type in `go env` into your terminal, it will show you what your Go installation is already using. Just copy that like so: 
+url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection"
 
-    $ export GOPATH=/home/israel/go
+payload = {}
+headers = {
+  'Authorization': 'Basic aXNyYWVsejppc3JhZWw='
+}
 
-And then: 
+response = requests.request("GET", url, headers=headers, data=payload)
 
-    1. $ go env -w GO111MODULE=off
-    2. $ go get -d github.com/griddb/go_client
-    3. $ cd $GOPATH/src/github.com/griddb/go_client
-    4. $ ./run_swig.sh
-    5. $ go install
+print(response.text)
+```
 
-And that's that! The Go Client is now ready to be used. Now let's `get` the source code of this project and the remaining required libraries: 
+#### JavaScript Request
 
-    $ cd $GOPATH/src/github.com
-    $ mkdir griddbnet
-    $ cd griddbnet
-    $ git clone https://github.com/griddbnet/Blogs.git --branch jwtII
-    $ cd Blogs
-    $ go env -w GO111MODULE=on
-    $ go get
-    $ go env -w GO111MODULE=off
+```js
+var myHeaders = new Headers();
+myHeaders.append("Authorization", "Basic aXNyYWVsejppc3JhZWw=");
 
-And then running is easy:
+var requestOptions = {
+  method: 'GET',
+  headers: myHeaders,
+  redirect: 'follow'
+};
+
+fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+```
+
+### Creating your First Container
+
+With our connection firmly established, we can create our first container -- either Collection or Time Series -- of which are similar to relational tables. You can read more about that here: [GridDB Data Model](https://docs.griddb.net/architecture/data-model/). 
+
+The URL suffix looks like this: `/:cluster/dbs/:database/containers`. This request can sometimes require a multitude of data and can have a big range, therefore this request will require an HTTP method of `POST`.
+
+The body of the request requires container name, container type, whether a rowkey exists (bool), and the schema. Let's first take a look at the structure outside of the context of an HTTP Request and then we will send it inside of a Request body. We will also need to include in our Request's headers that we are sending a data payload of type JSON like so: `'Content-Type: application/json'`
 
 ```bash
-$ source key.env
-$ go build
-$ ./Blogs
-```
-
-Note: the first command of this block simply adds the secret key into your environment variables. If you forget to include this, your server will run but it will not be able to issue or check any of the web tokens.
-
-## JSON Web Tokens and Granular Control 
-
-As explained above, the main feature we want to add is adding in a more granular control of our web tokens and therefore our endpoints. This means that we need to modify our function which issues out our web tokens, and then we also need to modify the process in which our web tokens are authenticated to check for specific roles granted to the user of the token. And finally, we will need to modify our authorization middleware to ensure the user is sending the requests with the web token in the headers -- previously we were simply ensuring that the token was present in the user's browser as a cookie.
-
-### Web Token Claims
-
-Both, when we create tokens and when we authenticate our tokens, we provide `claims`. These "are pieces of information asserted about a subject. For example, an ID token (which is always a JWT) can contain a claim called name that asserts that the name of the user authenticating is "John Doe". In a JWT, a claim appears as a name/value pair where the name is always a string and the value can be any JSON value. Generally, when we talk about a claim in the context of a JWT, we are referring to the name (or key)." (source)[https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims]
-
-The JWT library we are using comes with some default claims which are most typically used (issued-by, expiry, etc) and these are what we used in part one of this series. For this portion, we will be adding to this, adding in our own custom claims. Specifically, we will be adding in a `roles` struct which will allow us to state whether a user has access to specific GridDB containers (which are read through specific endpoints). We will also allow modification of the token's expiration date and for a field called `name`.
-
-### Adding Custom Claims
-
-To add to our customs claims, we can make a new struct called `MyClaims` and simply import the previously used default claims.
-
-```golang
-//specialRoleEndpoints.go
-type Roles struct {
-	Basic   bool   `json:"basic"`
-	Advisor bool   `json:"advisor"`
-	Admin   bool   `json:"admin"`
-	Owner   bool   `json:"owner"`
-	Value   string `json:"value"`
-	Name    string `json:"name"`
-}
-
-//issueTokens.go
-type MyCustomClaims struct {
-	Role Roles `json:"roles"`
-	jwt.RegisteredClaims
-}
-
-var claims = MyCustomClaims{
-	Roles{},
-	jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Unix(time.Now().Unix()*time.Hour.Milliseconds(), 0)),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-		Issuer:    "griddb-auth-server",
-	},
+{
+    "container_name": "time_series_container1",
+    "container_type": "TIME_SERIES",
+    "rowkey": true,
+    "columns": [
+        {
+            "name": "timestamp",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "active",
+            "type": "BOOL"
+        },
+        {
+            "name": "voltage",
+            "type": "DOUBLE"
+        }
+    ]
 }
 ```
 
-And now when we actually issue out our tokens, we can specify whether a user has a specifc role (with a bool). We also allow a user to specific the expiry time, so we have modified our `IssueTokens` function to take an expiry `time.Time` as one of its parameters (to go along with the Roles struct)
+Now we simply attach this to the body when we make our Request and we should create our new container. If successful, you should get a status code of `201 (Created)`.
 
-```golang
-//issueTokens.go
-func IssueToken(roles Roles, expiry time.Time) (string, error) {
+#### cURL
 
-	claims.Role = roles
-	claims.ExpiresAt = jwt.NewNumericDate(expiry)
+```bash
+curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
+--data '{
+    "container_name": "time_series_container1",
+    "container_type": "TIME_SERIES",
+    "rowkey": true,
+    "columns": [
+        {
+            "name": "timestamp",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "active",
+            "type": "BOOL"
+        },
+        {
+            "name": "voltage",
+            "type": "DOUBLE"
+        }
+    ]
+}'
+```
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	key := []byte(os.Getenv("SigningKey"))
-	if string(key) != "" {
-		if len(key) <= 0 {
-			return "", errors.New("Key is less than length 0")
-		}
-		s, err := token.SignedString(key)
-		if err != nil {
-			fmt.Printf("Error, couldn't read os environment: %q", err)
-			return "", errors.New("could not read environment var")
-		}
-		return s, nil
-	}
 
-	return "", errors.New("No environment variable set")
+#### Python
+
+```python
+import requests
+import json
+
+url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers"
+
+payload = json.dumps({
+  "container_name": "time_series_container1",
+  "container_type": "TIME_SERIES",
+  "rowkey": True,
+  "columns": [
+    {
+      "name": "timestamp",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "active",
+      "type": "BOOL"
+    },
+    {
+      "name": "voltage",
+      "type": "DOUBLE"
+    }
+  ]
+})
+headers = {
+  'Content-Type': 'application/json',
+  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA=='
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+#### JavaScript
+
+```js
+var myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
+myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
+
+var raw = JSON.stringify({
+  "container_name": "time_series_container1",
+  "container_type": "TIME_SERIES",
+  "rowkey": true,
+  "columns": [
+    {
+      "name": "timestamp",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "active",
+      "type": "BOOL"
+    },
+    {
+      "name": "voltage",
+      "type": "DOUBLE"
+    }
+  ]
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+```
+
+### Adding Rows of Data
+
+We can add rows of data directly inside of our container. The URL suffix: `/:cluster/dbs/public/containers/:container/rows`
+
+To `PUT` a row of data into our container, we will need to use the HTTP Method `PUT`. Similar to before, we will need to specify that our content is JSON and we will include the row data in our Request body.
+
+You can add multiple rows at once, you just need to make sure that your payload is formed to accomdate extra rows and that you don't have a trailing comma on the last row.
+
+```bash
+[
+  ["2023-12-15T10:25:00.253Z", true, 66.76],
+  ["2023-12-15T10:35:00.691Z", false, 89.31],
+  ["2023-12-15T10:45:00.032Z", false, 55.43]
+]
+```
+
+You of course also need to be sure that your row's schema matches your container's. If it doesn't, you will be met with an error message and a status code of `400 (Bad Request)`.
+
+#### cURL
+
+```bash
+curl --location --request PUT 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
+--data '[
+  ["2023-12-15T10:25:00.253Z", true, 66.76],
+  ["2023-12-15T10:35:00.691Z", false, 89.31],
+  ["2023-12-15T10:45:00.032Z", false, 55.43]
+]'
+```
+
+#### Python
+
+```python
+import requests
+import json
+
+url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows"
+
+payload = json.dumps([
+  [
+    "2023-12-15T10:25:00.253Z",
+    True,
+    66.76
+  ],
+  [
+    "2023-12-15T10:35:00.691Z",
+    False,
+    89.31
+  ],
+  [
+    "2023-12-15T10:45:00.032Z",
+    False,
+    55.43
+  ]
+])
+headers = {
+  'Content-Type': 'application/json',
+  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA=='
+}
+
+response = requests.request("PUT", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+#### JavaScript
+
+```js
+var myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
+myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
+
+var raw = JSON.stringify([
+  [
+    "2023-12-15T10:25:00.253Z",
+    true,
+    66.76
+  ],
+  [
+    "2023-12-15T10:35:00.691Z",
+    false,
+    89.31
+  ],
+  [
+    "2023-12-15T10:45:00.032Z",
+    false,
+    55.43
+  ]
+]);
+
+var requestOptions = {
+  method: 'PUT',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+```
+
+### Reading Container
+
+After writing to our containers, we will want to read from our containers. The URL suffix is exactly the same as before: `/:cluster/dbs/:database/containers/:container/rows` except now we will be using the `POST` method request. The data expected by the server in these requests are how we expect our row data returned to us -- for example, we can choose a row limit, an offset, any conditions, and a sort method. Here is what that body looks like: 
+
+```bash
+{
+  "offset" : 10,
+  "limit"  : 100,
+  "condition" : "id >= 50",
+  "sort" : "id desc"
 }
 ```
 
-So, when compared to before, our function now expects a Roles struct and uses that information when creating the web token itself. Before we get into the authorization portion, let's take a look at the html template file which will gather these options from our user.
+The one caveat with making this Request is that because it is a `POST` request, you will need to send *something* in the body of the request. Any of the parameters above will do, but the limit is likely the easiest option to include and has the added benefit of reducing server strain.
 
-### Accepting User-Specified Claims
+If successful, you should get a server response with a status code of `200 (OK)` and a body with the data requested. 
 
-To accomplish this, we simply add in inputs that allow a user to select their own preferences. We then use a POST request to send this information back to our server which will use this information to form our Roles struct and to set the expiration date.
-
-```html
-//home.tmpl
- <h3> Select your level of clearance </h3>
- <form action="/getToken" method="post">
-  <fieldset>
-    <legend>JSON Web Token Choices</legend>
-
-    <label for="Owner">Expiration in Days</label> 
-    <input type="number" id="expiration" name="expiration" min="1" max="365" />
-    </br>
-
-    <label for="Owner">Token Name</label> 
-    <input type="text" id="name" name="name" required />
-    </br>
-
-    <input type="checkbox" id="role" name="basic" value="true" />
-    <label for="basic">Basic</label><br />
-
-    <input type="checkbox" id="advisor" name="advisor" value="true" />
-    <label for="advisor">Advisor</label><br />
-
-    <input type="checkbox" id="admin" name="admin" value="true" />
-    <label for="admin">Admin</label><br />
-
-    <input type="checkbox" id="owner" name="owner" value="true" />
-    <label for="Owner">Owner</label>
-  </fieldset>
-      <div>
-    <button type="submit">Get Token</button>
-    </div>
-</form>
-```
-
-![auth page](images/auth-page.png)
-
-And then server-side we capture these inputs with our http handler
-
-```golang
-	roles := &Roles{}
-	if r.Method == "POST" {
-
-		roles.Basic, _ = strconv.ParseBool(r.FormValue("basic"))
-		roles.Advisor, _ = strconv.ParseBool(r.FormValue("advisor"))
-		roles.Admin, _ = strconv.ParseBool(r.FormValue("admin"))
-		roles.Owner, _ = strconv.ParseBool(r.FormValue("owner"))
-		roles.Name = r.FormValue("name")
-		fmt.Println("Received form values", roles)
-
-		expiryTime, _ := strconv.ParseInt(r.FormValue("expiration"), 10, 64)
-		expiryTimeInDays := expiryTime * 24
-		expirationTime := time.Now().Add(time.Duration(expiryTimeInDays) * time.Hour)
-
-		token, err := IssueToken(*roles, expirationTime)
-		if err != nil {
-			fmt.Println("issue getting token", err)
-			fmt.Fprintf(w, "Issue getting token, possible no environment variable set")
-			return
-		}
-		// We send the roles data struct to the template file. 
-		// We need the value to share with the user on the frontend
-		roles.Value = token 
-```
-
-### Authenticating Our Endpoints and Claims
-
-Now that we are armed with our newly formed tokens which are granularly-set, we must use a new authentication middleware to make sure the routes are protected properly. To do this, we will make a new function called `granularAuth`.
-
-As explained above, this function will check if the request made to this route has authorization section in the header. If it does, we will verify that the token is valid against our claims and our secret signing key. If this all checks out, our function will then specifically start checking the roles granted according to this token's specifications. For example, if the token claims the role for basic is True, then the route `/basic` will be granted for this request. If basic is False, it will tell the user that they have insufficient permissions to view this content. 
-
-If the request is granted, it will read the GridDB container of the same name (basic) and send it back to the requester as a response. First, let's take a look our new endpoint with its authorization middleware attached.
-
-```golang
-//main.go
-func main() {
-	createUsersContainer()
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/signIn", http.StatusSeeOther)
-	})
-
-	http.HandleFunc("/signUp", SignUp)
-	http.HandleFunc("/signIn", SignIn)
-
-	http.HandleFunc("/getToken", isAuthorized(GetToken))
-	http.HandleFunc("/auth", isAuthorized(AuthPage))
-	http.HandleFunc("/data", isAuthorized(DataEndPoints))
-
-	http.HandleFunc("/basic", granularAuth(Basic))
-	http.HandleFunc("/admin", granularAuth(Admin))
-	http.HandleFunc("/advisor", granularAuth(Advisor))
-	http.HandleFunc("/owner", granularAuth(Owner))
-
-	fmt.Println("Listening on port :2828....")
-	log.Fatal(http.ListenAndServe(":2828", nil))
-
+```bash
+{
+    "columns": [
+        {
+            "name": "timestamp",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "active",
+            "type": "BOOL"
+        },
+        {
+            "name": "voltage",
+            "type": "DOUBLE"
+        }
+    ],
+    "rows": [
+        [
+            "2023-12-15T10:25:00.253Z",
+            true,
+            66.76
+        ],
+        [
+            "2023-12-15T10:35:00.691Z",
+            false,
+            89.31
+        ],
+        [
+            "2023-12-15T10:45:00.032Z",
+            false,
+            55.43
+        ]
+    ],
+    "offset": 0,
+    "limit": 100,
+    "total": 3
 }
 ```
 
-Our old routes from the previous article are protected the `isAuthorized` function; our new routes can be protected by `granularAuth`. 
 
-Again, the flow is as follows: the user signs in  and is granted a `login` token. That user is then redirected to `/auth`, where they have an opportunity to create a new json web token. As of now, they cannot access any of the routes protected by `granularAuth`. Once they create a new token with the options presented to them, they will have a new token presented to them in the `/getToken` page. Armed with this token, they can now make HTTP Requests to the routes protected by `granularAuth`, but they must attach the token as an authorization bearer token.
+#### cURL
 
-![token page](images/token-page.png)
-
-And of course, their JSON Web Token must also explicitly grant access to that specific route to read that specific GridDB Endpoint. 
-
-Here is what that function looks like (caution: it's big and ugly): 
-
-```golang
-func granularAuth(endpoint func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		if r.Header["Authorization"] != nil {
-			authorization := r.Header.Get("Authorization")
-			tokenString := strings.TrimSpace(strings.Replace(authorization, "Bearer", "", 1))
-
-			token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-				return MySigningKey, nil
-			}, jwt.WithLeeway(5*time.Second))
-
-			if err != nil {
-				log.Fatal(err)
-			} else if claims, ok := token.Claims.(*MyCustomClaims); ok {
-				urlPath := strings.TrimLeft(r.URL.Path, "/")
-
-				gridstore := ConnectGridDB()
-				defer griddb.DeleteStore(gridstore)
-
-				col := GetContainer(gridstore, urlPath)
-				defer griddb.DeleteContainer(col)
-
-				rs, err := QueryContainer(gridstore, col, "select *")
-				if err != nil {
-					fmt.Println("Error getting container", err)
-					return
-				}
-				defer griddb.DeleteRowSet(rs)
-
-				var b strings.Builder
-
-				switch urlPath {
-				case "basic":
-					if claims.Role.Basic {
-						for rs.HasNext() {
-							rrow, err := rs.NextRow()
-							if err != nil {
-								fmt.Println("GetNextRow err:", err)
-								panic("err GetNextRow")
-							}
-
-							str := rrow[0].(string)
-							fmt.Fprintln(&b, str)
-						}
-						fmt.Fprintf(w, b.String())
-						endpoint(w, r)
-						return
-					} else {
-						w.WriteHeader(http.StatusUnauthorized)
-						fmt.Fprintln(w, "Insufficient Role to view this content")
-						fmt.Fprintln(w, "Please make sure you have the role of BASIC")
-					}
-				case "admin":
-					if claims.Role.Admin {
-						for rs.HasNext() {
-							rrow, err := rs.NextRow()
-							if err != nil {
-								fmt.Println("GetNextRow err:", err)
-								panic("err GetNextRow")
-							}
-
-							str := rrow[0].(string)
-							fmt.Fprintln(&b, str)
-						}
-						fmt.Fprintf(w, b.String())
-						endpoint(w, r)
-						return
-					} else {
-						w.WriteHeader(http.StatusUnauthorized)
-						fmt.Fprintln(w, "Insufficient Role to view this content")
-						fmt.Fprintln(w, "Please make sure you have the role of ADMIN")
-					}
-				case "advisor":
-					if claims.Role.Advisor {
-						for rs.HasNext() {
-							rrow, err := rs.NextRow()
-							if err != nil {
-								fmt.Println("GetNextRow err:", err)
-								panic("err GetNextRow")
-							}
-
-							str := rrow[0].(string)
-							fmt.Fprintln(&b, str)
-						}
-						fmt.Fprintf(w, b.String())
-						endpoint(w, r)
-						return
-					} else {
-						w.WriteHeader(http.StatusUnauthorized)
-						fmt.Fprintln(w, "Insufficient Role to view this content")
-						fmt.Fprintln(w, "Please make sure you have the role of ADVISOR")
-					}
-				case "owner":
-					if claims.Role.Owner {
-						for rs.HasNext() {
-							rrow, err := rs.NextRow()
-							if err != nil {
-								fmt.Println("GetNextRow err:", err)
-								panic("err GetNextRow")
-							}
-
-							str := rrow[0].(string)
-							fmt.Fprintln(&b, str)
-						}
-						fmt.Fprintf(w, b.String())
-						endpoint(w, r)
-						return
-					} else {
-						w.WriteHeader(http.StatusUnauthorized)
-						fmt.Fprintln(w, "Insufficient Role to view this content")
-						fmt.Fprintln(w, "Please make sure you have the role of OWNER")
-					}
-
-				default:
-					w.WriteHeader(http.StatusUnauthorized)
-					fmt.Fprintln(w, "Authorization Signature Invalid")
-				}
-
-			} else {
-				log.Fatal("unknown claims type, cannot proceed")
-			}
-
-		} else {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-	}
-}
+```bash
+curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
+--data '{
+  "limit"  : 100
+}'
 ```
 
-It's been explained already, but the basic premise here is that when this function is called, it will check if there is an authorization section in the request headers. Then it verifies that the token inside the bearer token header is valid. And then finally it checks the specific roles granted by this token.
+#### Python
 
-### Testing Our Protected Routes
+```python
+import requests
+import json
 
-Let's take a look at some Postman requests to verify that our routes are doing what expect.
+url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows"
 
-First, here is a successful route
+payload = json.dumps({
+  "limit": 100
+})
+headers = {
+  'Content-Type': 'application/json',
+  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA=='
+}
 
-![success](images/successful-route.png)
+response = requests.request("POST", url, headers=headers, data=payload)
 
-We have the proper role, the proper endpoint, and put our token into the bearer auth position in our request header. We receive back our GridDB container's contents.
+print(response.text)
+```
 
-Now let's see what happens if you do not include your bearer token
 
-![no token](images/no-token.png)
+#### JavaScript
 
-You can see here we are met with a 401 http status error.
+```js
+var myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
+myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
 
-And finally, let's see what happens when we have a token, but insufficient permissions for a specific endpoint
+var raw = JSON.stringify({
+  "limit": 100
+});
 
-![unsuccessful](images/unauthorized.png)
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
 
-## Conclusion
-
-This is of course a simple demo, but you can make this control as granular as you wanted -- for example you can make a role read only or read/write specific for specific containers or a subset of containers. Really, the beautfy of JSON Web Tokens are that they really put the control into the developer's hands.
-
+fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+```
 
