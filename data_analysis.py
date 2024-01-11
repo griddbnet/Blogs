@@ -23,7 +23,7 @@ headers = {
   'Authorization': 'Basic aXNyYWVsOmlzcmFlbA==',
   "User-Agent":"PostmanRuntime/7.29.0"
 }
-base_url = 'https://cloud1.griddb.com/trial1602/griddb/v2/gs_clustertrial1602/dbs/public/'
+base_url = 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/'
 
 sql_query1 = (f"""SELECT * from iot_data WHERE co < 0.0019050147565559603 """)
 
@@ -52,9 +52,9 @@ scatter_plot = px.scatter(lowest_col, x='ts', y='co', size='co', color='co',
 
 # Customize the plot
 scatter_plot.update_layout(
-    title='Top 20000 Stars by Luminosity',
-    xaxis_title='Right Ascension (RA)',
-    yaxis_title='Declination (Dec)'
+    title='Data Analysis',
+    xaxis_title='CO2 Emissions',
+    yaxis_title='Time'
 )
 
 scatter_plot.update_layout(template='plotly_dark')

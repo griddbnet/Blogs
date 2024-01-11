@@ -2,19 +2,20 @@ import pandas as pd
 import numpy as np
 import json
 import requests
-from datetime import datetime, timezone
+from datetime import datetime as dt, timezone
 
 
 
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA==',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
   "User-Agent":"PostmanRuntime/7.29.0"
 }
-base_url = 'https://cloud1.griddb.com/trial1602/griddb/v2/gs_clustertrial1602/dbs/public/'
+
+base_url = 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/'
 
 data_obj = {
-    "container_name": "iot_data2",
+    "container_name": "iot_data",
     "container_type": "TIME_SERIES",
     "rowkey": True,
     "columns": []
@@ -39,12 +40,14 @@ r = requests.post(url, json = data_obj, headers = headers)
 
 iot_data = pd.read_csv('iot_telemetry_data.csv')
 
-iot_data['ts'] = pd.to_datetime(iot_data['ts'], unit='s').dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+#2023-12-15T10:25:00.253Z
+iot_data['ts'] = pd.to_datetime(iot_data['ts'], unit='s').dt.strftime("%Y-%m-%dT%I:%M:%S.%fZ")
 print(iot_data["ts"])
-iot_data["device"] = iot_data["device"].astype("string")
-print(iot_data.dtypes)
 
-iot_subsets = np.array_split(iot_data, 200)
+iot_data["device"] = iot_data["device"].astype("string")
+#print(iot_data.dtypes)
+
+iot_subsets = np.array_split(iot_data, 20)
 
 # Ingest Data
 url = base_url + 'containers/iot_data/rows'
@@ -62,4 +65,4 @@ for subset in  iot_subsets:
         print(r.status_code)
         break
     else:
-        print('Success for chunk..')
+        print('Success for chunk')

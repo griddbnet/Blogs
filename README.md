@@ -2,7 +2,15 @@
 
 Your GridDB Cloud instance can be communicated with via HTTP Requests; every action needed to interact with GridDB will require formulating and issuing an HTTP Request with different URLs, parameters, methods, and payload bodies.
 
-If you haven't already, please whitelist your public IP Address in the network settings of your GridDB Cloud Management dashboard. Alternatively, you can disable the firewall completely and allow free access to the Web API.
+### Whitelisting Your IP Address
+
+If you haven't already, please whitelist your public IP address in the network settings of your GridDB Cloud Management dashboard.
+
+### GridDB Users with Database Access
+
+Next, we should create a new GridDB User. From the side panel, click the icon which says GridDB User. From this page, click `CREATE DATABASE USER`. This user's name and password will be attached to all of our HTTP Requests as a Basic Authorization Header. You will need to encode the username/password combination into base 64, separated by a colon; for example: admin:admin becomes `YWRtaW46YWRtaW4=`.
+
+Once you create the new user, you will also need to grant access to your database. Click on the user from the table of users in GridDB Users page and from this page, grant access to your database (either READ or ALL). Now we can move on to making actual HTTP requests.
 
 ### Checking your GridDB Connection
 
@@ -12,13 +20,13 @@ Let's start with a sanity check and make sure that we can reach out to the GridD
 
 The Web API uses a `base url` which we will use and expand upon to build out our requests. The base url looks like this:
 
-`https://cloud<number>.griddb.com/portal<number>/griddb/v2/`
+## `https://cloud<number>.griddb.com/griddb/v2/`
 
-To check that our connection exists, we can ammend the following to our base url `/:cluster/dbs/:database/checkConnection`. Because we are not sending any data back to the server, we will use the `GET` HTTP method. 
+To check that our connection exists, we can append the following to our base url `/:cluster/dbs/:database/checkConnection`. Because we are not sending any data back to the server, we will use the `GET` HTTP method. 
 
 Lastly, we need to include `basic authentication` in our HTTP Request's headers. For this, we will need to include our username and password encoded into base64. With all that said, here is the final result 
 
-`https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection`
+`https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection`
 
 We can now use this URL with any number of interfaces to communicate with our database.
 
@@ -26,10 +34,10 @@ We can now use this URL with any number of interfaces to communicate with our da
 
 To check our connection with cURL, you can use the following command 
 
-curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection' \
+curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection' \
 --header 'Authorization: Basic YWRtaW46YWRtaW4='
 
-Because it's a `GET` request, it's rather simple and we only needed to add in the authorization header. You should be able to run this and get an HTTP Response of `200`. If you receive `401 (unauthorized)`, check your credentials. If you recieve `403 (forbidden)`, ensure that your IP address is allowed to pass through the Cloud's firewall.
+Because it's a `GET` request, it's rather simple and we only needed to add in the authorization header. You should be able to run this and get an HTTP Response of `200`. If you receive `401 (unauthorized)`, check the credentials of your GridDB User. If you recieve `403 (forbidden)`, ensure that your IP address is allowed to pass through the Cloud's firewall.
 
 #### Python Request
 
@@ -38,7 +46,7 @@ Here is that same request written in Python
 ```python
 import requests
 
-url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection"
 
 payload = {}
 headers = {
@@ -62,7 +70,7 @@ var requestOptions = {
   redirect: 'follow'
 };
 
-fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/checkConnection", requestOptions)
+fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection", requestOptions)
   .then(response => response.text())
   .then(result => console.log(result))
   .catch(error => console.log('error', error));
@@ -103,7 +111,7 @@ Now we simply attach this to the body when we make our Request and we should cre
 #### cURL
 
 ```bash
-curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers' \
+curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
 --data '{
@@ -134,7 +142,7 @@ curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_cl
 import requests
 import json
 
-url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers"
 
 payload = json.dumps({
   "container_name": "time_series_container1",
@@ -200,7 +208,7 @@ var requestOptions = {
   redirect: 'follow'
 };
 
-fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers", requestOptions)
+fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers", requestOptions)
   .then(response => response.text())
   .then(result => console.log(result))
   .catch(error => console.log('error', error));
@@ -226,8 +234,10 @@ You of course also need to be sure that your row's schema matches your container
 
 #### cURL
 
+https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers
+
 ```bash
-curl --location --request PUT 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows' \
+curl --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
 --data '[
@@ -243,7 +253,7 @@ curl --location --request PUT 'https://cloud10000000.griddb.com/portal10000000/g
 import requests
 import json
 
-url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows"
 
 payload = json.dumps([
   [
@@ -304,7 +314,7 @@ var requestOptions = {
   redirect: 'follow'
 };
 
-fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows", requestOptions)
+fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows", requestOptions)
   .then(response => response.text())
   .then(result => console.log(result))
   .catch(error => console.log('error', error));
@@ -316,10 +326,10 @@ After writing to our containers, we will want to read from our containers. The U
 
 ```bash
 {
-  "offset" : 10,
+  "offset" : 0,
   "limit"  : 100,
-  "condition" : "id >= 50",
-  "sort" : "id desc"
+  "condition" : "voltage >= 60",
+  "sort" : "voltage desc"
 }
 ```
 
@@ -332,7 +342,8 @@ If successful, you should get a server response with a status code of `200 (OK)`
     "columns": [
         {
             "name": "timestamp",
-            "type": "TIMESTAMP"
+            "type": "TIMESTAMP",
+            "timePrecision": "MILLISECOND"
         },
         {
             "name": "active",
@@ -345,24 +356,19 @@ If successful, you should get a server response with a status code of `200 (OK)`
     ],
     "rows": [
         [
-            "2023-12-15T10:25:00.253Z",
-            true,
-            66.76
-        ],
-        [
             "2023-12-15T10:35:00.691Z",
             false,
             89.31
         ],
         [
-            "2023-12-15T10:45:00.032Z",
-            false,
-            55.43
+            "2023-12-15T10:25:00.253Z",
+            true,
+            66.76
         ]
     ],
     "offset": 0,
     "limit": 100,
-    "total": 3
+    "total": 2
 }
 ```
 
@@ -370,11 +376,14 @@ If successful, you should get a server response with a status code of `200 (OK)`
 #### cURL
 
 ```bash
-curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows' \
+curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
 --data '{
-  "limit"  : 100
+  "offset" : 0,
+  "limit"  : 100,
+  "condition" : "voltage >= 60",
+  "sort" : "voltage desc"
 }'
 ```
 
@@ -384,10 +393,13 @@ curl --location 'https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_cl
 import requests
 import json
 
-url = "https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows"
 
 payload = json.dumps({
-  "limit": 100
+  "offset": 0,
+  "limit": 100,
+  "condition": "voltage >= 60",
+  "sort": "voltage desc"
 })
 headers = {
   'Content-Type': 'application/json',
@@ -408,7 +420,10 @@ myHeaders.append("Content-Type", "application/json");
 myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
 
 var raw = JSON.stringify({
-  "limit": 100
+  "offset": 0,
+  "limit": 100,
+  "condition": "voltage >= 60",
+  "sort": "voltage desc"
 });
 
 var requestOptions = {
@@ -418,9 +433,8 @@ var requestOptions = {
   redirect: 'follow'
 };
 
-fetch("https://cloud10000000.griddb.com/portal10000000/griddb/v2/gs_clustermfcloud10000000/dbs/public/containers/time_series_container1/rows", requestOptions)
+fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows", requestOptions)
   .then(response => response.text())
   .then(result => console.log(result))
   .catch(error => console.log('error', error));
 ```
-
