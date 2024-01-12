@@ -1,0 +1,31 @@
+{
+  "name": "meal-planner-server",
+  "version": "1.0.0",
+  "description": "backend for meal planner",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "meal-planner",
+    "meal",
+    "planner",
+    "griddb",
+    "griddb_node"
+  ],
+  "author": "Oyafemi Babajide",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "griddb_node": "^0.8.4",
+    "griddb-node-api": "^0.8.6",
+    "joi": "^17.11.0",
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
