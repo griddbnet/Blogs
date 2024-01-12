@@ -1,8 +1,8 @@
 # Creating A Daily Meal Plan App Using ReactJS, NodeJS, ExpressJS, and GridDB
 
-Creating a daily meal plan app is like designing a roadmap for your body. It ensures you get to eat a balanced diet that will fuel your body and make you live healthy.
+Creating a daily meal plan app is like designing a roadmap for your body. It ensures you get to eat a balanced diet that will fuel your body and make you live a healthy life.
 
-With a well-thought-out daily meal plan, you can meet your nutritional needs while improving your energy levels and overall health. This is why we’re building this app.
+With a well-thought-out daily meal plan, you can meet your nutritional needs while improving your energy levels and overall health.
 
 So, here’s a detailed breakdown of the process required to create a daily meal plan application using technologies like ReactJS, NodeJS, ExpressJS, and GridDB.
 
@@ -14,29 +14,17 @@ Dieting is neither easy nor fun, but accountability in any form would enable any
 
 [GridDB](https://griddb.net/en/) is the database that will be used to store meal plans.
 
-For those who do not know, GridDB is a highly scalable, in-memory NoSQL time-series database optimized for IoT and Big Data. While GridDB is optimized for IoT and Big Data, it can also be used for other purposes such as gaming and web applications.
-
 In this article, we will use what is called the GERN stack (GridDB, ExpressJS, ReactJS, and NodeJS) to build a Fullstack meal planning web application.
 
 ## The Application
 
-GridDB can be used on any of the Windows, Linux, or Mac operating system.
-
-While I installed [WSL](https://learn.microsoft.com/en-us/windows/wsl/) (Windows Subsystem for Linux) on my Windows to have access to Linux (Ubuntu) on my machine, you could also follow along with this tutorial using Docker or MacOS. The [GridDB documentation](https://docs.griddb.net/latest/gettingstarted/wsl/) provides you with a detailed installation process to successfully install the database on your computer. There are also top-notch YouTube videos on their [YouTube channel](https://www.youtube.com/@GridDB) for those who prefer videos to written documentation. The entire code for the web application is available on [Github](https://github.com/Babajide777/grid-db-meal-planner).
+While I installed [WSL](https://learn.microsoft.com/en-us/windows/wsl/) (Windows Subsystem for Linux) on my Windows to have access to Linux (Ubuntu) on my machine, you could also follow along with this tutorial using Docker. The [GridDB documentation](https://docs.griddb.net/latest/gettingstarted/wsl/) provides you with a detailed installation process to successfully install the database on your computer. There are also top-notch YouTube videos on their [YouTube channel](https://www.youtube.com/@GridDB) for those who prefer videos to written documentation. The entire code for the web application is available on [Github](https://github.com/Babajide777/grid-db-meal-planner).
 
 Open your terminal and clone the repo using this command
 
-```bash
-git clone https://github.com/Babajide777/grid-db-meal-planner.git
-```
-
-Then,
-
-```bash
-cd grid-db-meal-planner
-```
-
-To change to the meal planner app directory.
+<div class="clipboard">
+<pre><code class="language-sh">git clone https://github.com/griddbnet/Blogs.git --branch meal-planner</code></pre>
+</div>
 
 ## The App Classification
 
@@ -52,7 +40,7 @@ This application is divided into 2 parts –
 
 ## The Backend
 
-The backend in this project ensures the correct meal data is gotten from the frontend, and then save to the GridDB database. We are able to perform functionalities with the GridDB database.
+The backend in this project ensures the correct meal data is gotten from the frontend, and then saved to the GridDB database. We are able to perform functionalities with the GridDB database.
 
 The proper CRUD functionalities are carried out in the app.
 
@@ -77,29 +65,33 @@ Follow the steps as explained below;
 Create a “server” folder and initialize npm to generate a package.json file.
 You can name the folder anything you want:
 
-```bash
-npm i
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">npm i</code></pre>
+</div>
 
 ## Step 2: Install Required Packages
 
 We are going to install all the required packages at once by running the following line of code:
 
-```bash
-npm i express morgan joi uuid  griddb-node-api cors
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">npm i express morgan joi uuid  griddb-node-api cors</code></pre>
+</div>
 
 **_Addition_**
 
 While it is not required to install nodemon, it's nice to have in development so that the server would restart automatically when any change is saved.
 This is the command to install nodemon as a dev dependency:
 
-```bash
-npm i -D nodemon
-```
 
-```bash
-{
+<div class="clipboard">
+<pre><code class="language-sh">npm i -D nodemon</code></pre>
+</div>
+
+
+<div class="clipboard">
+<pre><code class="language-sh">{
   "name": "meal-planner-server",
   "version": "1.0.0",
   "description": "backend for meal planner",
@@ -129,15 +121,16 @@ npm i -D nodemon
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
-}
-```
+}</code></pre>
+</div>
 
 ### Step 3: Create Server.js File
 
-Create an server.js file and insert the following code:
+Create a server.js file and insert the following code:
 
-```bash
-const express = require("express");
+
+<div class="clipboard">
+<pre><code class="language-sh">const express = require("express");
 const morgan = require("morgan");
 const app = express();
 const cors = require("cors")
@@ -152,22 +145,24 @@ app.use("/api", require("./routes/mealRoutes"));
 
 app.listen(PORT, () => {
   console.log(`Server started on ${PORT}`);
-});
-```
+});</code></pre>
+</div>
 
 If you installed nodemon as a dev dependency, you’ll need to add this line of code to the “scripts” section in your package.json file:
 
-```bash
-"dev": "nodemon index.js"
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">"dev": "nodemon index.js"</code></pre>
+</div>
 
 ### Step 4: Run the Application
 
 If you installed nodemon, you could use ‘npm start’ to start the application, however, this would require you to restart the application any time you make changes, going against what nodemon is intended for. The following method doesn’t require you to restart the application when you make any changes (the benefit of nodemon):
 
-```bash
-npm run dev
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">npm run dev</code></pre>
+</div>
 
 ![Image](/blog/images/1.jpg)
 
@@ -176,9 +171,9 @@ npm run dev
 We will connect to the GridDB database using the griddb-node-api package.
 We then set the container name of the project. I chose _"meal-planner"_ because it is related to the project. However, you can call it whatever you want.
 
-```bash
 
-const griddb = require("griddb-node-api");
+<div class="clipboard">
+<pre><code class="language-javascript">const griddb = require("griddb-node-api");
 
 const containerName = "meal-planner";
 
@@ -244,8 +239,8 @@ async function initGridDbTS() {
     console.error(err);
     throw err;
   }
-}
-```
+}</code></pre>
+</div>
 
 The initStore function connects the app to the GridDB Cluster using the host, port, clusterName, username, and password.
 The initContainer function is used to set the columns for the container and the datatypes for the different columns.
@@ -255,14 +250,15 @@ The createContainer creates the container while initGridDbTS initializes the dat
 
 To create a meal plan;
 
-```bash
-router.post("/add-meal", addMealPlan);
-```
+<div class="clipboard">
+<pre><code class="language-javascript">router.post("/add-meal", addMealPlan);</code></pre>
+</div>
 
-We use the Joi package to validate the request body sent from the frontend and then insert into the container that as created in step 6.
+We use the Joi package to validate the request body sent from the frontend and then insert into the container that is created in step 6.
 
-```bash
-//meal plan validation rules
+
+<div class="clipboard">
+<pre><code class="language-javascript">//meal plan validation rules
 const mealPlanValidation = async (field) => {
   const schema = Joi.object({
     title: Joi.string().required(),
@@ -320,13 +316,14 @@ async function insert(data, container) {
       return { status: false, error: err };
     }
   }
-}
-```
+}</code></pre>
+</div>
 
 Before that, the uuid package is used to generate a random id. After the meal plan is saved to the database, we then query the meal plan using the created random id to get the details of the saved meal plan.
 
-```bash
-async function queryByID(id, conInfo, store) {
+
+<div class="clipboard">
+<pre><code class="language-javascript">async function queryByID(id, conInfo, store) {
   try {
     const cont = await store.putContainer(conInfo);
     const row = await cont.get(id);
@@ -335,9 +332,6 @@ async function queryByID(id, conInfo, store) {
     console.log(err, "here");
   }
 }
-
-
-
 
 const addMealPlan = async (req, res) => {
   //validate req.body
@@ -407,8 +401,8 @@ const addMealPlan = async (req, res) => {
   } catch (error) {
     responseHandler(res, "Error saving meal plan", 400, false, error);
   }
-};
-```
+};</code></pre>
+</div>
 
 The meal plan details are then sent to the frontend as a json response.
 
@@ -420,14 +414,16 @@ The meal plan details are then sent to the frontend as a json response.
 
 The id of the meal plan that is required is gotten from the params of the request data.
 
-```bash
-router.get("/meal-detail/:id", mealPlanDetails);
-```
+
+<div class="clipboard">
+<pre><code class="language-javascript">router.get("/meal-detail/:id", mealPlanDetails);</code></pre>
+</div>
 
 Then id of the meal plan is then queried with the data in the database and a 200 response with the meal plan data is sent if the meal plan is found.
 
-```bash
-const mealPlanDetails = async (req, res) => {
+
+<div class="clipboard">
+<pre><code class="language-javascript">const mealPlanDetails = async (req, res) => {
   const { store, conInfo } = await initGridDbTS();
   const { id } = req.params;
 
@@ -436,8 +432,8 @@ const mealPlanDetails = async (req, res) => {
   return result
     ? responseHandler(res, "meal plan detail found", 200, true, result)
     : responseHandler(res, "No meal plan found", 400, false, "");
-};
-```
+};</code></pre>
+</div>
 
 ![Image](/blog/images/4.jpg)
 
@@ -445,14 +441,16 @@ const mealPlanDetails = async (req, res) => {
 
 ### Step 8: Edit a Meal Plan
 
-```bash
-router.put("/edit-meal/:id", editMealPlan);
-```
+
+<div class="clipboard">
+<pre><code class="language-javascript">router.put("/edit-meal/:id", editMealPlan);</code></pre>
+</div>
 
 To edit a meal plan, again the id of the required meal plan is sent in the params of the request. The meal plan is queried using the given id and the old details of the meal plan is replaced by the new ones.
 
-```bash
-const editMealPlan = async (req, res) => {
+
+<div class="clipboard">
+<pre><code class="language-javascript">const editMealPlan = async (req, res) => {
   const { store, conInfo } = await initGridDbTS();
   const { id } = req.params;
 
@@ -518,21 +516,23 @@ const editByID = async (store, conInfo, data) => {
     return [false, err];
   }
 };
-
-```
+</code></pre>
+</div>
 
 ![Image](/blog/images/6.jpg)
 
 ### Step 9: Delete a Meal Plan
 
-```bash
-router.delete("/delete-meal/:id", deleteMealPlan);
-```
+
+<div class="clipboard">
+<pre><code class="language-javascript">router.delete("/delete-meal/:id", deleteMealPlan);</code></pre>
+</div>
 
 The id is gotten from the params or the request data and that is used to delete the row containing the required meal plan.
 
-```bash
-const deleteMealPlan = async (req, res) => {
+
+<div class="clipboard">
+<pre><code class="language-javascript">const deleteMealPlan = async (req, res) => {
   const { store, conInfo } = await initGridDbTS();
   const { id } = req.params;
 
@@ -554,8 +554,8 @@ const deleteByID = async (store, id, conInfo) => {
   } catch (error) {
     return [false, error];
   }
-};
-```
+};</code></pre>
+</div>
 
 ![Image](/blog/images/7.jpg)
 
@@ -565,14 +565,16 @@ const deleteByID = async (store, id, conInfo) => {
 
 To get list of all meal plans in the database, you have to do this;
 
-```bash
-router.get("/all-meals", getAllMealPlans);
-```
+
+<div class="clipboard">
+<pre><code class="language-javascript">router.get("/all-meals", getAllMealPlans);</code></pre>
+</div>
 
 This returns all the meal plans in the database.
 
-```bash
-const getAllMealPlans = async (req, res) => {
+
+<div class="clipboard">
+<pre><code class="language-javascript">const getAllMealPlans = async (req, res) => {
   const { store, conInfo } = await initGridDbTS();
   const result = await queryAll(conInfo, store);
 
@@ -586,8 +588,6 @@ const getAllMealPlans = async (req, res) => {
       )
     : responseHandler(res, "Unable to retrieve meal plans", 400, false, "");
 };
-
-
 
 async function queryAll(conInfo, store) {
   const sql = `SELECT *`;
@@ -607,8 +607,8 @@ async function queryAll(conInfo, store) {
     return err;
   }
 }
-
-```
+</code></pre>
+</div>
 
 ![Image](/blog/images/9.png)
 
@@ -632,21 +632,24 @@ Redux Toolkit is a state management library.
 
 To view the frontend of the app change to the client directory.
 
-```bash
-cd client
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">cd client</code></pre>
+</div>
 
 Now install the required dependencies
 
-```bash
-npm i
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">npm i</code></pre>
+</div>
 
 Then run the app using
 
-```bash
-npm start
-```
+
+<div class="clipboard">
+<pre><code class="language-sh">npm start</code></pre>
+</div>
 
 ![Home](https://github.com/Babajide777/grid-db-meal-planner/blob/main/client/src/components/assets/images/Gb-home.PNG?raw=true)
 
