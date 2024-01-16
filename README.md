@@ -1,3 +1,11 @@
+## Introducing GridDB Cloud v2.0
+
+GridDB Cloud v2.0 has officially been released and has a new free tier, but for now, the new GridDB Cloud v2.0 Free Plan is only offered to people living in Japan.
+
+### How To Sign Up
+
+If you would like to sign up for a GridDB free trial, you can follow along with the instructions in this video: [](). 
+
 ## First Steps with GridDB Cloud
 
 Your GridDB Cloud instance can be communicated with via HTTP Requests; every action needed to interact with GridDB will require formulating and issuing an HTTP Request with different URLs, parameters, methods, and payload bodies.
@@ -35,7 +43,7 @@ We can now use this URL with any number of interfaces to communicate with our da
 To check our connection with cURL, you can use the following command 
 
 curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection' \
---header 'Authorization: Basic YWRtaW46YWRtaW4='
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
 
 Because it's a `GET` request, it's rather simple and we only needed to add in the authorization header. You should be able to run this and get an HTTP Response of `200`. If you receive `401 (unauthorized)`, check the credentials of your GridDB User. If you recieve `403 (forbidden)`, ensure that your IP address is allowed to pass through the Cloud's firewall.
 
@@ -50,30 +58,30 @@ url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy
 
 payload = {}
 headers = {
-  'Authorization': 'Basic aXNyYWVsejppc3JhZWw='
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
 response = requests.request("GET", url, headers=headers, data=payload)
 
-print(response.text)
+print(response.status_code)
 ```
 
-#### JavaScript Request
+#### node.js Request
 
 ```js
-var myHeaders = new Headers();
-myHeaders.append("Authorization", "Basic aXNyYWVsejppc3JhZWw=");
-
-var requestOptions = {
-  method: 'GET',
-  headers: myHeaders,
-  redirect: 'follow'
+const request = require('request');
+const options = {
+  'method': 'GET',
+  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection',
+  'headers': {
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  }
 };
-
-fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/checkConnection", requestOptions)
-  .then(response => response.text())
-  .then(result => console.log(result))
-  .catch(error => console.log('error', error));
+request(options, function (error, response) {
+  if (error) throw new Error(error);
+  console.log("Response Status Code: ", response.statusCode);
+});
 ```
 
 ### Creating your First Container
@@ -86,20 +94,40 @@ The body of the request requires container name, container type, whether a rowke
 
 ```bash
 {
-    "container_name": "time_series_container1",
+    "container_name": "cloud_quickstart",
     "container_type": "TIME_SERIES",
     "rowkey": true,
     "columns": [
         {
-            "name": "timestamp",
+            "name": "ts",
             "type": "TIMESTAMP"
         },
         {
-            "name": "active",
+            "name": "co",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "humidity",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "light",
             "type": "BOOL"
         },
         {
-            "name": "voltage",
+            "name": "lpg",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "motion",
+            "type": "BOOL"
+        },
+        {
+            "name": "smoke",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "temp",
             "type": "DOUBLE"
         }
     ]
@@ -111,24 +139,44 @@ Now we simply attach this to the body when we make our Request and we should cre
 #### cURL
 
 ```bash
-curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers' \
+curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
 --data '{
-    "container_name": "time_series_container1",
+    "container_name": "cloud_quickstart",
     "container_type": "TIME_SERIES",
     "rowkey": true,
     "columns": [
         {
-            "name": "timestamp",
+            "name": "ts",
             "type": "TIMESTAMP"
         },
         {
-            "name": "active",
+            "name": "co",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "humidity",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "light",
             "type": "BOOL"
         },
         {
-            "name": "voltage",
+            "name": "lpg",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "motion",
+            "type": "BOOL"
+        },
+        {
+            "name": "smoke",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "temp",
             "type": "DOUBLE"
         }
     ]
@@ -145,73 +193,112 @@ import json
 url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers"
 
 payload = json.dumps({
-  "container_name": "time_series_container1",
+  "container_name": "cloud_quickstart",
   "container_type": "TIME_SERIES",
   "rowkey": True,
   "columns": [
     {
-      "name": "timestamp",
+      "name": "ts",
       "type": "TIMESTAMP"
     },
     {
-      "name": "active",
+      "name": "co",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "humidity",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "light",
       "type": "BOOL"
     },
     {
-      "name": "voltage",
+      "name": "lpg",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "motion",
+      "type": "BOOL"
+    },
+    {
+      "name": "smoke",
+      "type": "DOUBLE"
+    },
+    {
+      "name": "temp",
       "type": "DOUBLE"
     }
   ]
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA=='
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
 response = requests.request("POST", url, headers=headers, data=payload)
 
-print(response.text)
+print(response.status_code)
 ```
 
 
-#### JavaScript
+#### node.js
 
 ```js
-var myHeaders = new Headers();
-myHeaders.append("Content-Type", "application/json");
-myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
+var request = require('request');
+var options = {
+  'method': 'POST',
+  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers',
+  'headers': {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  },
+  body: JSON.stringify({
+    "container_name": "cloud_quickstart",
+    "container_type": "TIME_SERIES",
+    "rowkey": true,
+    "columns": [
+      {
+        "name": "ts",
+        "type": "TIMESTAMP"
+      },
+      {
+        "name": "co",
+        "type": "DOUBLE"
+      },
+      {
+        "name": "humidity",
+        "type": "DOUBLE"
+      },
+      {
+        "name": "light",
+        "type": "BOOL"
+      },
+      {
+        "name": "lpg",
+        "type": "DOUBLE"
+      },
+      {
+        "name": "motion",
+        "type": "BOOL"
+      },
+      {
+        "name": "smoke",
+        "type": "DOUBLE"
+      },
+      {
+        "name": "temp",
+        "type": "DOUBLE"
+      }
+    ]
+  })
 
-var raw = JSON.stringify({
-  "container_name": "time_series_container1",
-  "container_type": "TIME_SERIES",
-  "rowkey": true,
-  "columns": [
-    {
-      "name": "timestamp",
-      "type": "TIMESTAMP"
-    },
-    {
-      "name": "active",
-      "type": "BOOL"
-    },
-    {
-      "name": "voltage",
-      "type": "DOUBLE"
-    }
-  ]
-});
-
-var requestOptions = {
-  method: 'POST',
-  headers: myHeaders,
-  body: raw,
-  redirect: 'follow'
 };
-
-fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers", requestOptions)
-  .then(response => response.text())
-  .then(result => console.log(result))
-  .catch(error => console.log('error', error));
+request(options, function (error, response) {
+  if (error) throw new Error(error);
+  console.log(response.statusCode);
+});
 ```
 
 ### Adding Rows of Data
@@ -224,9 +311,9 @@ You can add multiple rows at once, you just need to make sure that your payload 
 
 ```bash
 [
-  ["2023-12-15T10:25:00.253Z", true, 66.76],
-  ["2023-12-15T10:35:00.691Z", false, 89.31],
-  ["2023-12-15T10:45:00.032Z", false, 55.43]
+  ["2024-01-09T10:00:01.234Z", 0.003551, 50.0, false, 0.00754352, false, 0.0232432, 21.6],
+  ["2024-01-09T11:00:01.234Z", 0.303551, 60.0, false, 0.00754352, true, 0.1232432, 25.3],
+  ["2024-01-09T12:00:01.234Z", 0.603411, 70.0, true, 0.00754352, true, 0.4232432, 41.5]
 ]
 ```
 
@@ -237,13 +324,13 @@ You of course also need to be sure that your row's schema matches your container
 https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers
 
 ```bash
-curl --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows' \
+curl --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
 --data '[
-  ["2023-12-15T10:25:00.253Z", true, 66.76],
-  ["2023-12-15T10:35:00.691Z", false, 89.31],
-  ["2023-12-15T10:45:00.032Z", false, 55.43]
+  ["2024-01-09T10:00:01.234Z", 0.003551, 50.0, false, 0.00754352, false, 0.0232432, 21.6],
+  ["2024-01-09T11:00:01.234Z", 0.303551, 60.0, false, 0.00754352, true, 0.1232432, 25.3],
+  ["2024-01-09T12:00:01.234Z", 0.603411, 70.0, true, 0.00754352, true, 0.4232432, 41.5]
 ]'
 ```
 
@@ -253,28 +340,44 @@ curl --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_cluster
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows"
 
 payload = json.dumps([
   [
-    "2023-12-15T10:25:00.253Z",
+    "2024-01-09T10:00:01.234Z",
+    0.003551,
+    50,
+    False,
+    0.00754352,
+    False,
+    0.0232432,
+    21.6
+  ],
+  [
+    "2024-01-09T11:00:01.234Z",
+    0.303551,
+    60,
+    False,
+    0.00754352,
     True,
-    66.76
+    0.1232432,
+    25.3
   ],
   [
-    "2023-12-15T10:35:00.691Z",
-    False,
-    89.31
-  ],
-  [
-    "2023-12-15T10:45:00.032Z",
-    False,
-    55.43
+    "2024-01-09T12:00:01.234Z",
+    0.603411,
+    70,
+    True,
+    0.00754352,
+    True,
+    0.4232432,
+    41.5
   ]
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA=='
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
 response = requests.request("PUT", url, headers=headers, data=payload)
@@ -282,42 +385,55 @@ response = requests.request("PUT", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-#### JavaScript
+#### node.js
 
 ```js
-var myHeaders = new Headers();
-myHeaders.append("Content-Type", "application/json");
-myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
+var request = require('request');
+var options = {
+  'method': 'PUT',
+  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows',
+  'headers': {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  },
+  body: JSON.stringify([
+    [
+      "2024-01-09T10:00:01.234Z",
+      0.003551,
+      50,
+      false,
+      0.00754352,
+      false,
+      0.0232432,
+      21.6
+    ],
+    [
+      "2024-01-09T11:00:01.234Z",
+      0.303551,
+      60,
+      false,
+      0.00754352,
+      true,
+      0.1232432,
+      25.3
+    ],
+    [
+      "2024-01-09T12:00:01.234Z",
+      0.603411,
+      70,
+      true,
+      0.00754352,
+      true,
+      0.4232432,
+      41.5
+    ]
+  ])
 
-var raw = JSON.stringify([
-  [
-    "2023-12-15T10:25:00.253Z",
-    true,
-    66.76
-  ],
-  [
-    "2023-12-15T10:35:00.691Z",
-    false,
-    89.31
-  ],
-  [
-    "2023-12-15T10:45:00.032Z",
-    false,
-    55.43
-  ]
-]);
-
-var requestOptions = {
-  method: 'PUT',
-  headers: myHeaders,
-  body: raw,
-  redirect: 'follow'
 };
-
-fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows", requestOptions)
-  .then(response => response.text())
-  .then(result => console.log(result))
-  .catch(error => console.log('error', error));
+request(options, function (error, response) {
+  if (error) throw new Error(error);
+  console.log(response.body);
+});
 ```
 
 ### Reading Container
@@ -328,8 +444,8 @@ After writing to our containers, we will want to read from our containers. The U
 {
   "offset" : 0,
   "limit"  : 100,
-  "condition" : "voltage >= 60",
-  "sort" : "voltage desc"
+  "condition" : "temp >= 30",
+  "sort" : "temp desc"
 }
 ```
 
@@ -341,34 +457,54 @@ If successful, you should get a server response with a status code of `200 (OK)`
 {
     "columns": [
         {
-            "name": "timestamp",
+            "name": "ts",
             "type": "TIMESTAMP",
             "timePrecision": "MILLISECOND"
         },
         {
-            "name": "active",
+            "name": "co",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "humidity",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "light",
             "type": "BOOL"
         },
         {
-            "name": "voltage",
+            "name": "lpg",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "motion",
+            "type": "BOOL"
+        },
+        {
+            "name": "smoke",
+            "type": "DOUBLE"
+        },
+        {
+            "name": "temp",
             "type": "DOUBLE"
         }
     ],
     "rows": [
         [
-            "2023-12-15T10:35:00.691Z",
-            false,
-            89.31
-        ],
-        [
-            "2023-12-15T10:25:00.253Z",
+            "2024-01-09T12:00:01.234Z",
+            0.603411,
+            70.0,
             true,
-            66.76
+            0.00754352,
+            true,
+            0.4232432,
+            41.5
         ]
     ],
     "offset": 0,
     "limit": 100,
-    "total": 2
+    "total": 1
 }
 ```
 
@@ -376,14 +512,14 @@ If successful, you should get a server response with a status code of `200 (OK)`
 #### cURL
 
 ```bash
-curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows' \
+curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic aXNyYWVsOmlzcmFlbA==' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
 --data '{
   "offset" : 0,
   "limit"  : 100,
-  "condition" : "voltage >= 60",
-  "sort" : "voltage desc"
+  "condition" : "temp >= 30",
+  "sort" : "temp desc"
 }'
 ```
 
@@ -393,17 +529,18 @@ curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows"
 
 payload = json.dumps({
   "offset": 0,
   "limit": 100,
-  "condition": "voltage >= 60",
-  "sort": "voltage desc"
+  "condition": "temp >= 30",
+  "sort": "temp desc"
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic aXNyYWVsOmlzcmFlbA=='
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
 response = requests.request("POST", url, headers=headers, data=payload)
@@ -412,29 +549,28 @@ print(response.text)
 ```
 
 
-#### JavaScript
+#### nodejs
 
 ```js
-var myHeaders = new Headers();
-myHeaders.append("Content-Type", "application/json");
-myHeaders.append("Authorization", "Basic aXNyYWVsOmlzcmFlbA==");
+var request = require('request');
+var options = {
+  'method': 'POST',
+  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows',
+  'headers': {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  },
+  body: JSON.stringify({
+    "offset": 0,
+    "limit": 100,
+    "condition": "temp >= 30",
+    "sort": "temp desc"
+  })
 
-var raw = JSON.stringify({
-  "offset": 0,
-  "limit": 100,
-  "condition": "voltage >= 60",
-  "sort": "voltage desc"
+};
+request(options, function (error, response) {
+  if (error) throw new Error(error);
+  console.log(response.body);
 });
 
-var requestOptions = {
-  method: 'POST',
-  headers: myHeaders,
-  body: raw,
-  redirect: 'follow'
-};
-
-fetch("https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/time_series_container1/rows", requestOptions)
-  .then(response => response.text())
-  .then(result => console.log(result))
-  .catch(error => console.log('error', error));
 ```
