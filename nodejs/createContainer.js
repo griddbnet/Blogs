@@ -7,7 +7,7 @@ var options = {
     'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
   },
   body: JSON.stringify({
-    "container_name": "cloud_quickstart",
+    "container_name": "device1",
     "container_type": "TIME_SERIES",
     "rowkey": true,
     "columns": [

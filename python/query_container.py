@@ -1,7 +1,7 @@
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/cloud_quickstart/rows"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/device1/rows"
 
 payload = json.dumps({
   "offset": 0,

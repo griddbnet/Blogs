@@ -4,7 +4,7 @@ import json
 url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers"
 
 payload = json.dumps({
-  "container_name": "cloud_quickstart",
+  "container_name": "device1",
   "container_type": "TIME_SERIES",
   "rowkey": True,
   "columns": [

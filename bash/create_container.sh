@@ -4,7 +4,7 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 --header 'Content-Type: application/json' \
 --header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
 --data '{
-    "container_name": "cloud_quickstart",
+    "container_name": "device1",
     "container_type": "TIME_SERIES",
     "rowkey": true,
     "columns": [
