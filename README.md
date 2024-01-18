@@ -1088,7 +1088,11 @@ request(options, function (error, response) {
 
 ## SQL
 
-On top of TQL, GridDB and the GridDB Cloud also have SQL functionality. Though the SQL functionality for the GridDB Cloud is limited to reading results (SELECT). Here is what it looks like:
+On top of TQL, GridDB and the GridDB Cloud also have SQL functionality. Though the SQL functionality for the GridDB Cloud is limited to reading results (SELECT) and updating some rows (UPDATE). 
+
+### SQL Insert
+
+Here is what it looks like:
 
 base url + `/:cluster/dbs/:database/sql`
 
@@ -1171,7 +1175,7 @@ Here is the response body:
 ]
 ```
 
-### cURL
+#### cURL
 
 ```bash
 curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql' \
@@ -1184,7 +1188,7 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 '
 ```
 
-### Python
+#### Python
 
 ```python
 import requests
@@ -1213,7 +1217,7 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-### node.js
+#### node.js
 
 ```javascript
 var request = require('request');
@@ -1240,8 +1244,88 @@ request(options, function (error, response) {
   if (error) throw new Error(error);
   console.log(response.body);
 });
-
 ```
+
+### SQL Update
+
+The base URL is the same as above, but you need to append 'update'
+
+base url + `/:cluster/dbs/:database/sql`
+
+```bash
+[ 
+  {"stmt" : "update deviceMaster set location = 'LA' where equipmentID = '01'"},
+  {"stmt" : "insert into deviceMaster(equipment, equipmentID, location, serialNumber, lastInspection, information) values('device2', '02', 'MA', '34412', TIMESTAMP('2023-12-21T10:45:00.032Z'), 'working')"}
+]
+```
+
+This command allows you to Update, similar to the NoSQL method described above. We can both update existing rows, or update containers to add new rows.
+
+#### cURL 
+
+```bash
+curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql/update' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--data '[ 
+  {"stmt" : "insert into deviceMaster(equipment, equipmentID, location, serialNumber, lastInspection, information) values('\''device2'\'', '\''02'\'', '\''MA'\'', '\''34412'\'', TIMESTAMP('\''2023-12-21T10:45:00.032Z'\''), '\''working'\'')"}
+]'
+```
+
+#### Python
+
+```python
+import requests
+import json
+
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql/update"
+
+payload = json.dumps([
+  {
+    "stmt": "update deviceMaster set location = 'LA' where equipmentID = '01'"
+  },
+  {
+    "stmt": "insert into deviceMaster(equipment, equipmentID, location, serialNumber, lastInspection, information) values('device2', '02', 'MA', '34412', TIMESTAMP('2023-12-21T10:45:00.032Z'), 'working')"
+  }
+])
+headers = {
+  'Content-Type': 'application/json',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'User-Agent': 'PostmanRuntime/7.29.0' 
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+#### node.js
+
+```javascript
+var request = require('request');
+var options = {
+  'method': 'POST',
+  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql/update',
+  'headers': {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  },
+  body: JSON.stringify([
+    {
+      "stmt": "update deviceMaster set location = 'LA' where equipmentID = '01'"
+    },
+    {
+      "stmt": "insert into deviceMaster(equipment, equipmentID, location, serialNumber, lastInspection, information) values('device2', '02', 'MA', '34412', TIMESTAMP('2023-12-21T10:45:00.032Z'), 'working')"
+    }
+  ])
+
+};
+request(options, function (error, response) {
+  if (error) throw new Error(error);
+  console.log(response.body);
+});
+```
+
 
 ## Dropping Containers
 
