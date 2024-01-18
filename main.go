@@ -6,9 +6,15 @@ import (
 	"net/http"
 )
 
-func main() {
+func init() {
 	createUsersContainer()
+	createAdminContainer()
+	createAdvisorContainer()
+	createBasicContainer()
+	createOwnerContainer()
+}
 
+func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/signIn", http.StatusSeeOther)
 	})

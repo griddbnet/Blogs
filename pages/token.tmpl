@@ -5,7 +5,7 @@
 .token {
     word-wrap: break-word;
    width: 177.6px;
-
+    margin: 30px;
 }
 
 .token-text {
@@ -21,9 +21,67 @@
     font-size: 1.5em;
 }
 
+input[type=text], select {
+  width: 30%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  width: 15%;
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #45a049;
+}
+
+.form {
+    margin: 30px;
+    font-size: 1.3em;
+}
+
 </style>
 
     <title>Token Page</title>
+
+<script> 
+function send(e,form) {
+
+    console.log("Authorization: 'Bearer {{ .Value }}'")
+
+    const str = form.action;
+    const n = str.lastIndexOf('/');
+    const containerName = str.substring(n + 1);
+
+    fetch(form.action, {
+      method:'post', 
+      headers: {
+        Authorization: 'Bearer {{ .Value }}'
+      },
+      body: new URLSearchParams(new FormData(form))
+    });
+
+  console.log('sent data');
+  alert("Added row of data to container: " + containerName)
+  //document.getElementById(result).reset();
+  form.reset()
+  e.preventDefault();
+}
+
+</script>
+
+
 </head>
 <body>
     <h1>Token Page</h1>
@@ -32,24 +90,68 @@
         <p class="token-text"> {{ .Value }} </p>
     </div>
 
+    <br><br><br>
+
     {{ if .Basic }}
+    <div class="form">
         <p class="role-text">Congrats, you are basic </p>
         <p> With this role, you can visit <span class="route">/basic</span> by attaching the token as a bearer token</p>
+
+        <form method="POST" action="/basic" onsubmit="send(event,this)">
+            <div>
+                <label for="data">Add Data to "basic"</label>
+                <input type="text" id="basic" name="basic-data" required>
+            </div>
+            <input type="submit">    
+        </form>
+</div>
+
     {{ end }}
 
     {{ if .Advisor }}
+    <div class="form">
         <p class="role-text"> You are an Advisor -- congrats!</p>
          <p> With this role, you can visit <span class="route">/advisor</span> by attaching the token as a bearer token</p>
+
+        <form method="POST" action="/advisor" onsubmit="send(event,this)">
+            <div>
+                <label for="data">Add Data to "advisor"</label>
+                <input type="text" id="advisor" name="advisor-data" required>
+            </div>
+            <input type="submit">    
+        </form>
+</div>
+
     {{ end }}
 
     {{ if .Admin }}
+    <div class="form">
         <p class="role-text">You are an Admin -- congrats!</p>
         <p> With this role, you can visit <span class="route">/admin</span> by attaching the token as a bearer token</p>
+
+        <form method="POST" action="/admin" onsubmit="send(event,this)">
+            <div>
+                <label for="data">Add Data to "admin"</label>
+                <input type="text" id="admin" name="admin-data" required>
+            </div>
+            <input type="submit">    
+        </form>
+</div>
     {{ end }}
 
     {{ if .Owner }}
+    <div class="form">
         <p class="role-text">You are an Owner -- congrats!</p>
         <p> With this role, you can visit <span class="route">/owner</span> by attaching the token as a bearer token</p>
+
+        <form method="POST" action="/owner" onsubmit="send(event,this)">
+            <div>
+                <label for="data">Add Data to "owner"</label>
+                <input type="text" id="owner" name="owner-data" required>
+            </div>
+            <input type="submit">    
+        </form>
+    </div>
     {{ end }}
 </body>
 </html>
