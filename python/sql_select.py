@@ -1,11 +1,16 @@
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql/update"
+url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql"
 
 payload = json.dumps([
   {
-    "stmt": "update deviceMaster set location = 'LA' where equipmentID = '01'"
+    "type": "sql-select",
+    "stmt": "SELECT * FROM deviceMaster"
+  },
+  {
+    "type": "sql-select",
+    "stmt": "SELECT temp, co FROM device1 WHERE temp>=24"
   }
 ])
 headers = {

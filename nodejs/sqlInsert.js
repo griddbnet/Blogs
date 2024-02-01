@@ -8,7 +8,7 @@ var options = {
   },
   body: JSON.stringify([
     {
-      "stmt": "update deviceMaster set location = 'LA' where equipmentID = '01'"
+      "stmt": "insert into deviceMaster(equipment, equipmentID, location, serialNumber, lastInspection, information) values('device2', '02', 'MA', '34412', TIMESTAMP('2023-12-21T10:45:00.032Z'), 'working')"
     }
   ])
 
