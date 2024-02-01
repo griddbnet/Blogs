@@ -252,13 +252,39 @@ func main() {
 
 Our old routes from the previous article are protected the `isAuthorized` function; our new routes can be protected by `granularAuth`. 
 
-Again, the flow is as follows: the user signs in  and is granted a `login` token. That user is then redirected to `/auth`, where they have an opportunity to create a new json web token. As of now, they cannot access any of the routes protected by `granularAuth`. Once they create a new token with the options presented to them, they will have a new token presented to them in the `/getToken` page. Armed with this token, they can now make HTTP Requests to the routes protected by `granularAuth`, but they must attach the token as an authorization bearer token.
+Again, the flow is as follows: the user signs in and is granted a `login` token. That user is then redirected to `/auth`, where they have an opportunity to create a new json web token. As of now, they cannot access any of the routes protected by `granularAuth`. Once they create a new token with the options presented to them, they will have a new token presented to them in the `/getToken` page. Armed with this token, they can now make HTTP Requests to the routes protected by `granularAuth`, but they must attach the token as an authorization bearer token.
 
 ![token page](images/token-page.png)
 
-And of course, their JSON Web Token must also explicitly grant access to that specific route to read that specific GridDB Endpoint. 
+As you can see from this page, each endpoint has its own input field -- this allows the user to add rows of data to the specific container associated with the endpoint (ie. /basic is associated with the container called basic). And because this endpoint is protected by our auth (meaning it needs the new json web token we just made), the code is adding the bearer token for you directly in the post request to add the data to the specific container. Here is some of that code: 
 
-Here is what that function looks like (caution: it's big and ugly): 
+```javascript
+function send(e,form) {
+    console.log("Authorization: 'Bearer {{ .Value }}'")
+
+    const str = form.action;
+    const n = str.lastIndexOf('/');
+    const containerName = str.substring(n + 1);
+
+    fetch(form.action, {
+      method:'post', 
+      headers: {
+        Authorization: 'Bearer {{ .Value }}'
+      },
+      body: new URLSearchParams(new FormData(form))
+    });
+
+  console.log('sent data');
+  alert("Added row of data to container: " + containerName)
+  //document.getElementById(result).reset();
+  form.reset()
+  e.preventDefault();
+}
+```
+
+The `{{ .Value }}` comes from our Go backend, it is the json web token string. And one more note: the frontend page here is handling the json web token for you, but when we make our GET requests to test and read the contents, we will need to manually input our bearer token for *those* requests.
+
+Next, let's take a look at the backend (golang) code which will actually handle our athentication -- caution: it's big and ugly: 
 
 ```golang
 func granularAuth(endpoint func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
