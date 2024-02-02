@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid #ddd; /* Tailwind's border-gray-300 */
+  padding: 0.5rem; /* Tailwind's p-2 */
+  text-align: left; /* Default alignment for table data */
+}
+
+.markdown th {
+  text-align: center; /* Center alignment for headers */
+  background-color: #f8f8f8; /* Tailwind's bg-gray-100 */
+}
