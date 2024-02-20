@@ -1,4 +1,4 @@
-With the rollout of [GridDB v5.5](https://github.com/griddb/griddb), there have been some updates to the performance of SQL searches with joins, optimizations for partitioned indexes, and finally, the subject of this article: batch updates for SQL. Being able to update your GridDB containers with SQL in batches opens up a clear pathway for some optimizations in your applications. In this article, we will showcase how to conduct some SQL updates in batches through the lens of a simple benchmark to see how much faster (or not!) it is to run these commands in batches. And then at the end, we will also compared it to TQL which generally operates much more quickly in GridDB due to loads of optimizations under the hood.
+With the rollout of [GridDB v5.5](https://github.com/griddb/griddb), there have been some updates to the performance of SQL searches with joins, optimizations for partitioned indexes, and batch updates for SQL. All of the new features are there to help with the performance of your GridDB server, and batch updates especially provide the ability to update your GridDB containers with SQL in batches, which opens up a clear pathway for some optimizations in your applications. In this article, we will showcase how to conduct some SQL updates in batches through the lens of a simple benchmark to see how much faster (or not!) it is to run these commands in batches.  And then at the end, we will also compared it to TQL which generally operates much more quickly in GridDB due to loads of optimizations under the hood. We will also lightly discuss the other features.
 
 ## Getting Starts (Prereqs)
 
@@ -20,6 +20,46 @@ $ docker run sql-batch --network=host
 Note: the commands above assume you are already running a GridDB server on your host machine with the default configs set. If you would like to run GridDB in a docker container, you will need to adjust how you are running this project.
 
 Afterwards, you can feel free to drop into the [GridDB CLI](https://github.com/griddb/cli) and check the results of the operations as well.
+
+## SQL Cost-Based Optimization 
+
+Prior to the release of v5.5, SQL queries which required SQL joins had to be optmized solely by the user/developer who was forging those queries. For example, if you were making a query, the order in which you made your query would be the order in which the tables were joined to give you the results of the search -- this means that you needed to be purposeful in the way the query was worded and formed to be as efficient as possible. But with the release of v5.5, now there is a new setting called cost-based optimization (which is set to true by default, but can be turned off in the `gs_cluster.json` file). Note: if you are interested in turning this feature off, set `/sql/costBasedJoin` to false in the cluster config file. If you set the cost-based join to false, it will instead use what is called a rule-based join.
+
+The cost-based method will do all optimizations automatically for you under the hood so that you aren't required to know all of the best optimizations off-hand and are no longer required to expend the effort into crafting efficient queries with every single call. The old method, the rule-based one, required the optimizations to be done on the side of the developer, who would be required to know off-hand the best ways to optimize table joins.
+
+Under the hood, the cost-based method is constantly figuring out which queries' results will have more rows and will adjust accordingly. As an example, if you had the following query: 
+
+`FROM A, C, B WHERE A.x>=C.z AND C.z>=B.y AND B.y=A.x`
+
+Instead of joining in order in which it was written (rule-based), it will instead ascertain that the relationship between A and B is high, so it will join A with B and then the result of that with C.
+
+Another method of optimizing is to find which table is more filtered (ie will have a smaller amount of rows in the results) and to join those first. So here's another example:
+
+`FROM A, B, C WHERE A.x=C.z AND C.z=B.y AND A.x IN (1, 2) AND B.x IN (1, 2, 3)`
+
+Here, table A has much more filtering into a narrower result, meaning it will be joined first.
+
+### Hints
+
+And though the cost-based optimizations setting is set to on by default, there is another method of optimizing your queries. Instead of leaving this setting on, you could also turn it off and instead use the `hint` system (Note: you can use the hints even if cost-based optimizations is kept to `true`).
+
+The hint system allows you to set special markers in your queries to indicate that you are giving the system a hint of how to conduct the query. To do so, you need to set a comment (indicated with special reserved characters : `/*+`) RIGHT before or after the `SELECT` statement like so: 
+
+```sql
+/*+
+Leading(t3 t2 t1)
+ */
+SELECT *
+  FROM t1, t2, t3
+    ON t1.x = t2.y and t2.y = t3.z
+  ORDER BY t1.x
+  LIMIT 10;
+```
+In this example, the hint `Leading` tells our query the order in which the table joins should be conducted. There are many more types of hints which can be utilized for this
+
+## Optimization of Index Joins Related to Partitioning Tables
+
+Before version 5.5, sometimes index joins would not occur if the underlying tables had too many partitions, resulting in full table scans. With this update, even if a table has many partitions or different types, plans that perform index joins will still run as expected.
 
 ## Benchmarking SQL Inserts
 
