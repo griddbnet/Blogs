@@ -1,0 +1,120 @@
+version: '3'
+volumes:
+  griddb:
+
+services:
+
+  griddb-server:
+    build:
+      context: griddb-server
+      dockerfile: Dockerfile
+    container_name: griddb-server
+    expose:
+      - '10001'
+      - '10010'
+      - '10020'
+      - '10040'
+      - '20001'
+      - '41999'
+    environment:
+      NOTIFICATION_MEMBER: 1
+      GRIDDB_CLUSTER_NAME: myCluster
+#    volumes:
+#      - 'griddb:/var/lib/gridstore/data'
+
+
+  zookeeper:
+    image: 'confluentinc/cp-zookeeper:7.3.0'
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: 'confluentinc/cp-kafka:7.3.0'
+    container_name: broker
+    ports:
+      - '9092:9092'
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:9092,PLAINTEXT_INTERNAL://broker:29092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  kafka-schema-registry:
+    image: 'confluentinc/cp-schema-registry:7.3.0'
+    hostname: kafka-schema-registry
+    container_name: kafka-schema-registry
+    ports:
+      - '8082:8082'
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker:9092'
+      SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8082'
+    depends_on:
+      - zookeeper
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    container_name: kafka-connect
+    ports:
+      - '8083:8083'
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'broker:9092'
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: device
+      CONNECT_CONFIG_STORAGE_TOPIC: device-config
+      CONNECT_OFFSET_STORAGE_TOPIC: device-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: device-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: true
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: true
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8082'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8082'
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: '[%d] %p %X{connector.context}%m (%c:%L)%n'
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: '1'
+      CONNECT_PLUGIN_PATH: >-
+        /usr/share/java,/etc/kafka-connect/jars,/usr/share/confluent-hub-components,/usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib
+      CLASSPATH: >-
+        /usr/share/java,/etc/kafka-connect/jars,/usr/share/confluent-hub-components,/usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib
+    volumes:
+      - './scripts:/scripts'
+      - './kafka-connect/connectors:/etc/kafka-connect/jars/'
+      
+    depends_on:
+      - zookeeper
+      - broker
+      - kafka-schema-registry
+      - griddb-server
+    command:
+      - bash
+      - '-c'
+      - >
+        /etc/confluent/docker/run & 
+
+        echo "Waiting for Kafka Connect to start listening on kafka-connect ⏳"
+
+        while [ $$(curl -s -o /dev/null -w %{http_code}
+        http://kafka-connect:8083/connectors) -eq 000 ] ; do 
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$(curl -s -o /dev/null -w %{http_code} http://kafka-connect:8083/connectors) " (waiting for 200)"
+          sleep 5 
+        done
+
+        nc -vz kafka-connect 8083
+
+        echo -e "\n--\n+> Creating Kafka Connect GridDB sink"
+
+        /scripts/create-griddb-sink.sh
+
+        sleep infinity     

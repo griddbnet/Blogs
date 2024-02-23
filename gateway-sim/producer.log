@@ -1,0 +1,11 @@
+2024-02-22 10:38:10 <BrokerConnection node_id=bootstrap-0 host=broker:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to broker:9092 [('127.0.0.1', 9092) IPv4]
+2024-02-22 10:38:10 Probing node bootstrap-0 broker version
+2024-02-22 10:38:10 <BrokerConnection node_id=bootstrap-0 host=broker:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection complete.
+2024-02-22 10:38:10 Broker version identified as 2.5.0
+2024-02-22 10:38:10 Set configuration api_version=(2, 5, 0) to skip auto check_version requests on startup
+2024-02-22 10:38:10 <BrokerConnection node_id=1 host=broker:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to broker:9092 [('127.0.0.1', 9092) IPv4]
+2024-02-22 10:38:10 <BrokerConnection node_id=1 host=broker:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: Connection complete.
+2024-02-22 10:38:10 <BrokerConnection node_id=bootstrap-0 host=broker:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. 
+2024-02-22 10:38:10 Topic meter_0 is not available during auto-create initialization
+2024-02-22 10:38:11 Closing the Kafka producer with 0 secs timeout.
+2024-02-22 10:38:11 Proceeding to force close the producer since pending requests could not be completed within timeout 0.
