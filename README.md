@@ -192,7 +192,7 @@ and finally
 | 2024-03-01 00:47:03.714 |
 | 2024-03-02 00:47:03.714 | 
 
-There is another partition for the days from 02/21 - 02/26 but because 26 is already ten days old (expiration time), the entire partition is unsearchable and possibly deleted.
+There is another partition for the days from 02/21 - 02/26 but because ten days ago is 03/01, the entirety of the data from that last partition fall outside of our expiry time, the entire partition is unsearchable and possibly deleted.
 
 ## Conclusion
 
