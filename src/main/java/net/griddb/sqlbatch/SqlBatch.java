@@ -99,16 +99,16 @@ public class SqlBatch {
 		pstmtBatch.close();
 		con.close();
 
-		Tql tql = new Tql();
+		NoSQL noSQL = new NoSQL();
 
 		startTime = System.nanoTime();
-		tql.runSinglePut(serialBlob);
+		noSQL.runSinglePut(serialBlob);
 		endTime = System.nanoTime();
 		duration = (endTime - startTime) / 1000000;
 		System.out.println("TQL took: " + Long.toString(duration) + " milliseconds");
 
 		startTime = System.nanoTime();
-		tql.runMulti(serialBlob);
+		noSQL.runMulti(serialBlob);
 		endTime = System.nanoTime();
 		duration = (endTime - startTime) / 1000000;
 		System.out.println("Multi Put took: " + Long.toString(duration) + " milliseconds");
