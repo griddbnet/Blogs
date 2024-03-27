@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" />
+    <title>Realtime Dashboard</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+        integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    
+    <style>
+        .badge {
+            margin-left: -10px;
+            background-color: #E91E63 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="container-fluid" style="max-width: 900px; margin: 0 auto;">
+        <h2 class="text-center">Realtime Dashboard</h2>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                Chart Server Sent Event
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i>
+                Votes Count by Time
+            </div>
+            <div style="height:auto; width: 800px;"><canvas id="charts"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script type="text/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reconnecting-eventsource@1.6.2/dist/ReconnectingEventSource.min.js"></script>
+
+    <script th:inline="javascript">
+        Chart.register(ChartDataLabels);
+
+        const data = [
+            { label: "2023-07-01 10:01:01", count: 10 }
+        ];
+
+        const config = {
+            type: 'line',
+            data: {
+                labels: Array(1).fill("0000-00-00 00:00:00"),
+                datasets: [{
+                    label: 'Votes by Time',
+                    data: Array(1).fill(null),
+                    borderWidth: 1,
+                    pointStyle: 'circle',
+                    pointRadius: 10,
+                    pointHoverRadius: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Real-Time Chart'
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            color: 'red',
+                            display: true,
+                            text: 'Count of Votes'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            tickColor: 'red'
+                        },
+                        ticks: {
+                            color: 'blue',
+                        }
+                    }
+                },
+                plugins: {
+                    datalabels: {
+                        color: 'white',
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                }
+            }
+        };
+
+        const ctx = document.getElementById('charts');
+        const voteChart = new Chart(ctx, config);
+        /* A small decorator for the JavaScript EventSource API that automatically reconnects */
+        const eventSource = new ReconnectingEventSource("/votes/chart-data");
+        
+        eventSource.onmessage = function (event) {
+            console.log("Received event: " + event.data);
+            const data = JSON.parse(event.data);
+            config.data.labels.splice(0, config.data.labels.length, ...data.map(row => row.label));
+            config.data.datasets[0].data.splice(0, config.data.datasets[0].data.length, ...data.map(row => row.count));
+            voteChart.update();
+        };
+        eventSource.onopen = function (event) {
+            console.log("Connection opened");
+        };
+        eventSource.onerror = function (event) {
+            console.log("Connection error");
+        };
+
+    </script>
+
+</body>
+
+</html>
