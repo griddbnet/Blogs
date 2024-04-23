@@ -1,0 +1,109 @@
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0] }}"
+  name: "Air Quality Data (Daily)"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][0] }}"
+  name: "Particle Matter 1"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][1] }}"
+  name: "Particle Matter 2.5"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][2] }}"
+  name: "Particle Matter 10"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][3] }}"
+  name: "Particles 03"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][4] }}"
+  name: "Particles 05"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][5] }}"
+  name: "Particles 10"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][6] }}"
+  name: "Particles 25"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][7] }}"
+  name: "Particles 50"
+  scan_interval: 3600
+
+- platform: rest
+  resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
+  method: POST
+  headers:
+    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    Content-Type: application/json
+  payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
+  value_template: "{{ value_json[0].results[0][8] }}"
+  name: "Particles 100"
+  scan_interval: 3600

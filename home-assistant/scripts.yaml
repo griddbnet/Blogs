@@ -1,0 +1,19 @@
+get_griddb_data:
+  sequence:
+    - service: rest_command.griddb_cloud_get_aqdata
+      response_variable: aqdata
+    - if: "{{ aqdata['status'] == 200 }}"
+      then:
+        - alias: Parse data
+          variables:
+            results: "{ {aqdata['content']['results'] }}"
+        - if: "{{ results != 'null'}}"
+          then:
+            service: light.turn_on
+            target:
+              entity_id: light.living_room
+            data:
+              rgb_color:
+                - 240
+                - 0
+                - 0
