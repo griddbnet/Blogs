@@ -1,8 +1,24 @@
-The marriage between IoT devices and GridDB is a well-known phenomenon. To help flesh this union along a bit further, we have integrated GridDB Cloud with the open source smart home solution known as [Home Assistant](https://www.home-assistant.io/). If you are unfamiliar, Home Assistant is an "Internet of things (IoT) ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control and privacy". Typically, end users install the software onto their home servers/raspberry pis to control all aspects of internet-connected physical devices within range of their wi-fi network. For example, one might install home assistant to act as their smart hub to control their smart light bulbs, smart robovac, etc.
+![featured image](images/air.jpeg)
 
-The beauty of home assistant is its versatility and flexibility. For instance, because it's completely open source and built for tinkers/developers, many users can roll their own solutions for their specific use cases and build their own automations based on their scripts and needs. For our case, we were interested in using a physical sensor to measure an important metric in the real world, save those values inside of a time-series database, and then be able to query those results on a consistent interval to alert the users of problematic sensor readings.
+Despite humanity's (lackluster) efforts, climate change has become an omnipresent, undeniable force. Though there are many side effects that come with a rising global average temperature, today I want to focus on wildfires and their affect on the air quality of all surrounding areas. And indeed, when a 100-acre-fire is burning up a California forest, all of that debris and particle matter are kicked up into the atmosphere, becoming potentially dangerous, inhalable matter.
 
-For this blog, we have connected an air quality sensor -- [Adafruit PMSA003I Air Quality Breakout](https://www.adafruit.com/product/4632) -- to a raspberry pi. We send the sensor readings up to GridDB Cloud every 1 second via HTTP Request. With our data being saved into persistent storage with GridDB Cloud, we can again make use of the HTTP Requests to query our dataset wherever an internet connection is available. In this case, we want to use Home Assistant to query our dataset to alert us of higher than normal particle matters in the air at our locations. We also want to include an easy to read sensor reading right on our Home Assistant home dashboard.
+Of course, there are various other factors which can (and do) contribute to the AQI (Air Quality Index), a measure developed by government agencies to communicate how polluted the air is. To me, this means that even if there isn't a wildfire nearby causing spikes in AQI, there is still a reason to be informed and aware of what the air quality is like at any given moment.
+
+## The Project
+
+For this article, we were interested in measuring the air quality inside of our homes. Specifically, we wanted to take live readings of our air quality data, save it into persistent storage, and then notify the inhabitants when the air quality grew passed a certain threshold.  
+
+To accomplish our goal, we sought out to integrate GridDB Cloud with the open source smart home solution known as [Home Assistant](https://www.home-assistant.io/). If you are unfamiliar, Home Assistant is an "Internet of things (IoT) ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control". Typically, end users install the software onto their home servers to control aspects of their internet-connected physical devices. As an example, one might install home assistant to act as their smart hub to control their smart light bulbs, smart robovac, etc.
+
+The beauty of home assistant is in its versatility and flexibility. For instance, because it's completely open source and built for tinkerers/developers, many users can roll their own solutions for their specific use cases, building their own automations. For our case, we were interested in being able to query GridDB Cloud's sensor data and then being able to notify those who live in the same space as the sensor that the air quality is approaching dangerous levels in some tangible way.
+
+### Project Specifics
+
+To propel the project forward, we have connected an air quality sensor -- [Adafruit PMSA003I Air Quality Breakout](https://www.adafruit.com/product/4632) -- to a raspberry pi. We send the sensor readings up to GridDB Cloud every 1 second via HTTP Request. With our data being saved into persistent storage with GridDB Cloud, we can make HTTP Requests to query our dataset with `SQL Select statements`. In this case, we want to use Home Assistant to query our dataset to alert us of higher than normal particle matters in the air at our locations. We also want to include an easy to read sensor reading right on our Home Assistant home dashboard.
+
+![diagram](/images/Diagram.jpg)
+
+An interesting point about this particular sensor is that it can read matter as small as 1 micron (labeled as `PM1`). These particles are so small that they can [penetrate lung tissue and get directly into your bloodstream](https://www.iqair.com/us/newsroom/pm1); this particle is also not a commonly detected-for object because it takes specialized equipment. And indeed, this particle will be the focus of our queries for notifying the home inhabitants of its increasing levels.
 
 ## Project Requirements
 
@@ -12,19 +28,21 @@ If you would like to follow along, you will need the following:
 2. Air Quality sensor 
 3. Means of connecting the sensor to a computer (single board or otherwise)
 
-Once you have set up the necessary hardware and can connect to your GridDB Cloud database, you can grab the source code from here: [GitHub]() to run the simple python script to send sensor readings.
+Once you have set up the necessary hardware and can connect to your GridDB Cloud database, you can grab the source code from here: [GitHub](https://github.com/griddbnet/Blogs/tree/air_quality_sensor) to run the simple python script to send sensor readings.
 
 ## Connecting the Hardware
 
-In my case, I bought the air quality sensor with the STEMMA Connector. So to connect it to my Raspberry Pi 4, I bought a [STEMMA Hat](https://www.adafruit.com/product/4688) and a STEMMA wire and that was the extent of the connection needed to be made. If you do not want to purchase a STEMMA hat, you can also solder onto the sensor its pins and use a breadboard to connect to the Raspberry Pi's GPIO pins as well. If you go this route, you may need to alter the python script provided by our source code -- you can read more about how to physically connect this air quality sensor through their documentation page: [Docs](https://learn.adafruit.com/pmsa003i?view=all).
+In my case, I bought the air quality sensor with the STEMMA Connector. So to connect it to the Raspberry Pi 4, I bought a [STEMMA Hat](https://www.adafruit.com/product/4688) and a STEMMA wire; that was the extent of the connection needed to be made. If you do not want to purchase a STEMMA hat, you can also solder the pins onto the sensor and use a breadboard to connect to the Raspberry Pi's GPIO pins. If you go this route, you may need to alter the python script provided by our source code -- you can read more about how to physically connect this air quality sensor through their documentation page: [Docs](https://learn.adafruit.com/pmsa003i?view=all).
+
+![image of raspberry pi](/images/hardware.jpg)
 
 ## Software
 
-Now let's focus on the software that make this project go. 
+Now let's focus on the software that makes this project go. 
 
 ### Python Script for Container Creation and Pushing Data
 
-First and foremost, of course, is our script which sends the sensor readings as HTTP requests. It is a modified version of the example script provided directly by ada fruit's documentation. The data structure of the incoming data readings are already laid out in convenient dictionary matter, so we simply need to iterate through and make the values match up with how we lay out our schema on container creation. So first, here's the script for container creation: 
+First and foremost, is our script which sends the sensor readings as HTTP requests. It is a modified version of the example script provided directly by ada fruit's documentation. The data structure of the incoming data readings are already laid out in convenient dictionary matter, so we simply need to iterate through and make the values match up with how we lay out our schema on container creation. So first, here's the script for container creation: 
 
 ```python
 import http.client
@@ -92,7 +110,7 @@ payload = json.dumps({
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  'Authorization': 'Basic <redacted>'
 }
 conn.request("POST", "/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers", payload, headers)
 res = conn.getresponse()
@@ -127,7 +145,7 @@ import json
 conn = http.client.HTTPSConnection("cloud5197.griddb.com")
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  'Authorization': 'Basic <redacted>'
 }
 
 reset_pin = None
@@ -168,19 +186,21 @@ And now that we have our data available in the cloud, we can move on to integrat
 
 ### Home Assistant
 
-Home automation software comes in many varieties, with many companies providing their own hubs, sold alongside their own products. Home assistant is unique in that it is, 1. completely open source, and 2. made to integrate with all manner of physical and virtual devices. For example, in my own personal home environment, I have Home Assistant running on a Raspberry Pi. To allow it to communicate with other physical devices, I have installed a Zigbee/Z-Wave USB Stick. If you are unfamiliar, Zigbee and Z-Wave are protocols used by smart home devices to communicate with their hubs. In my case, most of my smart light bulbs communicate through Zigbee, for example.
+Home automation software comes in many varieties, with many companies providing their own hubs sold alongside their own products. Home assistant is unique in that it is, 1. completely open source, and 2. made to integrate with all manner of physical and virtual devices. For example, in my own personal home environment, I have Home Assistant running on a Raspberry Pi. To allow it to communicate with other physical devices, I have installed a Zigbee/Z-Wave USB Stick. If you are unfamiliar, Zigbee and Z-Wave are protocols used by smart home devices to communicate with their hubs. In my case, most of my smart light bulbs communicate through Zigbee, for example.
 
-In any case, through Home Assistant, we can create various scripts/automations for getting things done. Some examples can be: turn on bedroom lights at 1% at wake up time, or play my Spotify playlist every day at lunch time, etc etc. In the case of our air quality sensor, we can send out a direct HTTP Query against our sensor data and do `something` if our readings are higher than a certain threshold. For this blog, I have set up my home to turn my living room light bulbs on to red if the `pm1` particles are above a certain threshold over the past 1 hour. But of course, because Home Assistant is flexible, you could set up any sort of notification method you'd like, including emails, phone push notifications, or even turning on your robovac!
+In any case, through Home Assistant, we can create various scripts/automations for getting things done. Some examples can be: turn on bedroom lights at 1% at wake up time, or play my Spotify playlist every day at lunch time, etc etc. In the case of our air quality sensor, we can send out a direct HTTP Query against our sensor data and do `something` if our readings are higher than a certain threshold. For this blog, I have set up my home to turn my living room light bulbs `on` and to `red` if the `pm1` particles are above a certain threshold, over the past 1 hour. But of course, because Home Assistant is flexible, you could set up any sort of notification method you'd like, including emails, phone push notifications, or even turning on your robovac!
 
-So, to continue on, we will need to first forumulate our query on sensor readings, learn how to make HTTP Requests through Home Assistant, and learn how to act on the data returned by our query. After we set up our notifcation system for high sensor reading averages, we will also want to display all sensor readings in our Home Assistant dashboard.
+So, to continue on, we will need to first formulate our query on sensor readings, learn how to make HTTP Requests through Home Assistant, and learn how to act on the data returned by our query. After we set up our notifcation system for high sensor reading averages, we will also want to display all sensor readings in our Home Assistant dashboard.
+
+#### Forumulating our Query
+
+First, let's get our query settled. From my cursory research, `pm1` particles are potentially the most threatening to our health because those particles are *so* tiny they can be inhaled and absorbed directly through the lungs; we will want to set up an alert for these particles. 
+
+Before we begin, Let's use `cURL` or Postman to test our HTTP Queries until we get what we are looking for; in my case, I used postman until I was happy with the results. The query I settled is the following: `SELECT AVG(pm1) FROM aqdata WHERE ts > TIMESTAMP_ADD(HOUR, NOW(), -1) AND ts < NOW() AND pm1 > 10 "`. This query will look at the data from the past 1 hour and will return with data if the avg value is over 10. Though please note I did not do strict research on what consitutes an unhealthy amount of `pm1` particles, this is simply for demo purposes. But now that we have our query, we can figure out how to make `HTTP REQUESTS` through Home Assistant.
 
 #### Making HTTP Requests with Home Assistant
 
-First, let's get our Query settled. From my cursory research, `pm1` particles are potentially the most threatening to our health as those particles are so small, they can be inhaled and absorbed directly through the lungs. So we will want to set up an alert for these particles, and I suppose the action we take based on this information depends on a lot of other factors we will not get into during this blog. 
-
-So first, let's use `cURL` or Postman to test our HTTP Queries until we get what we are looking for. In my case, I used postman until I was happy with the results. The query I settled is the following: `SELECT AVG(pm1) FROM aqdata WHERE ts > TIMESTAMP_ADD(HOUR, NOW(), -1) AND ts < NOW() AND pm1 > 10 "`. This query will look at the data from the past 1 hour and will return with data if the avg value is over 10. Though please note I did not do strict research on what consitutes an unhealthy amount of `pm1` particles in there, this is simply for demo purposes. But now that we have our query, we can figure out how to make HTTP REQUESTS through Home Assistant.
-
-Within the `/config` directory of the Home Assistant, there are a bunch of `yaml` files which are used to make configuration and automation changes to the software itself -- very flexible and customizable. In our case, we want to add what is called a `rest_command` inside of the configuraion yaml. We also would like to add an automation of what action to take based on the returned data from our `rest_command` -- this will happen in the `scripts.yaml` file. Please note that all `yaml` files are included in the source code in the GitHub page linked above. 
+Within the `/config` directory of the Home Assistant, there are a bunch of `yaml` files which are used to make configuration and automation changes to the software itself -- very flexible and customizable. In our case, we want to add what is called a `rest_command` inside of the configuration yaml. We also would like to add an automation of what action to take based on the returned data from our `rest_command` -- this will happen in the `scripts.yaml` file. Please note that all `yaml` files are included in the source code in the GitHub page linked above. 
 
 So, here is what our `configuration.yaml` file will need to make the HTTP Request: 
 
@@ -192,7 +212,7 @@ rest_command:
     method: post
     content_type: "application/json"
     headers:
-      authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+      authorization: "Basic <redacted>"
     payload: '[{"type" : "sql-select", "stmt" : "SELECT AVG(pm1) FROM aqdata WHERE ts > TIMESTAMP_ADD(HOUR, NOW(), -1) AND ts < NOW() AND pm1 > 10 "}]'
 ```
 
@@ -251,7 +271,7 @@ The last thing we would like to accomplish is to show our sensor readings direct
   resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
   method: POST
   headers:
-    authorization: "Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs"
+    authorization: "Basic <redacted>"
     Content-Type: application/json
   payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
   value_template: "{{ value_json[0].results[0][0] }}"
@@ -283,7 +303,9 @@ columns: 3
 state_color: false
 ```
 
-And now we can have our daily averages at a glance. Of course, this just a few of things you can do with this information so readily available and that's really the beauty of having the open source Home Assistant powering your home automations, and why it's great to have GridDB Cloud hosting all of your data -- it can accessible from anywhere and you can upload data from anywhere, as long as you have an internet connection. You could, of course, monitor poor air in remote locations, or in locations of loved ones far away and take actions however you see fit.
+![image of dashboard card](images/home-assistant-dashboard.png)
+
+And now we can have our daily averages at a glance. Of course, this just a few of things you can do with this information being so readily available; this really is the beauty of having the open source Home Assistant powering your home automations, and why it's great to have GridDB Cloud hosting all of your data -- it can be accessible from anywhere and you can upload data from anywhere, as long as you have an internet connection. You could, of course, monitor poor air in remote locations, or in locations of loved ones far away and take actions however you see fit.
 
 ## Conclusion
 

@@ -20,7 +20,7 @@ import json
 conn = http.client.HTTPSConnection("cloud5197.griddb.com")
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  'Authorization': 'Basic <redacted>'
 }
 
 reset_pin = None

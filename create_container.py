@@ -63,7 +63,7 @@ payload = json.dumps({
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+  'Authorization': 'Basic <redacted>'
 }
 conn.request("POST", "/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers", payload, headers)
 res = conn.getresponse()
