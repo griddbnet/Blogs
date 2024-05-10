@@ -2,23 +2,23 @@
 
 Despite humanity's (lackluster) efforts, climate change has become an omnipresent, undeniable force. Though there are many side effects that come with a rising global average temperature, today I want to focus on wildfires and their affect on the air quality of all surrounding areas. And indeed, when a 100-acre-fire is burning up a California forest, all of that debris and particle matter are kicked up into the atmosphere, becoming potentially dangerous, inhalable matter.
 
-Of course, there are various other factors which can (and do) contribute to the AQI (Air Quality Index), a measure developed by government agencies to communicate how polluted the air is. To me, this means that even if there isn't a wildfire nearby causing spikes in AQI, there is still a reason to be informed and aware of what the air quality is like at any given moment.
+Of course, there are various other factors which can (and do) contribute to the quality of the air we breathe. To me, this means that even if there isn't a wildfire nearby causing spikes in AQI (Air Quality Index), there is still a reason to be informed and aware of what the air quality is like at any given moment.
 
 ## The Project
 
 For this article, we were interested in measuring the air quality inside of our homes. Specifically, we wanted to take live readings of our air quality data, save it into persistent storage, and then notify the inhabitants when the air quality grew passed a certain threshold.  
 
-To accomplish our goal, we sought out to integrate GridDB Cloud with the open source smart home solution known as [Home Assistant](https://www.home-assistant.io/). If you are unfamiliar, Home Assistant is an "Internet of things (IoT) ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control". Typically, end users install the software onto their home servers to control aspects of their internet-connected physical devices. As an example, one might install home assistant to act as their smart hub to control their smart light bulbs, smart robovac, etc.
+To accomplish our goal, we sought to integrate GridDB Cloud with the open source smart home solution known as [Home Assistant](https://www.home-assistant.io/). If you are unfamiliar, Home Assistant is an "Internet of things (IoT) ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control". Typically, end users install the software onto their home servers to control aspects of their internet-connected physical devices. As an example, one might install Home Assistant to act as their smart hub to control their smart light bulbs, smart robovac, etc.
 
-The beauty of home assistant is in its versatility and flexibility. For instance, because it's completely open source and built for tinkerers/developers, many users can roll their own solutions for their specific use cases, building their own automations. For our case, we were interested in being able to query GridDB Cloud's sensor data and then being able to notify those who live in the same space as the sensor that the air quality is approaching dangerous levels in some tangible way.
+The beauty of Home Assistant is in its versatility and flexibility. For instance, because it's completely open source and built for tinkerers/developers, users can roll their own solutions for their own specific use cases, and build their own automations. For our case, we were interested in being able to query GridDB Cloud's sensor data and then being able to notify those who live in the same space as the sensor that the air quality is approaching dangerous levels in some tangible way.
 
-### Project Specifics
+### Project Specifics and the PM1 Particle
 
 To propel the project forward, we have connected an air quality sensor -- [Adafruit PMSA003I Air Quality Breakout](https://www.adafruit.com/product/4632) -- to a raspberry pi. We send the sensor readings up to GridDB Cloud every 1 second via HTTP Request. With our data being saved into persistent storage with GridDB Cloud, we can make HTTP Requests to query our dataset with `SQL Select statements`. In this case, we want to use Home Assistant to query our dataset to alert us of higher than normal particle matters in the air at our locations. We also want to include an easy to read sensor reading right on our Home Assistant home dashboard.
 
 ![diagram](/images/Diagram.jpg)
 
-An interesting point about this particular sensor is that it can read matter as small as 1 micron (labeled as `PM1`). These particles are so small that they can [penetrate lung tissue and get directly into your bloodstream](https://www.iqair.com/us/newsroom/pm1); this particle is also not a commonly detected-for object because it takes specialized equipment. And indeed, this particle will be the focus of our queries for notifying the home inhabitants of its increasing levels.
+As a sidenote: an interesting point about this particular sensor is that it can read matter as small as 1 micron (labeled as `PM1`). These particles are so small that they can [penetrate lung tissue and get directly into your bloodstream](https://www.iqair.com/us/newsroom/pm1); and because this particle is so tiny, it's only detectable by specialized equipment, including the sensor linked above. Because of the lack of readily available sources of PM1 readings, this particle will be the focus of our queries for notifying the home inhabitants of its increasing levels.
 
 ## Project Requirements
 
@@ -32,7 +32,7 @@ Once you have set up the necessary hardware and can connect to your GridDB Cloud
 
 ## Connecting the Hardware
 
-In my case, I bought the air quality sensor with the STEMMA Connector. So to connect it to the Raspberry Pi 4, I bought a [STEMMA Hat](https://www.adafruit.com/product/4688) and a STEMMA wire; that was the extent of the connection needed to be made. If you do not want to purchase a STEMMA hat, you can also solder the pins onto the sensor and use a breadboard to connect to the Raspberry Pi's GPIO pins. If you go this route, you may need to alter the python script provided by our source code -- you can read more about how to physically connect this air quality sensor through their documentation page: [Docs](https://learn.adafruit.com/pmsa003i?view=all).
+In my case, I bought the air quality sensor attached with a STEMMA Connector; to connect it to the Raspberry Pi 4, I bought a [STEMMA Hat](https://www.adafruit.com/product/4688) and a STEMMA wire. If you do not want to purchase a STEMMA hat, you can also solder the pins onto the sensor and use a breadboard to connect to the Raspberry Pi's GPIO pins. If you go this route, you may need to alter the python script provided by our source code -- you can read more about how to physically connect this air quality sensor through their documentation page: [Docs](https://learn.adafruit.com/pmsa003i?view=all).
 
 ![image of raspberry pi](/images/hardware.jpg)
 
@@ -42,7 +42,7 @@ Now let's focus on the software that makes this project go.
 
 ### Python Script for Container Creation and Pushing Data
 
-First and foremost, is our script which sends the sensor readings as HTTP requests. It is a modified version of the example script provided directly by ada fruit's documentation. The data structure of the incoming data readings are already laid out in convenient dictionary matter, so we simply need to iterate through and make the values match up with how we lay out our schema on container creation. So first, here's the script for container creation: 
+First and foremost, let's discuss the script which sends the sensor readings as HTTP requests. It is a modified version of the example script provided directly by ada fruit's documentation. The data structure of the incoming data readings are already laid out in convenient dictionary matter, so we simply need to iterate through and make the values match up with how we lay out our schema on container creation. So first, here's the script for container creation: 
 
 ```python
 import http.client
