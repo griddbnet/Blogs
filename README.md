@@ -1,8 +1,8 @@
 ![featured image](images/air.jpeg)
 
-Despite humanity's (lackluster) efforts, climate change has become an omnipresent, undeniable force. Though there are many side effects that come with a rising global average temperature, today I want to focus on wildfires and their affect on the air quality of all surrounding areas. And indeed, when a 100-acre-fire is burning up a California forest, all of that debris and particle matter are kicked up into the atmosphere, becoming potentially dangerous, inhalable matter.
+Despite humanity's (lackluster) efforts, climate change has become an omnipresent, undeniable force. Though there are many side effects that come with a rising global average temperature, today I want to focus on wildfires and their affect on the air quality of all surrounding areas; when a 100-acre-fire is burning up a Californian forest, all of that debris and particle matter get kicked up into the atmosphere, becoming potentially dangerous, inhalable matter.
 
-Of course, there are various other factors which can (and do) contribute to the quality of the air we breathe. To me, this means that even if there isn't a wildfire nearby causing spikes in AQI (Air Quality Index), there is still a reason to be informed and aware of what the air quality is like at any given moment.
+Of course, there are various *other* factors which can (and do) contribute to the quality of the air we breathe. To me, this means that even if there isn't a wildfire nearby causing spikes in AQI (Air Quality Index), there is still a reason to be informed and aware of what the air quality is like at any given moment.
 
 ## The Project
 
@@ -10,11 +10,13 @@ For this article, we were interested in measuring the air quality inside of our 
 
 To accomplish our goal, we sought to integrate GridDB Cloud with the open source smart home solution known as [Home Assistant](https://www.home-assistant.io/). If you are unfamiliar, Home Assistant is an "Internet of things (IoT) ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control". Typically, end users install the software onto their home servers to control aspects of their internet-connected physical devices. As an example, one might install Home Assistant to act as their smart hub to control their smart light bulbs, smart robovac, etc.
 
-The beauty of Home Assistant is in its versatility and flexibility. For instance, because it's completely open source and built for tinkerers/developers, users can roll their own solutions for their own specific use cases, and build their own automations. For our case, we were interested in being able to query GridDB Cloud's sensor data and then being able to notify those who live in the same space as the sensor that the air quality is approaching dangerous levels in some tangible way.
+The beauty of Home Assistant is in its versatility and flexibility. For instance, because it's completely open source and built for tinkerers/developers, users can roll their own solutions for their own specific use cases, and build their own automations. For our case, we were interested in being able to save all of the raw, unfiltered sensor data into GridDB Cloud at a resolution of 1 reading/second, and then using the Home Assistant to query the values needed to do what we want, eventually being able to notify those who live in the same space as the sensor that the air quality is approaching dangerous levels in some tangible way. 
 
 ### Project Specifics and the PM1 Particle
 
-To propel the project forward, we have connected an air quality sensor -- [Adafruit PMSA003I Air Quality Breakout](https://www.adafruit.com/product/4632) -- to a raspberry pi. We send the sensor readings up to GridDB Cloud every 1 second via HTTP Request. With our data being saved into persistent storage with GridDB Cloud, we can make HTTP Requests to query our dataset with `SQL Select statements`. In this case, we want to use Home Assistant to query our dataset to alert us of higher than normal particle matters in the air at our locations. We also want to include an easy to read sensor reading right on our Home Assistant home dashboard.
+The idea goes like this, we use a single board computer to connect to a sensor which will capture raw air quality data. We then send that raw data into GridDB cloud at a resolution of 1/second. Our Home Assistant can then query the data and downsample whatever information is necessary to accomplish our goal.
+
+To begin, we have connected an air quality sensor -- [Adafruit PMSA003I Air Quality Breakout](https://www.adafruit.com/product/4632) -- to a raspberry pi. We then use a python script to read and send the sensor readings up to GridDB Cloud every 1 second via HTTP Request. With our data being saved into persistent storage with GridDB Cloud, we can make HTTP Requests to query our dataset with `SQL Select statements`. In this case, we want to use Home Assistant to query our dataset to alert us of higher than normal particle matters in the air at our locations. We also want to include an easy to read sensor reading right on our Home Assistant dashboard with rolling averages.
 
 ![diagram](/images/Diagram.jpg)
 
