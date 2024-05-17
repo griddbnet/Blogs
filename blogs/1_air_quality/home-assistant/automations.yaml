@@ -1,0 +1,10 @@
+- id: '1713475588605'
+  alias: Get GridDB Data
+  description: get the griddb data
+  trigger:
+  - platform: time_pattern
+    minutes: /10
+  condition: []
+  action:
+  - service: script.get_griddb_data
+  mode: single
