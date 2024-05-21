@@ -14,7 +14,7 @@ The beauty of Home Assistant is in its versatility and flexibility. For instance
 
 ### Project Specifics and the PM1 Particle
 
-The idea goes like this, we use a single board computer to connect to a sensor which will capture raw air quality data. We then send that raw data into GridDB cloud at a resolution of 1/second. Our Home Assistant can then query the data and downsample whatever information is necessary to accomplish our goal.
+The idea goes like this, we use a single board computer to connect to a sensor which will capture raw air quality data. We then send that raw data into GridDB cloud at a resolution of 1 particle/second. Our Home Assistant can then query the data and downsample whatever information is necessary to accomplish our goal.
 
 To begin, we have connected an air quality sensor -- [Adafruit PMSA003I Air Quality Breakout](https://www.adafruit.com/product/4632) -- to a raspberry pi. We then use a python script to read and send the sensor readings up to GridDB Cloud every 1 second via HTTP Request. With our data being saved into persistent storage with GridDB Cloud, we can make HTTP Requests to query our dataset with `SQL Select statements`. In this case, we want to use Home Assistant to query our dataset to alert us of higher than normal particle matters in the air at our locations. We also want to include an easy to read sensor reading right on our Home Assistant dashboard with rolling averages.
 
@@ -27,6 +27,7 @@ As a sidenote: an interesting point about this particular sensor is that it can 
 If you would like to follow along, you will need the following: 
 
 1. Free GridDB Cloud Account
+  a. You can read instructions on how to sign up for a free GridDB cloud account from here: [GridDB Free Plan Blog]()
 2. Air Quality sensor 
 3. Means of connecting the sensor to a computer (single board or otherwise)
 
@@ -46,8 +47,9 @@ Now let's focus on the software that makes this project go.
 
 First and foremost, let's discuss the script which sends the sensor readings as HTTP requests. It is a modified version of the example script provided directly by ada fruit's documentation. The data structure of the incoming data readings are already laid out in convenient dictionary matter, so we simply need to iterate through and make the values match up with how we lay out our schema on container creation. So first, here's the script for container creation: 
 
-```python
-import http.client
+
+<div class="clipboard">
+<pre><code class="language-python">import http.client
 import json
 
 conn = http.client.HTTPSConnection("cloud5197.griddb.com")
@@ -117,15 +119,16 @@ headers = {
 conn.request("POST", "/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers", payload, headers)
 res = conn.getresponse()
 data = res.read()
-print(data.decode("utf-8"))
-```
+print(data.decode("utf-8"))</code></pre>
+</div>
 
 For the schema, we simply just used a 1:1 mapping to the `aqdata` dictionary returned by our sensor readings. Even if we don't intend to use all of these data points, the data readouts are so small, we keep them in.
 
 Next, let's take a look at the script that will push sensor readings to our GridDB Cloud instance. It will read the sensor data every 1 second, and then make an HTTP Request every second to push that data into the Cloud.
 
-```python
-# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+
+<div class="clipboard">
+<pre><code class="language-python"># SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
 
 """
@@ -179,8 +182,8 @@ while True:
     conn.request("PUT", "/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/containers/aqdata/rows", payload, headers)
     res = conn.getresponse()
     data = res.read()
-    print(data.decode("utf-8"))
-```
+    print(data.decode("utf-8"))</code></pre>
+</div>
 
 As explained above, there is nothing fancy or extraordinary about this script; it simply reads sensor data and then immediately pushes it out to the Cloud with a timestamp attached. The one thing to note, though, is that the GridDB Cloud is by default in UTC Time, so I have altered the timestamps to be attached to the data results to match UTC for consistency's sake.
 
@@ -194,7 +197,7 @@ In any case, through Home Assistant, we can create various scripts/automations f
 
 So, to continue on, we will need to first formulate our query on sensor readings, learn how to make HTTP Requests through Home Assistant, and learn how to act on the data returned by our query. After we set up our notifcation system for high sensor reading averages, we will also want to display all sensor readings in our Home Assistant dashboard.
 
-#### Forumulating our Query
+#### Formulating our Query
 
 First, let's get our query settled. From my cursory research, `pm1` particles are potentially the most threatening to our health because those particles are *so* tiny they can be inhaled and absorbed directly through the lungs; we will want to set up an alert for these particles. 
 
@@ -206,8 +209,9 @@ Within the `/config` directory of the Home Assistant, there are a bunch of `yaml
 
 So, here is what our `configuration.yaml` file will need to make the HTTP Request: 
 
-```yaml
-#configuration.yaml
+
+<div class="clipboard">
+<pre><code class="language-bash">#configuration.yaml
 rest_command:
   griddb_cloud_get_aqdata:
     url: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
@@ -215,13 +219,14 @@ rest_command:
     content_type: "application/json"
     headers:
       authorization: "Basic <redacted>"
-    payload: '[{"type" : "sql-select", "stmt" : "SELECT AVG(pm1) FROM aqdata WHERE ts > TIMESTAMP_ADD(HOUR, NOW(), -1) AND ts < NOW() AND pm1 > 10 "}]'
-```
+    payload: '[{"type" : "sql-select", "stmt" : "SELECT AVG(pm1) FROM aqdata WHERE ts > TIMESTAMP_ADD(HOUR, NOW(), -1) AND ts < NOW() AND pm1 > 10 "}]'</code></pre>
+</div>
 
 You can see here we included all neccesary things to make an HTTP Sql Select request to our Cloud instance. Here, we are naming our `rest_command` as `griddb_cloud_get_aqdata`, so now in our `scripts` file we can directly call upon this `service`
 
-```yaml
-#scripts.yaml
+
+<div class="clipboard">
+<pre><code class="language-bash">#scripts.yaml
 get_griddb_data:
   sequence:
     - service: rest_command.griddb_cloud_get_aqdata
@@ -240,15 +245,16 @@ get_griddb_data:
               rgb_color:
                 - 240
                 - 0
-                - 0
-```
+                - 0</code></pre>
+</div>
 
 As you can see, we are calling `rest_command.griddb_cloud_get_aqdata` as a service. This will run the HTTP Request and then parse the resulting data. If the results are null (meaning no data over our threshold), nothing will happen, but if we do get some data, we can take some action -- or in this case, change the living room lights to `on` and change the RGB to completely red, this way everybody in the home knows that the air quality is compromised in some way. 
 
 So to explain a bit more about how the yaml files work, the configuration yaml allows you to create `services`, in our case, the HTTP Request. The scripts file is for actions which may be run many times in many different spots, a bit analoguous to functions in software. And lastly we will use `automations.yaml` which sets up the trigger to when our script should be running. In our case, we want it run every 10 minutes -- that is, every 10 minutes our Home Assistant will look at the average `pm1` levels over the past 1 hour and take action if it is too high. 
 
-```yaml
-#automations.yaml
+
+<div class="clipboard">
+<pre><code class="language-bash">#automations.yaml
 - id: '1713475588605'
   alias: Get GridDB Data
   description: get the griddb data
@@ -258,8 +264,8 @@ So to explain a bit more about how the yaml files work, the configuration yaml a
   condition: []
   action:
   - service: script.get_griddb_data
-  mode: single
-```
+  mode: single</code></pre>
+</div>
 
 You can see here that the automation is calling upon our script to get the GridDB data. You can also see that our trigger is every 10 minutes.
 
@@ -267,8 +273,9 @@ You can see here that the automation is calling upon our script to get the GridD
 
 The last thing we would like to accomplish is to show our sensor readings directly onto the Home Assistant Dashboard. This will allow for all home users to constantly be aware othe readings. To do this, we will need to use the `sensors.yaml` file and establish new virtual "sensors" of HTTP Requests reading the sensor avg sensor data. For this, we needed to formulate a new SQL Query and this time around, I think we could make do with average readings for the past 24 hours. That query looks like this: `SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW()`. We simply grab all rounded averages from the past 1 day and use that info to be displayed in the dashboard.
 
-```yaml
-#sensors.yaml
+
+<div class="clipboard">
+<pre><code class="language-bash">#sensors.yaml
 - platform: rest
   resource: https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2xcGQJy/sql
   method: POST
@@ -278,15 +285,16 @@ The last thing we would like to accomplish is to show our sensor readings direct
   payload: '[{"type" : "sql-select", "stmt" : "SELECT ROUND(AVG(pm1)),ROUND(AVG(pm25)),ROUND(AVG(pm10)),ROUND(AVG(particles03)),ROUND(AVG(particles05)),ROUND(AVG(particles10)),ROUND(AVG(particles25)),ROUND(AVG(particles50)),ROUND(AVG(particles100)) FROM aqdata WHERE ts > TIMESTAMP_ADD(DAY, NOW(), -1) AND ts < NOW() "}]'
   value_template: "{{ value_json[0].results[0][0] }}"
   name: "Particle Matter 1"
-  scan_interval: 3600
-```
+  scan_interval: 3600</code></pre>
+</div>
 
 Here we use the `value_template` as the result that will be shown when we select this sensor as an entity. Unfortunately, I could not figure out how to use one singular HTTP Request with multiple values, so I needed to make each value as its own unique HTTP Request, just with a different index array position for the results. The example shown above, for instance, is for `pm1` as it is index 0 of our result array due to the container schema.
 
 So now that we have our sensor set up, we can go to the dashboard and add it to be displayed. We can click edit (the pencil in the top right corner), then add card, then glance card, and then manually add all of your sensors. For me, the text editor looks like this: 
 
-```yaml
-show_name: true
+
+<div class="clipboard">
+<pre><code class="language-bash">show_name: true
 show_icon: true
 show_state: true
 type: glance
@@ -302,8 +310,8 @@ entities:
   - entity: sensor.particles_100
 title: Daily Air Quality Averages
 columns: 3
-state_color: false
-```
+state_color: false</code></pre>
+</div>
 
 ![image of dashboard card](images/home-assistant-dashboard.png)
 
