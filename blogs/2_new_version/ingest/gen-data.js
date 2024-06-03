@@ -58,11 +58,13 @@ const AMTPASSES = 10000;
 (async () => {
     try {
         console.log("attempting to gen data and push to GridDB")
+        console.time("gen-ingest");
         for (let i = 0; i < AMTPASSES; i++) {
             const data = parseFloat(getRandomFloat(1, 10).toFixed(2))
             const temperature = parseFloat(getRandomFloat(60, 130).toFixed(2))
             await putCont(AMTROWS, data, temperature);
         }
+        console.timeEnd("gen-ingest");
         console.log("Finished pushing data!")
     } catch (error) {
         console.log("Error putting to container", error);

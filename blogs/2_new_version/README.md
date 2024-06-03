@@ -2,23 +2,38 @@ With the release of GridDB v5.6, we are taking a look at the new features that c
 
 Of the new features, today we are focusing on the new data compression algorithm that is now selectable in the `gs_node.json` config file. Prior to v5.6, there were only two methods of compression that were selectable: `NO_COMPRESSION` and `COMPRESSION_ZLIB`. Though the default setting is still no compression for all versions, version 5.6 offers a new compression method called `COMPRESSION_ZSTD`. 
 
-This compression method promises to be more efficient at compressing your data regularly, and also at compressing the data itself, meaning we can expect a smaller footprint when actually compressing the data itself. So in this article, we will inserting some data into GridDB and comparing the resulting storage space used and compare between all three compression methods.
+This compression method promises to be more efficient at compressing your data regularly, and also at compressing the data itself, meaning we can expect a smaller footprint. So, in this article, we will inserting a consistent amount of data into GridDB, comparing the resulting storage space taken up, and then finally comparing between all three compression methods.
 
 ## Methodology
 
-As explained above, we will need to easily compare between three instances of GridDB with the same dataset. To accomplisah this, it seems docker would be the easiest method because we can easily spin up or down new instances and change the compression method for each instance. If we do this, then we simply use the same dataset or the same data generation script for each of instances. 
+As explained above, we will need to easily compare between three instances of GridDB with the same dataset. To accomplish this, it seems docker would be the easiest method because we can easily spin up or down new instances and change the compression method for each instance. If we do this, then we simply use the same dataset or the same data generation script for each of the instances. 
 
-To get a robust enough dataset to really test the compression alogrithm differences, we decided on 100m rows of data. Specifically, we wanted the dataset to be similar enough in some respects that the compression can do its job so that we in turn can effectively measure its effectiveness. 
+To get a robust enough dataset to really test the compression alogrithm differences, we decided on 100 million rows of data. Specifically, we wanted the dataset to be similar enough in some respects that the compression can do its job so that we in turn can effectively measure its effectiveness. 
 
 The three docker containers will be `griddb-server1`, `griddb-server2`, and `griddb-server3`. The compression levels are set in the docker-compose file, but we will do it the way that makes the most sense to me: server1 is `NO_COMPRESSION`, server2 is the old compression system (`COMPRESSION_ZLIB`), and server3 is the new compression system (`COMPRESSION_ZSTD`).
 
 So when we run our gen-script, we can use command line arguments to specify which container we want to target. More on that in the next section.
 
+## How to Follow Along
+
+If you plan to build and test out these methods yourself while you read along, you can grab the source code from our GitHub page: [](). 
+
+Once you have the repo, you can start with spinng up your GridDB servers. We will get into how to run the generation data script to push 100m rows of data into your servers in the next section.
+
+To get the three servers running, the instructions are laid out in the docker compose file in the root of the projectory repoistory, so simply run: 
+
+```bash
+$ docker compose build
+$ docker compose up -d
+```
+
+If all goes well, you should have three GridDB containers running: `griddb-server1`, `griddb-server2`, `griddb-server3`
+
 ## Implementation
 
 To implement, we used a node.js script which generated 100m rows of random data. Because our GridDB containers are spun up using Docker, we made all three docker containers for GridDB separate services inside of a docker compose file. We then grabbed that docker network name and used it when running our nodejs script.
 
-This means, our nodejs script was also built into a docker container and then we used that to push data into the GridDB containers with the following commands: 
+This means that our nodejs script was also built into a docker container and then we used that to push data into the GridDB containers with the following commands: 
 
 ```bash
 $ docker build -t gen-data .
@@ -27,7 +42,7 @@ $ docker run  --network docker-griddb_default gen griddb-server2:10001
 $ docker run  --network docker-griddb_default gen griddb-server3:10001
 ```
 
-The full source code, including our Dockerfiles and docker-compose file can be found in the GitHub repo: [](). Here is the nodejs script in its entirety: 
+Here is the nodejs script in its entirety: 
 
 ```javascript
 const griddb = require('griddb-node-api');
@@ -78,7 +93,7 @@ const generateSensors = (sensorCount, data, temperature) => {
         tmp.push(data)
         tmp.push(temperature)
         arr.push(tmp)
-    }//    console.log("arr: ", arr)
+    }
     return arr;
 }
 
@@ -100,4 +115,49 @@ const AMTPASSES = 10000;
 })();
 ```
 
-The code itself is simple and self explanatory but please note that if you plan to follow along, inserting this volume of rows into GridDB takes a long time.
+The code itself is simple and self explanatory but please note that if you plan to follow along, inserting this volume of rows into GridDB takes a long time and you should be prepared to let the script work for ~10-20 minutes, depending on your server's hardware. 
+
+## Compression Method Results
+
+Now that we have our rows of data inside of our three GridDB containers, we can let GridDB handle the actual compressing of the data. This process happens automatically and in the background; you can read more about that here: [https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_5/GridDB_FeaturesReference.html#database-compressionrelease-function](https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_5/GridDB_FeaturesReference.html#database-compressionrelease-function).
+
+To check how much space your 100 million rows of data are taking up, you can run the following command against each Docker container of GridDB: 
+
+```bash
+$ docker exec griddb-server1 du -sh /var/lib/gridstore
+
+16G	/var/lib/gridstore/
+```
+
+Which checks the storage space used up by GridDB in total, including any swap files and logs. If you just want the data: 
+
+```bash
+$ docker exec griddb-server1 du -sh /var/lib/gridstore/data
+
+12G	/var/lib/gridstore/data/
+```
+
+This, of course, must be repeated for all three containers. 
+
+You can also verify the compression method in your GridDB container like so: 
+
+```bash
+$ docker exec griddb-server3 cat /var/lib/gridstore/conf/gs_node.json | grep "storeCompressionMode"
+
+"storeCompressionMode": "COMPRESSION_ZSTD",
+```
+
+Beyond testing the storage space used, we tested how long it took to load the data and how long a query takes. You can see the results here in the following table: 
+
+|       | NO_COMPRESSION | COMPRESSION_ZLIB |        COMPRESSION_ZSTD         |
+|---------------------|------------------|------------------|-----------------|
+| Search (ms)         | 32644            | 20666            | 11475           |
+| Agreggation (ms)    | 30261            | 13302            | 8402            |
+| Storage (gridstore) | 11968312 (17GB)  | 7162824 (6.9GB)  | 6519520 (6.3GB) |
+| Storage (/data)     | 17568708 (12GB)  | 1141152 (1.1GB)  | 1140384 (1.1GB) |
+| Insert (m:ss.mmm)   | 14:42.452        | 15:02.748        | 15:05.404       |
+
+To test the query speed, we did both `select *` and agreggation queries like: `select AVG(data) from` and then took the average of 3 results and placed them into the table.
+
+The results are clear: compression helps a lot more than it hurts. It helps save on storage space but also helps query speeds. Version 5.6's compression method seems to both save storage space and also help query speed by a meaningful amount. All of this is done of course on consumer level hardware as well.
+
