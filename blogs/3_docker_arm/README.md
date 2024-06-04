@@ -42,3 +42,51 @@ First, we need to grab the source code which contains some modified files when c
 Of course here, when running this, you are simply running the sample code we have provided. But it lays out the framework for running your own GridDB nodejs code. You write your code, build the docker image, and then run it with explict case of choosing the docker network and pointing to the correct hostname/ip address.
 
 To go along with the nodejs application interface, JDBC and Java have also been tested and confirmed to work with an ARM based Mac using an M1.
+
+### Example of Creating Application Container
+
+To build and run your own application in docker, the process is simple: you write the application in your language of choice, write the Dockerfile for that application, and then finally build & run the container, ensuring the use the same network as used when running the GridDB container.
+
+For example, let's say you wrote a quick node.js script to ingest data as we did here: [previous blog](). To keep the application connection agnostic, you can keep the connection details as command line arguments, meaning when you run your docker container, you can simply enter in the docker container you wish to connect to. For example, here's a Dockerfile of a nodejs application we want to use with a docker griddb server: 
+
+```bash
+FROM node:18
+
+# download c_client
+WORKDIR /
+RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.6.0/griddb-c-client_5.6.0_amd64.deb
+RUN dpkg -i griddb-c-client_5.6.0_amd64.deb
+
+
+WORKDIR /app
+COPY package.json /app/package.json
+COPY package-lock.json /app/package-lock.json
+COPY gen-data.js /app/gen-data.js
+
+RUN npm i
+
+ENTRYPOINT ["node", "gen-data.js"]
+```
+The instructions are straight forward, we want to copy all source code and package information and build it into a docker container. The code itself expects command line arguments for the connection details: 
+
+```javascript
+var fs = require('fs');
+var factory = griddb.StoreFactory.getInstance();
+var store = factory.getStore({
+    "notificationMember": process.argv[2],
+    "clusterName": "myCluster",
+    "username": "admin",
+    "password": "admin"
+});
+```
+So when we build this docker container, we can specify the connection details. Here are the full instructions of getting this running: 
+
+```bash
+$ docker build -t nodejs-gen-griddb .
+```
+
+We are building our current Dockerfile with the tag of `nodejs-gen-griddb`. Then we run it, specifying the connection details: 
+
+```bash
+$ docker run  --network griddb-net nodejs-gen-griddb griddb-server:10001
+```
