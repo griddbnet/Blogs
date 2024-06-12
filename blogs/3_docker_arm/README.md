@@ -1,10 +1,10 @@
 GridDB running on Docker isn't a new topic. We have covered it before: [https://griddb.net/en/blog/run-a-griddb-server-in-docker-desktop/](https://griddb.net/en/blog/run-a-griddb-server-in-docker-desktop/) & [https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/](https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/). 
 
-In this blog, we want to again touch on using GridDB on docker, but will focus instead on using GridDB on ARM archiecture, namely a mac using Apple silicon (M1, M2, etc). So, in this blog, we will provide a docker image which works with ARM devices, as well as walk through how to spin up application containers to work in conjunction with your docker container service.
+In this blog, we want to again touch on using GridDB on docker, but will focus instead on using GridDB on ARM archiecture, namely a Mac using Apple silicon (M1, M2, etc). So, in this blog, we will provide a docker image which works with ARM devices, as well as walk through how to spin up application containers to work in conjunction with your docker container service.
 
-## Running GridDB on Docker
+## Running GridDB & GridDB Applications with Docker
 
-First, you can read the source code that accompanies this article here: [https://github.com/griddbnet/griddb-docker-arm](https://github.com/griddbnet/griddb-docker-arm). It contains the docker image itself which you can build to run on your ARM machine. The docker image itself is also built and ready for immediate consumption on our Dockerhub page: [Dockerhub](https://hub.docker.com/r/griddbnet/griddb).
+First, you can read the source code that accompanies this article here: [https://github.com/griddbnet/griddb-docker-arm](https://github.com/griddbnet/griddb-docker-arm). It contains the docker image itself which you can build to run on your ARM machine. It is also available for pulling from the GridDB.net [Dockerhub](https://hub.docker.com/r/griddbnet/griddb) page.
 
 ### Running GridDB Server
 
@@ -43,9 +43,11 @@ Of course here, when running this, you are simply running the sample code we hav
 
 To go along with the nodejs application interface, JDBC and Java have also been tested and confirmed to work with an ARM based Mac using an M1.
 
-### Example of Creating Application Container
+### Examples of Creating Application Container
 
 To build and run your own application in docker, the process is simple: you write the application in your language of choice, write the Dockerfile for that application, and then finally build & run the container, ensuring the use the same network as used when running the GridDB container.
+
+#### Node.js
 
 For example, let's say you wrote a quick node.js script to ingest data as we did here: [previous blog](). To keep the application connection agnostic, you can keep the connection details as command line arguments, meaning when you run your docker container, you can simply enter in the docker container you wish to connect to. For example, here's a Dockerfile of a nodejs application we want to use with a docker griddb server: 
 
@@ -90,3 +92,7 @@ We are building our current Dockerfile with the tag of `nodejs-gen-griddb`. Then
 ```bash
 $ docker run  --network griddb-net nodejs-gen-griddb griddb-server:10001
 ```
+
+#### JDBC 
+
+
