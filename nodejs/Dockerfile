@@ -9,6 +9,7 @@ RUN dpkg -i griddb-c-client_5.6.0_amd64.deb
 WORKDIR /app
 COPY package.json /app/package.json
 COPY package-lock.json /app/package-lock.json
+COPY iot_telemetry_data.csv /app/iot_telemetry_data.csv
 COPY gen-data.js /app/gen-data.js
 
 RUN npm i

@@ -1,53 +1,79 @@
-With the release of GridDB v5.6, we are taking a look at the new features that come bundled with this new update. To read the entirety of the notes, you can read them directly from GitHub: [GridDB CE v5.6 Release Notes](https://github.com/griddb/griddb/blob/master/docs/GridDB-5.6-CE-RELEASE_NOTES.md).
+GridDB running via Docker containers isn't a new topic. We have covered it before: [https://griddb.net/en/blog/run-a-griddb-server-in-docker-desktop/](https://griddb.net/en/blog/run-a-griddb-server-in-docker-desktop/) & [https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/](https://griddb.net/en/blog/improve-your-devops-with-griddb-server-and-client-docker-containers/). 
 
-Of the new features, today we are focusing on the new data compression algorithm that is now selectable in the `gs_node.json` config file. Prior to v5.6, there were only two methods of compression that were selectable: `NO_COMPRESSION` and `COMPRESSION_ZLIB`. Though the default setting is still no compression for all versions, version 5.6 offers a new compression method called `COMPRESSION_ZSTD`. 
+In this blog, we want to again touch on using GridDB on Docker, but will focus instead on using GridDB on ARM architecture, namely a Mac with Apple silicon (M1, M2, etc). So, in this blog, we will provide a docker image which works with ARM devices, as well as walk through how to spin up application containers to work in conjunction with your docker container service.
 
-This compression method promises to be more efficient at compressing your data regularly, and also at compressing the data itself, meaning we can expect a smaller footprint. So, in this article, we will inserting a consistent amount of data into GridDB, comparing the resulting storage space taken up, and then finally comparing between all three compression methods.
+## Running GridDB & GridDB Applications with Docker
 
-## Methodology
+First, you can read the source code that accompanies this article here: [https://github.com/griddbnet/griddb-docker-arm](https://github.com/griddbnet/griddb-docker-arm). It contains the docker image itself which you can build to run on your ARM machine. It is also available for pulling from the GridDB.net [Dockerhub](https://hub.docker.com/r/griddbnet/griddb) page.
 
-As explained above, we will need to easily compare between three instances of GridDB with the same dataset. To accomplish this, it seems docker would be the easiest method because we can easily spin up or down new instances and change the compression method for each instance. If we do this, then we simply use the same dataset or the same data generation script for each of the instances. 
+### Running GridDB Server
 
-To get a robust enough dataset to really test the compression alogrithm differences, we decided on 100 million rows of data. Specifically, we wanted the dataset to be similar enough in some respects that the compression can do its job so that we in turn can effectively measure its effectiveness. 
-
-The three docker containers will be `griddb-server1`, `griddb-server2`, and `griddb-server3`. The compression levels are set in the docker-compose file, but we will do it the way that makes the most sense to me: server1 is `NO_COMPRESSION`, server2 is the old compression system (`COMPRESSION_ZLIB`), and server3 is the new compression system (`COMPRESSION_ZSTD`).
-
-So when we run our gen-script, we can use command line arguments to specify which container we want to target. More on that in the next section.
-
-## How to Follow Along
-
-If you plan to build and test out these methods yourself while you read along, you can grab the source code from our GitHub page: [](). 
-
-Once you have the repo, you can start with spinng up your GridDB servers. We will get into how to run the generation data script to push 100m rows of data into your servers in the next section.
-
-To get the three servers running, the instructions are laid out in the docker compose file in the root of the projectory repoistory, so simply run: 
+To pull and run this image: 
 
 ```bash
-$ docker compose build
-$ docker compose up -d
+$ docker network create griddb-net
+$ docker pull griddbnet/griddb
+$ docker run --name griddb-server \
+    --network griddb-net \
+    -e GRIDDB_CLUSTER_NAME=myCluster \
+    -e GRIDDB_PASSWORD=admin \
+    -e NOTIFICATION_MEMBER=1 \
+    -d -t griddbnet/griddb:5.5.0
 ```
 
-If all goes well, you should have three GridDB containers running: `griddb-server1`, `griddb-server2`, `griddb-server3`
+These commands will create a network for your GridDB server and any containers you intend to run with it. It will also download the built image and then run the image on your machine. Once you confirm it's running, you can try running application code, using your GridDB container as the data store.
 
-## Implementation
+### Running Application Containers
 
-To implement, we used a node.js script which generated 100m rows of random data. Because our GridDB containers are spun up using Docker, we made all three docker containers for GridDB separate services inside of a docker compose file. We then grabbed that docker network name and used it when running our nodejs script.
-
-This means that our nodejs script was also built into a docker container and then we used that to push data into the GridDB containers with the following commands: 
+First, here are the commands to run some node.js GridDB code against your containerized server:
 
 ```bash
-$ docker build -t gen-data .
-$ docker run  --network docker-griddb_default gen griddb-server1:10001
-$ docker run  --network docker-griddb_default gen griddb-server2:10001
-$ docker run  --network docker-griddb_default gen griddb-server3:10001
+$ git clone https://github.com/griddbnet/griddb-docker-arm.git
+$ cd griddb-docker-arm/node-api/centos7_arm/
+$ docker build -t griddb_node_app .
+$ docker run --name griddb-node   --network griddb-net     -e
+GRIDDB_CLUSTER_NAME=myCluster     -e GRIDDB_USERNAME=admin     -e
+GRIDDB_PASSWORD=admin     -e IP_NOTIFICATION_MEMBER=griddb-server
+griddb_node_app
 ```
 
-Here is the nodejs script in its entirety: 
+First, we need to grab the source code which contains some modified files when compared to the official source code (changes to allow the C_Client to run on macos/ARM, which is required for non java programming language connectors). Then we build the image and run it, setting some options such as cluster name, user/pass combo, and finally the IP_NOTIFICATION_MEMBER which explictly tells the container the ip address of the GridDB server.
+
+Of course here, when running this, you are simply running the sample code we have provided. But it lays out the framework for running your own GridDB nodejs code. You write your code, build the docker image, and then run it with explict case of choosing the docker network and pointing to the correct hostname/ip address.
+
+To go along with the nodejs application interface, JDBC and Java have also been tested and confirmed to work with an ARM based Mac using an M1.
+
+### Examples of Creating Application Container
+
+To build and run your own application in docker, the process is simple: you write the application in your language of choice, write the Dockerfile for that application, and then finally build & run the container, ensuring the use the same network as used when running the GridDB container.
+
+#### Node.js
+
+For example, let's say you wrote a quick node.js script to ingest data as we did here: [previous blog](). NOTE: Source code for this example nodejs script is also included in the source code for this article.
+
+To keep the application connection agnostic, you can keep the connection details as command line arguments, meaning when you run your docker container, you can simply enter in the docker container you wish to connect to. For example, here's a Dockerfile of a nodejs application we want to use with a docker griddb server: 
+
+```bash
+FROM node:18
+
+# download c_client
+WORKDIR /
+RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.6.0/griddb-c-client_5.6.0_amd64.deb
+RUN dpkg -i griddb-c-client_5.6.0_amd64.deb
+
+
+WORKDIR /app
+COPY package.json /app/package.json
+COPY package-lock.json /app/package-lock.json
+COPY gen-data.js /app/gen-data.js
+
+RUN npm i
+
+ENTRYPOINT ["node", "gen-data.js"]
+```
+The instructions are straight forward, we want to copy all source code and package information and build it into a docker container. The code itself expects command line arguments for the connection details: 
 
 ```javascript
-const griddb = require('griddb-node-api');
-const process = require('process');
-
 var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 var store = factory.getStore({
@@ -56,108 +82,78 @@ var store = factory.getStore({
     "username": "admin",
     "password": "admin"
 });
-
-const conInfo = new griddb.ContainerInfo({
-    'name': "compressionBlog",
-    'columnInfoList': [
-        ["timestamp", griddb.Type.TIMESTAMP],
-        ["location", griddb.Type.STRING],
-        ["data", griddb.Type.FLOAT],
-        ["temperature", griddb.Type.FLOAT],
-    ],
-    'type': griddb.ContainerType.COLLECTION, 'rowKey': false
-});
-
-function getRandomFloat(min, max) {
-    return Math.random() * (max - min) + min;
-}
-
-const putCont = async (sensorCount, data, temperature) => {
-    const rows = generateSensors(sensorCount, data, temperature);
-    try {
-        const cont = await store.putContainer(conInfo)
-        await cont.multiPut(rows);
-    } catch (error) {
-        console.log("error: ", error)
-    }
-}
-
-const generateSensors = (sensorCount, data, temperature) => {
-    const arr = []
-    let now = new Date();
-    for (let i = 1; i <= sensorCount; i++) {
-        let tmp = [];
-        let newTime = now.setMilliseconds(now.getMinutes() + i)
-        tmp.push(newTime)
-        tmp.push("A"+i)
-        tmp.push(data)
-        tmp.push(temperature)
-        arr.push(tmp)
-    }
-    return arr;
-}
-
-const AMTROWS = 10000;
-const AMTPASSES = 10000;
-
-(async () => {
-    try {
-        console.log("attempting to gen data and push to GridDB")
-        for (let i = 0; i < AMTPASSES; i++) {
-            const data = parseFloat(getRandomFloat(1, 10).toFixed(2))
-            const temperature = parseFloat(getRandomFloat(60, 130).toFixed(2))
-            await putCont(AMTROWS, data, temperature);
-        }
-        console.log("Finished pushing data!")
-    } catch (error) {
-        console.log("Error putting to container", error);
-    }
-})();
 ```
-
-The code itself is simple and self explanatory, but please note that if you plan to follow along, inserting this volume of rows into GridDB takes a long time and you should be prepared to let the script work for ~10-20 minutes, depending on your server's hardware. 
-
-## Compression Method Results
-
-Now that we have our rows of data inside of our three GridDB containers, we can let GridDB handle the actual compressing of the data. This process happens automatically and in the background; you can read more about that here: [https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_5/GridDB_FeaturesReference.html#database-compressionrelease-function](https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_5/GridDB_FeaturesReference.html#database-compressionrelease-function).
-
-To check how much space your 100 million rows of data are taking up, you can run the following command against each Docker container of GridDB: 
+So when we build this docker container, we can specify the connection details. Here are the full instructions of getting this running: 
 
 ```bash
-$ docker exec griddb-server1 du -sh /var/lib/gridstore
-
-16G	/var/lib/gridstore/
+$ docker build -t nodejs-gen-griddb .
 ```
 
-Which checks the storage space used up by GridDB in total, including any swap files and logs. If you just want the data: 
+We are building our current Dockerfile with the tag of `nodejs-gen-griddb`. Then we run it, specifying the connection details: 
 
 ```bash
-$ docker exec griddb-server1 du -sh /var/lib/gridstore/data
-
-12G	/var/lib/gridstore/data/
+$ docker run  --network griddb-net nodejs-gen-griddb griddb-server:10001
 ```
 
-This, of course, must be repeated for all three containers. 
+#### JDBC 
 
-You can also verify the compression method in your GridDB container like so: 
+Here is another example, connecting to our GridDB server using Java and JDBC so that we can run SQL commands.
+
+First, we create out java program. In this case, we simply want to make a connection and then create a new table. 
+
+```java
+    String notificationMember = args[0];
+    String clusterName = args[1];
+    String databaseName = args[2];
+    // String notificationMember = "griddb-server:20001";
+    // String clusterName = "myCluster";
+    // String databaseName = "public";
+    String username = "admin";
+    String password = "admin";
+    String encodeClusterName = URLEncoder.encode(clusterName, "UTF-8");
+    String encodeDatabaseName = URLEncoder.encode(databaseName, "UTF-8");
+    String jdbcUrl = "jdbc:gs://" + notificationMember + "/" + encodeClusterName + "/" + encodeDatabaseName;
+    System.out.println(jdbcUrl);
+
+    Properties prop = new Properties();
+    prop.setProperty("user", username);
+    prop.setProperty("password", password);
+
+    con = DriverManager.getConnection(jdbcUrl, prop);
+
+    System.out.println("Connected to cluster via SQL Interface");
+
+    String SQL = "CREATE TABLE IF NOT EXISTS devices (ts TIMESTAMP PRIMARY KEY, co DOUBLE, humidity DOUBLE,light BOOL,lpg DOUBLE,motion BOOL,smoke DOUBLE,temp DOUBLE) USING TIMESERIES WITH (expiration_type='PARTITION',expiration_time=90,expiration_time_unit='DAY') PARTITION BY RANGE (ts) EVERY (60, DAY)SUBPARTITION BY HASH (ts) SUBPARTITIONS 64;";
+
+    Statement stmt = con.createStatement();
+    stmt.executeUpdate(SQL);
+    System.out.println("Successfully created container called: devices");
+```
+
+And now we create the dockerfile to build this java program to be run against the GridDB server.
 
 ```bash
-$ docker exec griddb-server3 cat /var/lib/gridstore/conf/gs_node.json | grep "storeCompressionMode"
+FROM alpine:3.14
 
-"storeCompressionMode": "COMPRESSION_ZSTD",
+WORKDIR /app
+RUN apk add --no-cache wget
+RUN apk add openjdk11
+
+RUN wget https://repo1.maven.org/maven2/com/github/griddb/gridstore-jdbc/5.6.0/gridstore-jdbc-5.6.0.jar
+ENV CLASSPATH /app/gridstore-jdbc-5.6.0.jar
+
+COPY ./src ./src
+WORKDIR /app/src/main/java/
+RUN javac net/griddb/jdbc/Jdbc.java
+
+CMD ["java",  "net/griddb/jdbc/Jdbc.java", "griddb-server:20001", "myCluster", "public"]
 ```
 
-Beyond testing the storage space used, we tested how long it took to load the data and how long a query takes. You can see the results here in the following table: 
+For this build process, we install java and wget, download the latest griddb jdbc driver, add it to our class path environment, and then simply compile and run our java code. If all goes well, you should be able to run the docker image and set the network to be equal to where your GridDB server is connected and have it work that way.
 
-|       | NO_COMPRESSION | COMPRESSION_ZLIB |        COMPRESSION_ZSTD         |
-|---------------------|------------------|------------------|-----------------|
-| Search (ms)         | 32644            | 20666            | 11475           |
-| Agreggation (ms)    | 30261            | 13302            | 8402            |
-| Storage (gridstore) | 11968312 (17GB)  | 7162824 (6.9GB)  | 6519520 (6.3GB) |
-| Storage (/data)     | 17568708 (12GB)  | 1141152 (1.1GB)  | 1140384 (1.1GB) |
-| Insert (m:ss.mmm)   | 14:42.452        | 15:02.748        | 15:05.404       |
+In this case, we left the command line arguments within the Dockerfile itself, meaning you can simply change how the code is executed to keep it flexible.
 
-To test the query speed, we did both `select *` and agreggation queries like: `select AVG(data) from` and then took the average of 3 results and placed them into the table.
+## Conclusion
 
-The results are clear: compression helps a lot more than it hurts. It helps save on storage space but also helps query speeds. Version 5.6's compression method seems to both save storage space and also help query speed by a meaningful amount. All of this is done of course on consumer level hardware as well.
+And now you should be able to run both nodejs and JDBC containers on your ARM devices. If you get other programming languages running ony our machines, please let us know.
 
