@@ -4,6 +4,8 @@ Of the new features, today we are focusing on the new data compression algorithm
 
 This compression method promises to be more efficient at compressing your data regularly, and also at compressing the data itself, meaning we can expect a smaller footprint. So, in this article, we will inserting a consistent amount of data into GridDB, comparing the resulting storage space taken up, and then finally comparing between all three compression methods.
 
+Another feature we would like to go over quickly is regarding the CLI. With v5.6, the GridDB team released the ability to save variables within the CLI. And though this may seem minor, we will do a quick look at an unexpected benefit of this feature.
+
 ## Methodology
 
 As explained above, we will need to easily compare between three instances of GridDB with the same dataset. To accomplish this, it seems docker would be the easiest method because we can easily spin up or down new instances and change the compression method for each instance. If we do this, then we simply use the same dataset or the same data generation script for each of the instances. 
@@ -160,4 +162,51 @@ Beyond testing the storage space used, we tested how long it took to load the da
 To test the query speed, we did both `select *` and agreggation queries like: `select AVG(data) from` and then took the average of 3 results and placed them into the table.
 
 The results are clear: compression helps a lot more than it hurts. It helps save on storage space but also helps query speeds. Version 5.6's compression method seems to both save storage space and also help query speed by a meaningful amount. All of this is done of course on consumer level hardware as well.
+
+## CLI Variables & Scripting
+
+With v5.6, we can now save results and other data into variables. 
+
+NOTE: If you are interested in trying out these features, you can check out our online GridDB CLI tool: https://demo.griddb.net
+
+For example: 
+
+```bash
+  //Define variables
+  gs[public]> set TABLENAME c001
+  
+  //Execute the TQL
+  gs[public]> tql $TABLENAME select *;
+  5 hits found. (25 ms)
+  // Internally, "tql c001 select *;" was executed.
+```
+
+We can also save the results of queries into variables as well. For example: 
+
+```bash
++---------------------------+--------------+------+----------+---------+-----+--------+-------+-------+--------+--------+----------+-------+--------+------+-----------+
+| NAME                      | MANUFACTURER | TYPE | CALORIES | PROTEIN | FAT | SODIUM | FIBER | CARBO | SUGARS | POTASS | VITAMINS | SHELF | WEIGHT | CUPS | RATING    |
++---------------------------+--------------+------+----------+---------+-----+--------+-------+-------+--------+--------+----------+-------+--------+------+-----------+
+| 100% Bran                 | (NULL)       | C    | 70       | 4       | 1   | 130    | 10    | 5     | 6      | 280    | 25       | 3     | 1.0    | 0.33 | 68.40297  |
+| 100% Natural Bran         | (NULL)       | C    | 120      | 3       | 5   | 15     | 2     | 8     | 8      | 135    | 0        | 3     | 1.0    | 1.0  | 33.98368  |
+| All-Bran                  | (NULL)       | C    | 70       | 4       | 1   | 260    | 9     | 7     | 5      | 320    | 25       | 3     | 1.0    | 0.33 | 59.425507 |
+| All-Bran with Extra Fiber | (NULL)       | C    | 50       | 4       | 0   | 140    | 14    | 8     | 0      | 330    | 25       | 3     | 1.0    | 0.5  | 93.70491  |
+| Almond Delight            | (NULL)       | C    | 110      | 2       | 2   | 200    | 1     | 14    | 8      | -1     | 25       | 3     | 1.0    | 0.75 | 34.384842 |
+| Apple Jacks               | (NULL)       | C    | 110      | 2       | 0   | 125    | 1     | 11    | 14     | 30     | 25       | 2     | 1.0    | 1.0  | 33.174095 |
+| Basic 4                   | (NULL)       | C    | 130      | 3       | 2   | 210    | 2     | 18    | 8      | 100    | 25       | 3     | 1.33   | 0.75 | 37.038563 |
+| Bran Chex                 | (NULL)       | C    | 90       | 2       | 1   | 200    | 4     | 15    | 6      | 125    | 25       | 1     | 1.0    | 0.67 | 49.120255 |
+| Bran Flakes               | (NULL)       | C    | 90       | 3       | 0   | 210    | 5     | 13    | 5      | 190    | 25       | 3     | 1.0    | 0.67 | 53.313812 |
+| Cap'n'Crunch              | (NULL)       | C    | 120      | 1       | 2   | 220    | 0     | 12    | 12     | 35     | 25       | 2     | 1.0    | 0.75 | 18.04285  |
++---------------------------+--------------+------+----------+---------+-----+--------+-------+-------+--------+--------+----------+-------+--------+------+-----------+
+gs[p4766]> select calories, fiber from $TABLENAME;
+72 results. (20 ms)
+gs[p4766]> getval CALORIES FIBER
+The 1 result had been acquired and defined values for variables.
+gs[p4766]> show CALORIES
+70
+```
+
+And because we can save results into variables, we can also run expensive computations during down times and save the results into variables using the scripting features of the CLI. 
+
+### Automatic Time Aggregation
 
