@@ -1,0 +1,34 @@
+version: "3"
+
+services:
+  griddb-server:
+    image: griddb/griddb
+    expose:
+      - "10001"
+      - "10010"
+      - "10020"
+      - "10040"
+      - "20001"
+    healthcheck:
+      test:
+        ["CMD", "tail", "-f", "tail -f /var/lib/gridstore/log/gridstore*.log"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  mind-map-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app/
+    container_name: mind-map-server
+    expose:
+      - "4000"
+    depends_on:
+      - griddb-server
+    links:
+      - griddb-server
+    ports:
+      - "4000:4000"
+    command: bash -c "sleep 30"
+    restart: unless-stopped

@@ -1,10 +1,10 @@
-With the release of GridDB v5.6, we are taking a look at the new features that come bundled with this new update. To read the entirety of the notes, you can read them directly from GitHub: [GridDB CE v5.6 Release Notes](https://github.com/griddb/griddb/blob/master/docs/GridDB-5.6-CE-RELEASE_NOTES.md).
+With the release of GridDB v5.6, we are taking a look at the new features that come bundled with this new update. To read the entirety of the notes, you can read them directly from GitHub: [GridDB CE v5.6 Release Notes](https://github.com/griddb/griddb/blob/master/docs/GridDB-5.6-CE-RELEASE_NOTES.md). You can also read the detailed GridDB documenation, including the new v5.6 updates here: [https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_6/GridDB_FeaturesReference.html](https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_6/GridDB_FeaturesReference.html)
 
-Of the new features, today we are focusing on the new data compression algorithm that is now selectable in the `gs_node.json` config file. Prior to v5.6, there were only two methods of compression that were selectable: `NO_COMPRESSION` and `COMPRESSION_ZLIB`. Though the default setting is still no compression for all versions, version 5.6 offers a new compression method called `COMPRESSION_ZSTD`. 
+Of the new features, today we are focusing on the new data compression algorithm that is now selectable in the `gs_node.json` config file and automatic time aggregation from the GridDB CLI tool. Prior to v5.6, there were only two methods of compression that were selectable: `NO_COMPRESSION` and `COMPRESSION_ZLIB`. Though the default setting is still no compression for all versions, version 5.6 offers a new compression method called `COMPRESSION_ZSTD`. 
 
 This compression method promises to be more efficient at compressing your data regularly, and also at compressing the data itself, meaning we can expect a smaller footprint. So, in this article, we will inserting a consistent amount of data into GridDB, comparing the resulting storage space taken up, and then finally comparing between all three compression methods.
 
-Another feature we would like to go over quickly is regarding the CLI. With v5.6, the GridDB team released the ability to save variables within the CLI. And though this may seem minor, we will do a quick look at an unexpected benefit of this feature.
+As for automatic aggregation, we will show a brief demonstration of how it looks at the end of this artcle. But first, compression.
 
 ## Methodology
 
@@ -91,7 +91,7 @@ const generateSensors = (sensorCount, data, temperature) => {
         let tmp = [];
         let newTime = now.setMilliseconds(now.getMinutes() + i)
         tmp.push(newTime)
-        tmp.push("A"+i)
+        tmp.push("A1")
         tmp.push(data)
         tmp.push(temperature)
         arr.push(tmp)
@@ -117,7 +117,7 @@ const AMTPASSES = 10000;
 })();
 ```
 
-The code itself is simple and self explanatory, but please note that if you plan to follow along, inserting this volume of rows into GridDB takes a long time and you should be prepared to let the script work for ~10-20 minutes, depending on your server's hardware. 
+The code itself is simple and self explanatory but please note that if you plan to follow along, inserting this volume of rows into GridDB takes a long time and you should be prepared to let the script work for ~10-20 minutes, depending on your server's hardware. 
 
 ## Compression Method Results
 
@@ -161,52 +161,39 @@ Beyond testing the storage space used, we tested how long it took to load the da
 
 To test the query speed, we did both `select *` and agreggation queries like: `select AVG(data) from` and then took the average of 3 results and placed them into the table.
 
-The results are clear: compression helps a lot more than it hurts. It helps save on storage space but also helps query speeds. Version 5.6's compression method seems to both save storage space and also help query speed by a meaningful amount. All of this is done of course on consumer level hardware as well.
+The results are clear: compression helps a lot more than it hurts. It helps save on storage space but also helps query speeds. Version 5.6's compression method seems to both save storage space and also help query speed by a meaningful amount. All of this is done of course on consumer level hardware.
 
-## CLI Variables & Scripting
+## Automatic Aggregation with CLI
 
-With v5.6, we can now save results and other data into variables. 
+This functionality utilizes cron on your linux machine to regularly run the script you create. But essentially, what this addition allows is for you to run an aggregation on one of your containers, and then push all of those values onto another table, allowing for you to periodically run new queries, perhaps in the background when your resources aren't in use. This way you can have updated/fresh values on hand without needing to conduct your aggregations and wait for possibly long calculation times.
 
-NOTE: If you are interested in trying out these features, you can check out our online GridDB CLI tool: https://demo.griddb.net
+The way it works is you can now Insert values from one table into another like so: 
 
-For example: 
+```sql
+gs[public]> INSERT OR REPLACE INTO device_output (ts, co) SELECT ts,avg(co) FROM device WHERE ts BETWEEN TIMESTAMP('2020-07-12T00:29:38.905Z') AND TIMESTAMP('2020-07-19T23:58:25.634Z') GROUP BY RANGE(ts) EVERY (20,SECOND);
+The 34,468 records had been inserted.
+```
+And so, knowing this, we can do some clever things, like writing a GridDB CLI script file (`.gsh`), and allowing for that script to get the latest values from a table, run aggregation, and then push them out into your etl_output file. Once you write that script file, you can set up a [cron job](https://crontab.guru/) to regularly schedule the script to run in the background. This process will allow your agg output file to be regularly updated with new, up-to-date values completely automatically! Here is an example script file directly from the docs page: 
 
 ```bash
-  //Define variables
-  gs[public]> set TABLENAME c001
-  
-  //Execute the TQL
-  gs[public]> tql $TABLENAME select *;
-  5 hits found. (25 ms)
-  // Internally, "tql c001 select *;" was executed.
+# gs_sh script file (sample.gsh)
+
+# If no table exists, create a partitioning table with intervals of 30 days to output data.
+CREATE TABLE IF NOT EXISTS etl_output (ts TIMESTAMP PRIMARY KEY, value DOUBLE)
+ PARTITION BY RANGE (ts) EVERY (30, DAY);
+
+# Retrieve the last run time registered. If it does not exist, retrieve the time one hour before the present.
+SELECT case when MAX(ts) ISNULL THEN TIMESTAMP_ADD(HOUR,NOW(),-1) else MAX(ts)
+ end AS lasttime FROM etl_output;
+
+# Store the retrieved time in a variable.
+getval LastTime
+
+# Set the aggregation range between the time retrieved and the present time and obtain the average value for every 20 seconds. Register or update the results into the output container.
+INSERT OR REPLACE INTO etl_output (ts, value)
+ SELECT ts,avg(value) FROM etl_input
+ WHERE ts BETWEEN TIMESTAMP('$LastTime') AND NOW()
+ GROUP BY RANGE(ts) EVERY (20, SECOND);
 ```
 
-We can also save the results of queries into variables as well. For example: 
-
-```bash
-+---------------------------+--------------+------+----------+---------+-----+--------+-------+-------+--------+--------+----------+-------+--------+------+-----------+
-| NAME                      | MANUFACTURER | TYPE | CALORIES | PROTEIN | FAT | SODIUM | FIBER | CARBO | SUGARS | POTASS | VITAMINS | SHELF | WEIGHT | CUPS | RATING    |
-+---------------------------+--------------+------+----------+---------+-----+--------+-------+-------+--------+--------+----------+-------+--------+------+-----------+
-| 100% Bran                 | (NULL)       | C    | 70       | 4       | 1   | 130    | 10    | 5     | 6      | 280    | 25       | 3     | 1.0    | 0.33 | 68.40297  |
-| 100% Natural Bran         | (NULL)       | C    | 120      | 3       | 5   | 15     | 2     | 8     | 8      | 135    | 0        | 3     | 1.0    | 1.0  | 33.98368  |
-| All-Bran                  | (NULL)       | C    | 70       | 4       | 1   | 260    | 9     | 7     | 5      | 320    | 25       | 3     | 1.0    | 0.33 | 59.425507 |
-| All-Bran with Extra Fiber | (NULL)       | C    | 50       | 4       | 0   | 140    | 14    | 8     | 0      | 330    | 25       | 3     | 1.0    | 0.5  | 93.70491  |
-| Almond Delight            | (NULL)       | C    | 110      | 2       | 2   | 200    | 1     | 14    | 8      | -1     | 25       | 3     | 1.0    | 0.75 | 34.384842 |
-| Apple Jacks               | (NULL)       | C    | 110      | 2       | 0   | 125    | 1     | 11    | 14     | 30     | 25       | 2     | 1.0    | 1.0  | 33.174095 |
-| Basic 4                   | (NULL)       | C    | 130      | 3       | 2   | 210    | 2     | 18    | 8      | 100    | 25       | 3     | 1.33   | 0.75 | 37.038563 |
-| Bran Chex                 | (NULL)       | C    | 90       | 2       | 1   | 200    | 4     | 15    | 6      | 125    | 25       | 1     | 1.0    | 0.67 | 49.120255 |
-| Bran Flakes               | (NULL)       | C    | 90       | 3       | 0   | 210    | 5     | 13    | 5      | 190    | 25       | 3     | 1.0    | 0.67 | 53.313812 |
-| Cap'n'Crunch              | (NULL)       | C    | 120      | 1       | 2   | 220    | 0     | 12    | 12     | 35     | 25       | 2     | 1.0    | 0.75 | 18.04285  |
-+---------------------------+--------------+------+----------+---------+-----+--------+-------+-------+--------+--------+----------+-------+--------+------+-----------+
-gs[p4766]> select calories, fiber from $TABLENAME;
-72 results. (20 ms)
-gs[p4766]> getval CALORIES FIBER
-The 1 result had been acquired and defined values for variables.
-gs[p4766]> show CALORIES
-70
-```
-
-And because we can save results into variables, we can also run expensive computations during down times and save the results into variables using the scripting features of the CLI. 
-
-### Automatic Time Aggregation
-
+In this example, we're placing aggregated results from etl_input into etl_output. Pretty neat!

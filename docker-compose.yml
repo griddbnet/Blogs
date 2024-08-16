@@ -1,0 +1,45 @@
+services:
+
+  griddb-server:
+    build:
+      context: griddb-server
+      dockerfile: Dockerfile
+    container_name: griddb-server
+    user: root
+    expose:
+      - '10001'
+      - '10010'
+      - '10020'
+      - '10040'
+      - '20001'
+      - '41999'
+    environment:
+      NOTIFICATION_MEMBER: 1
+      GRIDDB_CLUSTER_NAME: myCluster
+    healthcheck:
+        test: ["CMD", "gs_sh"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+
+  mind-map-server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    container_name: mind-map-server
+    expose:
+      - "4000"
+    depends_on:
+      - griddb-server
+    links:
+      - griddb-server
+
+  mind-map-client:
+    build:
+      context: client
+      dockerfile: Dockerfile
+    container_name: mind-map-client
+    depends_on:
+      - mind-map-server
+    ports:
+      - "3000:3000"
