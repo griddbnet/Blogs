@@ -45,7 +45,7 @@ public class Recv {
     }
 
     private final static String QUEUE_NAME = "airQuality";
-    private final static boolean AUTO_ACK = true;
+    private final static boolean AUTO_ACK = false;
 
     public static GridStore GridDBNoSQL() throws GSException {
 
@@ -81,7 +81,7 @@ public class Recv {
         factory.setHost("localhost");
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
-        channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+        channel.queueDeclare(QUEUE_NAME, true, false, false, null);
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
         ObjectMapper mapper = new ObjectMapper();
@@ -93,8 +93,10 @@ public class Recv {
                 String jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(ad);
                 System.out.println(jsonString);
                 container.put(ad);
+                channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
             } catch (Exception e) {
-                e.printStackTrace();
+                channel.basicNack(delivery.getEnvelope().getDeliveryTag(), false, true);
+                System.out.println("Setting nack");
             }
         };
         channel.basicConsume(QUEUE_NAME, AUTO_ACK, deliverCallback, consumerTag -> { });

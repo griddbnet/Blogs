@@ -8,13 +8,20 @@ Example sketch to connect to PM2.5 sensor with either I2C or UART.
 # pylint: disable=unused-import
 import time
 import datetime
+import json
+import logging
+
 import board
 import busio
 from adafruit_pm25.i2c import PM25_I2C
 
-import json
+logging.basicConfig(level=logging.INFO)
 
-import pika
+import pika 
+
+confirmed = 0
+errors = 0
+published = 0
 
 credentials = pika.PlainCredentials('izzy', 'guest')
 parameters = pika.ConnectionParameters('192.168.50.206',
@@ -24,7 +31,8 @@ parameters = pika.ConnectionParameters('192.168.50.206',
 
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
-channel.queue_declare(queue='airQuality')
+channel.confirm_delivery()
+channel.queue_declare(queue='airQuality', durable=True)
 
 reset_pin = None
 i2c = busio.I2C(board.SCL, board.SDA, frequency=100000)
@@ -59,7 +67,13 @@ while True:
         continue
     
     payload = json.dumps(aqdata)
-    channel.basic_publish(exchange='',
-                      routing_key='airQuality',
-                      body=payload)
-    print(" [x] Sent payload: " + payload)
+    try: 
+        channel.basic_publish(exchange='',
+                        routing_key='airQuality',
+                        body=payload,
+                          properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Transient),
+                        mandatory=True)
+        print(" [x] Sent payload: " + payload)
+    except pika.exceptions.UnroutableError:
+        # If the message is not confirmed, it means something went wrong
+        print("Message could not be confirmed")
