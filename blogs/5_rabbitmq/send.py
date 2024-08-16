@@ -71,7 +71,7 @@ while True:
         channel.basic_publish(exchange='',
                         routing_key='airQuality',
                         body=payload,
-                          properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Transient),
+                          properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent),
                         mandatory=True)
         print(" [x] Sent payload: " + payload)
     except pika.exceptions.UnroutableError:
