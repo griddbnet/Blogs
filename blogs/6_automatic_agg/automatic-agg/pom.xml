@@ -29,7 +29,7 @@
 
 
         <build>
-        <finalName>Processor</finalName>
+        <finalName>automatic-aggregation</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -54,7 +54,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>net.griddb.Main</Main-Class>
+                                        <Main-Class>net.griddb.GitCommand</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
