@@ -63,7 +63,7 @@ $ sudo rabbitmqctl set_permissions -p / username ".*" ".*" ".*"
 
 The credentials here will be the same ones used when forging the connection between the data sender and the data receiver. 
 
-One note: I was unsuccessful use "special characters" in my password when making my connection so I'd advise to keep the password simple for now.
+One note: I was unsuccessful in trying to use "special characters" in my password when making my connection, so I'd advise to keep the password simple for now (ie. just A-z and integers).
 
 ## Implementation: The Producer
 
@@ -85,7 +85,7 @@ pm25 = PM25_I2C(i2c, reset_pin)
 aqdata = pm25.read()
 ```
 
-This snippet of code is all you need to read/translate the sensor readings. With this, assuming everything is connected properly, will save the current values into the variable we called `aqdata`. 
+This snippet of code is all you need to read/translate the sensor readings. With this, assuming everything is connected properly, we will save the current values into the variable we called `aqdata`. 
 
 ### Python Code to Create and Push Data to RabbitMQ Queue
 
@@ -111,11 +111,11 @@ channel.confirm_delivery()
 channel.queue_declare(queue='airQuality', durable=True)
 ```
 
-Be default, RabbitMQ prioritizes throughput above all else, meaning we need to change some default values to ensure our data is being sent to our server (broker).
+By default, RabbitMQ prioritizes throughput above all else, meaning we need to change some default values to ensure our data is being sent to our server (broker).
 
-First, we want to enable `confirm delivery`. This will stop produce an exception/error if the producer receives a negative acknowledgement (nack) from our broker. This means if our data is falling off, we will at least have a log of it. Unfortunetely for us, there isn't a very robust handling of failed messages on the Python side; if this were for a production project, we would need to migrate from Python to some other language where you can deal with messages in a variety of ways. Namely, I think, we'd like to add batch processing of messages so that there's less of a chance of dropped data readings, and an easier time of re-sending dropped efforts.
+First, we want to enable `confirm delivery`. This will produce an exception/error if the producer receives a negative acknowledgement (nack) from our broker. This means if our data is falling off, we will at least have a log of it. Unfortunately for us, there isn't a very robust handling of failed messages on the Python side; if this were for a production project, we would need to migrate from Python to some other language where you can deal with messages in a variety of ways. Namely, I think, we'd like to add batch processing of messages so that there's less of a chance of dropped data readings, and an easier time of re-sending dropped efforts.
 
-Anyway, working with what we have, the next thing we do is turn on `durable` which will save the queue in the event of a broker crash/reboot. This means the `aqdata` won't need to be re-created but the saved inside won't necessarily be saved.
+Anyway, working with what we have, the next thing we do is turn on `durable` which will save the queue in the event of a broker crash/reboot. This means the `aqdata` won't need to be re-created but the messages inside of the queue won't necessarily be saved.
 
 After that, we read and send data simultaneously: 
 
