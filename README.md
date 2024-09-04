@@ -20,16 +20,16 @@ So when we run our gen-script, we can use command line arguments to specify whic
 
 If you plan to build and test out these methods yourself while you read along, you can grab the source code from our GitHub page: [](). 
 
-Once you have the repo, you can start with spinng up your GridDB servers. We will get into how to run the generation data script to push 100m rows of data into your servers in the next section.
+Once you have the repo, you can start with spinning up your GridDB servers. We will get into how to run the generation data script to push 100m rows of data into your servers in the next section.
 
-To get the three servers running, the instructions are laid out in the docker compose file in the root of the projectory repoistory, so simply run: 
+To get the three servers running, the instructions are laid out in the docker compose file located in the root of the projectory repository; you can simply run: 
 
 ```bash
 $ docker compose build
 $ docker compose up -d
 ```
 
-If all goes well, you should have three GridDB containers running: `griddb-server1`, `griddb-server2`, `griddb-server3`
+If all goes well, you should have three GridDB containers running: `griddb-server1`, `griddb-server2`, & `griddb-server3`.
 
 ## Implementation
 
@@ -121,7 +121,7 @@ The code itself is simple and self explanatory but please note that if you plan 
 
 ## Compression Method Results
 
-Now that we have our rows of data inside of our three GridDB containers, we can let GridDB handle the actual compressing of the data. This process happens automatically and in the background; you can read more about that here: [https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_5/GridDB_FeaturesReference.html#database-compressionrelease-function](https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_5/GridDB_FeaturesReference.html#database-compressionrelease-function).
+Now that we have our rows of data inside of our three GridDB containers, we can let GridDB handle the actual compressing of the data. This process happens automatically and in the background; you can read more about that here: [https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_6/GridDB_FeaturesReference.html#database-compressionrelease-function](https://www.toshiba-sol.co.jp/en/pro/griddb/docs-en/v5_6/GridDB_FeaturesReference.html#database-compressionrelease-function).
 
 To check how much space your 100 million rows of data are taking up, you can run the following command against each Docker container of GridDB: 
 
@@ -149,14 +149,14 @@ $ docker exec griddb-server3 cat /var/lib/gridstore/conf/gs_node.json | grep "st
 "storeCompressionMode": "COMPRESSION_ZSTD",
 ```
 
-Beyond testing the storage space used, we tested how long it took to load the data and how long a query takes. You can see the results here in the following table: 
+Beyond testing the storage space used, we tested how long it took to load the data and how long a query takes. You can see the results here in the following table. For every row/cell, a lower value is better and idincated superior user experience and usability. 
 
-|       | NO_COMPRESSION | COMPRESSION_ZLIB |        COMPRESSION_ZSTD         |
+|| NO_COMPRESSION | COMPRESSION_ZLIB |   COMPRESSION_ZSTD (added v5.6)         |
 |---------------------|------------------|------------------|-----------------|
-| Search (ms)         | 32644            | 20666            | 11475           |
-| Agreggation (ms)    | 30261            | 13302            | 8402            |
-| Storage (gridstore) | 11968312 (17GB)  | 7162824 (6.9GB)  | 6519520 (6.3GB) |
-| Storage (/data)     | 17568708 (12GB)  | 1141152 (1.1GB)  | 1140384 (1.1GB) |
+| Search (ms)         | 32,644            | 20,666            | 11,475           |
+| Agreggation (ms)    | 30,261            | 13,302            | 8,402            |
+| Storage (gridstore) | 11,968,312 (17GB)  | 7,162,824 (6.9GB)  | 6,519,520 (6.3GB) |
+| Storage (/data)     | 17,568,708 (12GB)  | 1,141,152 (1.1GB)  | 1,140,384 (1.1GB) |
 | Insert (m:ss.mmm)   | 14:42.452        | 15:02.748        | 15:05.404       |
 
 To test the query speed, we did both `select *` and agreggation queries like: `select AVG(data) from` and then took the average of 3 results and placed them into the table.

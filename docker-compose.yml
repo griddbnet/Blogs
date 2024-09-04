@@ -1,45 +1,83 @@
+#volumes:
+#  griddb:
+
 services:
 
-  griddb-server:
+  griddb-server1:
     build:
       context: griddb-server
       dockerfile: Dockerfile
-    container_name: griddb-server
+    container_name: griddb-server1
     user: root
     expose:
       - '10001'
-      - '10010'
-      - '10020'
-      - '10040'
-      - '20001'
-      - '41999'
+#    ports:
+#      - "10001:10001"
     environment:
       NOTIFICATION_MEMBER: 1
       GRIDDB_CLUSTER_NAME: myCluster
+      COMPRESSION_MODE: 0
+#    volumes:
+#     -  griddb:/var/lib/gridstore
     healthcheck:
         test: ["CMD", "gs_sh"]
         interval: 30s
         timeout: 10s
         retries: 5
 
-  mind-map-server:
+  griddb-server2:
     build:
-      context: server
+      context: griddb-server
       dockerfile: Dockerfile
-    container_name: mind-map-server
+    container_name: griddb-server2
+    user: root
     expose:
-      - "4000"
-    depends_on:
-      - griddb-server
-    links:
-      - griddb-server
+      - '10001'
+#    ports:
+#      - "10001:10001"
+    environment:
+      NOTIFICATION_MEMBER: 1
+      GRIDDB_CLUSTER_NAME: myCluster
+      COMPRESSION_MODE: 1
+ #   volumes:
+ #    -  griddb:/var/lib/gridstore
+    healthcheck:
+        test: ["CMD", "gs_sh"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
 
-  mind-map-client:
+  griddb-server3:
     build:
-      context: client
+      context: griddb-server
       dockerfile: Dockerfile
-    container_name: mind-map-client
+    container_name: griddb-server3
+    user: root
+    expose:
+      - '10001'
+#    ports:
+#      - "10001:10001"
+    environment:
+      NOTIFICATION_MEMBER: 1
+      GRIDDB_CLUSTER_NAME: myCluster
+      COMPRESSION_MODE: 2
+ #   volumes:
+ #    -  griddb:/var/lib/gridstore
+    healthcheck:
+        test: ["CMD", "gs_sh"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+
+
+  ingest: 
+    build:
+      context: ingest
+      dockerfile: Dockerfile
+    container_name: ingest
+    profiles:
+      - donotstart
     depends_on:
-      - mind-map-server
-    ports:
-      - "3000:3000"
+      griddb-server:
+        condition: service_healthy
+
