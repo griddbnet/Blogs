@@ -24,15 +24,15 @@ There are also top-notch YouTube videos on their [YouTube channel](https://www.y
 
 Open your terminal and clone the repo using this command
 
-```bash
-git clone https://github.com/Babajide777/grid-db-mind-map.git
-```
+<div class="clipboard">
+<pre><code class="language-sh">git clone https://github.com/Babajide777/grid-db-mind-map.git</code></pre>
+</div>
 
 Then,
 
-```bash
-cd grid-db-mind-map
-```
+<div class="clipboard">
+<pre><code class="language-sh">cd grid-db-mind-map</code></pre>
+</div>
 
 To change to the grid db mind map app directory.
 
@@ -71,21 +71,21 @@ React Flow a customizable React component for building node-based editors and in
 
 To view the frontend of the app change to the client directory.
 
-```bash
-cd client
-```
+<div class="clipboard">
+<pre><code class="language-sh">cd client</code></pre>
+</div>
 
 Now install the required dependencies
 
-```bash
-npm i
-```
+<div class="clipboard">
+<pre><code class="language-sh">npm i</code></pre>
+</div>
 
 Then run the app using
 
-```bash
-npm start
-```
+<div class="clipboard">
+<pre><code class="language-sh">npm start</code></pre>
+</div>
 
 ![Image](/blog/images/1.png)
 ![Image](/blog/images/1.png)
@@ -123,29 +123,29 @@ Follow the steps as explained below;
 Create a “server” folder and initialize npm to generate a package.json file.
 You can name the folder anything you want:
 
-```bash
-npm i
-```
+<div class="clipboard">
+<pre><code class="language-sh">npm i</code></pre>
+</div>
 
 #### Step 2: Install Required Packages
 
 We are going to install all the required packages at once by running the following line of code:
 
-```bash
-npm i express morgan joi griddb-node-api cors
-```
+<div class="clipboard">
+<pre><code class="language-sh">npm i express morgan joi griddb-node-api cors</code></pre>
+</div>
 
 **_Addition_**
 
 While it is not required to install nodemon, it's nice to have in development so that the server would restart automatically when any change is saved.
 This is the command to install nodemon as a dev dependency:
 
-```bash
-npm i -D nodemon
-```
+<div class="clipboard">
+<pre><code class="language-sh">npm i -D nodemon</code></pre>
+</div>
 
-```bash
-{
+<div class="clipboard">
+<pre><code class="language-sh">{
   "name": "grid-db-mind-map-server",
   "version": "1.0.0",
   "description": "backend for grid db mind-map",
@@ -173,15 +173,15 @@ npm i -D nodemon
     "nodemon": "^3.0.1"
   }
 }
-
-```
+</code></pre>
+</div>
 
 #### Step 3: Create Server.js File
 
 Create an server.js file and insert the following code:
 
-```bash
-const express = require("express");
+<div class="clipboard">
+<pre><code class="language-js">const express = require("express");
 const morgan = require("morgan");
 const app = express();
 const cors = require("cors");
@@ -202,22 +202,22 @@ app.use("/api", require("./routes/mindMapRoutes"));
 app.listen(PORT, () => {
   console.log(`Server started on ${PORT}`);
 });
-
-```
+</code></pre>
+</div>
 
 If you installed nodemon as a dev dependency, you’ll need to add this line of code to the “scripts” section in your package.json file:
 
-```bash
-"dev": "nodemon index.js"
-```
+<div class="clipboard">
+<pre><code class="language-sh">"dev": "nodemon index.js"</code></pre>
+</div>
 
 #### Step 4: Run the Application
 
 If you installed nodemon, you could use ‘npm start’ to start the application, however, this would require you to restart the application any time you make changes, going against what nodemon is intended for. The following method doesn’t require you to restart the application when you make any changes (the benefit of nodemon):
 
-```bash
-npm run dev
-```
+<div class="clipboard">
+<pre><code class="language-sh">npm run dev</code></pre>
+</div>
 
 ![Image](/blog/images/3.png)
 
@@ -226,9 +226,8 @@ npm run dev
 We will connect to the GridDB database using the griddb-node-api package.
 We then set the container name of the project. I chose _“mind-map”_ because it is related to the project. However, you can call it whatever you want.
 
-```bash
-
-const griddb = require("griddb-node-api");
+<div class="clipboard">
+<pre><code class="language-js">const griddb = require("griddb-node-api");
 
 const containerName = "mind-map";
 
@@ -455,8 +454,8 @@ module.exports = {
   deleteByID,
   editByID,
 };
-
-```
+</code></pre>
+</div>
 
 The initStore function connects the app to the GridDB Cluster using the host, port, clusterName, username, and password.
 
@@ -468,15 +467,14 @@ The createContainer creates the container while initGridDbTS initializes the dat
 
 To create a mind map item
 
-```bash
-router.post("/add-meal", addMealPlan);
-```
+<div class="clipboard">
+<pre><code class="language-sh">router.post("/add-meal", addMealPlan);</code></pre>
+</div>
 
 We use the Joi package to validate the request body sent from the frontend and then insert into the container that as created in step 6.
 
-```bash
-
-const Joi = require("joi");
+<div class="clipboard">
+<pre><code class="language-js">const Joi = require("joi");
 
 //map item validation rules
 const mapItemValidation = async (field) => {
@@ -500,12 +498,11 @@ module.exports = {
   mapItemValidation,
 };
 
+</code></pre>
+</div>
 
-```
-
-```bash
-
-async function insert(data, container) {
+<div class="clipboard">
+<pre><code class="language-js">async function insert(data, container) {
   try {
     let savedData = await container.put(data);
 
@@ -526,13 +523,13 @@ async function insert(data, container) {
     }
   }
 }
-
-```
+</code></pre>
+</div>
 
 The id and lineId are randomly generated on the frontend and sent along with the source, target, x, y, and label. After the map item is saved to the database, we then query the map item using the created random id to get the details of the saved map item.
 
-```bash
-async function queryByID(id, conInfo, store) {
+<div class="clipboard">
+<pre><code class="language-js">async function queryByID(id, conInfo, store) {
   try {
     const cont = await store.putContainer(conInfo);
     const row = await cont.get(id);
@@ -542,11 +539,11 @@ async function queryByID(id, conInfo, store) {
   }
 }
 
+</code></pre>
+</div>
 
-```
-
-```bash
-const addMealItem = async (req, res) => {
+<div class="clipboard">
+<pre><code class="language-js">const addMealItem = async (req, res) => {
   //validate req.body
   const { collectionDb, store, conInfo } = await initGridDbTS();
 
@@ -596,8 +593,8 @@ const addMealItem = async (req, res) => {
   }
 };
 
-
-```
+</code></pre>
+</div>
 
 The map plan item details are then sent to the frontend as a json response.
 
@@ -609,16 +606,16 @@ The map plan item details are then sent to the frontend as a json response.
 
 The id of the map item that is required is gotten from the params of the request data.
 
-```bash
-router.get("/map-detail/:id", mapItemDetails);
-```
+<div class="clipboard">
+<pre><code class="language-js">router.get("/map-detail/:id", mapItemDetails);</code></pre>
+</div>
 
 Then id of the map item is then queried with the data in the database and a 200 response with the map item data is sent if the map item is found.
 
 This route will mostly be used to get the details of a map item that is to be edited.
 
-```bash
-const mapItemDetails = async (req, res) => {
+<div class="clipboard">
+<pre><code class="language-js">const mapItemDetails = async (req, res) => {
   try {
     const { store, conInfo } = await initGridDbTS();
     const { id } = req.params;
@@ -642,8 +639,8 @@ const mapItemDetails = async (req, res) => {
     responseHandler(res, "Error saving map item", 400, false, error.message);
   }
 };
-
-```
+</code></pre>
+</div>
 
 ![Image](/blog/images/6.png)
 
@@ -651,14 +648,14 @@ const mapItemDetails = async (req, res) => {
 
 #### Step 8: Edit a Map Item
 
-```bash
-router.put("/edit-map-item/:id", editMapItem);
-```
+<div class="clipboard">
+<pre><code class="language-js">router.put("/edit-map-item/:id", editMapItem);</code></pre>
+</div>
 
 To edit a map item, again the id of the required map item is sent in the params of the request. The map item is queried using the given id and the old details of the map item is replaced by the new ones.
 
-```bash
-const editMapItem = async (req, res) => {
+<div class="clipboard">
+<pre><code class="language-js">const editMapItem = async (req, res) => {
   try {
     const { store, conInfo } = await initGridDbTS();
     const { id } = req.params;
@@ -702,11 +699,11 @@ const editMapItem = async (req, res) => {
   }
 };
 
+</code></pre>
+</div>
 
-```
-
-```bash
-const editByID = async (store, conInfo, data) => {
+<div class="clipboard">
+<pre><code class="language-js">const editByID = async (store, conInfo, data) => {
   try {
     const cont = await store.putContainer(conInfo);
     const res = await cont.put(data);
@@ -716,21 +713,21 @@ const editByID = async (store, conInfo, data) => {
   }
 };
 
-
-```
+</code></pre>
+</div>
 
 ![Image](/blog/images/8.png)
 
 ### Step 9: Delete a Map Item
 
-```bash
-router.delete("/delete-map-item/:id", deleteMapItem);
-```
+<div class="clipboard">
+<pre><code class="language-js">router.delete("/delete-map-item/:id", deleteMapItem);</code></pre>
+</div>
 
 The id is gotten from the params or the request data and that is used to delete the row containing the specified map item.
 
-```bash
-const deleteMapItem = async (req, res) => {
+<div class="clipboard">
+<pre><code class="language-js">const deleteMapItem = async (req, res) => {
   try {
     const { store, conInfo } = await initGridDbTS();
     const { id } = req.params;
@@ -745,12 +742,11 @@ const deleteMapItem = async (req, res) => {
   }
 };
 
+</code></pre>
+</div>
 
-```
-
-```bash
-
-const deleteByID = async (store, id, conInfo) => {
+<div class="clipboard">
+<pre><code class="language-js">const deleteByID = async (store, id, conInfo) => {
   try {
     const cont = await store.putContainer(conInfo);
     let res = await cont.remove(id);
@@ -761,8 +757,8 @@ const deleteByID = async (store, id, conInfo) => {
   }
 };
 
-
-```
+</code></pre>
+</div>
 
 ![Image](/blog/images/9.png)
 
@@ -772,14 +768,14 @@ const deleteByID = async (store, id, conInfo) => {
 
 To get list of all map items in the database, you have to do this;
 
-```bash
-router.get("/all-map-items", getAllMapItems);
-```
+<div class="clipboard">
+<pre><code class="language-js">router.get("/all-map-items", getAllMapItems);</code></pre>
+</div>
 
 This returns all the map items in the database.
 
-```bash
-const getAllMapItems = async (req, res) => {
+<div class="clipboard">
+<pre><code class="language-js">const getAllMapItems = async (req, res) => {
   try {
     const { store, conInfo } = await initGridDbTS();
     const result = await queryAll(conInfo, store);
@@ -819,11 +815,11 @@ const getAllMapItems = async (req, res) => {
 };
 
 
+</code></pre>
+</div>
 
-```
-
-```bash
-async function queryAll(conInfo, store) {
+<div class="clipboard">
+<pre><code class="language-js">async function queryAll(conInfo, store) {
   const sql = `SELECT *`;
   const cont = await store.putContainer(conInfo);
   const query = await cont.query(sql);
@@ -842,8 +838,8 @@ async function queryAll(conInfo, store) {
   }
 }
 
-
-```
+</code></pre>
+</div>
 
 ![Image](/blog/images/11.png)
 
