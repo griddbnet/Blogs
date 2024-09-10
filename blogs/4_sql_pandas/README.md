@@ -25,8 +25,8 @@ This, of course, rules out JayDeBeApi but we were able to find a fork of the pop
 
 Reading the docs for SQLAlchemy JDBC Generic: [https://pypi.org/project/sqlalchemy-jdbc-generic/](https://pypi.org/project/sqlalchemy-jdbc-generic/) along with the docs for GridDB JDBC: [https://github.com/griddb/docs-en/blob/master/manuals/GridDB_JDBC_Driver_UserGuide.md](https://github.com/griddb/docs-en/blob/master/manuals/GridDB_JDBC_Driver_UserGuide.md) allowed for us to ascertain the proper way of building out the JDBC connection string -- again, note that it's *not* the same process as building out the connection string with the JayDeBeApi library. Having set the table, here is how to create that connection string: 
 
-```python
-from sqlalchemy.engine.url import URL
+<div class="clipboard">
+<pre><code class="language-python">from sqlalchemy.engine.url import URL
 
 eng_url = URL.create(
     drivername='sqlajdbc',
@@ -39,26 +39,26 @@ eng_url = URL.create(
         'notificationMember': 'griddb-server:20001',
         '_jars':  '/app/lib/gridstore-jdbc-5.6.0.jar'
     }
-)
-```
+)</code></pre>
+</div>
 
 First, the drivername *must* be set as `sqlajdbc`, this is the name of the generic JDBC driver. Next, the connection order might seem a bit backwards, but this is the correct way of building the URL. One other thing, the `_jars` option expects the library jar so please make sure the path points to where you keep your GridDB JDBC jar file. If you are using the included Dockerfile, it already points to the correct path.
 
 One last *gotcha* when trying to make this connection is that before you feed in the connection details and try to make the connection to GridDB, you will need to start the JVM (Java Virtual Machine) like so:
 
-```python
-import jpype
-jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=/app/lib/gridstore-jdbc-5.6.0.jar")
-```
+<div class="clipboard">
+<pre><code class="language-python">import jpype
+jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=/app/lib/gridstore-jdbc-5.6.0.jar")</code></pre>
+</div>
 
 With this information all set, you can now make the connection and run some queries to be saved into dataframes:
 
-```python
-from sqlalchemy import create_engine
+<div class="clipboard">
+<pre><code class="language-python">from sqlalchemy import create_engine
 eng = create_engine(eng_url)
 with eng.connect() as c:
     print("Connected")
     df = pd.read_sql("SELECT * FROM LOG_agent_intrusion WHERE exploit = True", c)
 
-    print(df.head())
-```
+    print(df.head())</code></pre>
+</div>

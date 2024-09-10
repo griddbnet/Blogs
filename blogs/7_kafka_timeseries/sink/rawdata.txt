@@ -1,0 +1,10 @@
+2012-07-18 12:54:45.126257  D001    Ignore      Ignore      CLOSE   Control4-Door
+2012-07-18 12:54:45.196564  D002    OutsideDoor FrontDoor   OPEN    Control4-Door
+2012-07-18 12:54:45.247825  T102    Ignore      FrontDoorTemp   78  Control4-Temperature
+2012-07-18 12:54:45.302398  BATP102 Ignore      Ignore      85  Control4-BatteryPercent
+2012-07-18 12:54:45.399416  T103    Ignore      BathroomTemp    25  Control4-Temperature
+2012-07-18 12:54:45.472391  BATP103 Ignore      Ignore      82  Control4-BatteryPercent
+2012-07-18 12:54:45.606580  T101    Ignore      Ignore      31  Control4-Temperature
+2012-07-18 12:54:45.682577  MA016   Kitchen     Kitchen     OFF Control4-MotionArea
+2012-07-18 12:54:45.723461  D003    Bathroom    BathroomDoor    OPEN    Control4-Door
+2012-07-18 12:54:45.767498  M009    Bedroom     Bedroom     ON  Control4-Motion
