@@ -64,7 +64,7 @@ def produce(meterid, usagemodel=None):
             "schema": 
             {
                 "fields": [ 
-                    { "field": "timestamp", "optional": False, "type": "timestamp" },
+                    { "field": "timestamp", "optional": False, "type": "string" },
                     { "field": "kwh", "optional": False, "type": "double" }, 
                     { "field": "temp", "optional": False, "type": "double" } 
                 ], 
