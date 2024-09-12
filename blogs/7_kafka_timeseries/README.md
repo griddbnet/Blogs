@@ -3,19 +3,19 @@ In today's article we will be discussing Kafka in conjunction with GridDB, which
 - [Stream Data with GridDB and Kafka](https://griddb.net/en/blog/stream-data-with-griddb-and-kafka/)
 - [Using GridDB as a source for Kafka with JDBC](https://griddb.net/en/blog/using-griddb-as-a-source-for-kafka-with-jdbc/)
 - [Using SQL Batch Inserts with GridDB v5.5, JDBC, and Kafka](https://griddb.net/en/blog/using-sql-batch-inserts-with-griddb-v5-5-jdbc-and-kafka/)
-- even a Udemy course: [Create a working IoT Project - Apache Kafka, Python, GridDB](https://www.udemy.com/course/create-a-working-iot-project-with-iot-database-griddb/)
+- Udemy course: [Create a working IoT Project - Apache Kafka, Python, GridDB](https://www.udemy.com/course/create-a-working-iot-project-with-iot-database-griddb/)
 
-We will focus in this article on a new feature which allows for use of Kafka with GridDB as a sink resource which will make `TIME_SERIES` containers(meaning we can push time_series data from Kafka topics directly into GridDB with some configuration); prior to v5.6, we were limited to Collection Containers. 
+We will focus in this article on a new feature which allows for use of Kafka with GridDB as a sink resource which will make `TIME_SERIES` containers (meaning we can push time_series data from Kafka topics directly into GridDB with some configuration); prior to v5.6, we were limited to Collection Containers. 
 
-We will be sharing some of the format written for the blog last written about using Kafka with GridDB titled "Stream Data with GridDB and Kafka". The differences will be: we have made all the moving parts of kafka and griddb into Docker containers for easier portability and ease of use, and will be using Time Series containers. If you follow along with this blog, you will learn how use Kafka to stream time series data directly into a GridDB time series container using Docker containers.
+There will be some similarities with the blog last written about using Kafka with GridDB titled: "Stream Data with GridDB and Kafka". The differences here are that we have made all the moving parts of kafka and GridDB into Docker containers for easier portability and ease of use and will, as alluded to earlier, be using Time Series containers. If you follow along with this blog, you will learn how use Kafka to stream time series data directly into a GridDB time series container using Docker containers and Kafka.
 
 ## High Level Overview 
 
-Before we get into how to run this project, let's briefly go over what this project does and how it works. We will get Kafka and GridDB running inside of docker containers, and once those are ready, we will run a python script which is a kafka `producer` to push up random data into the `broker`, which will then sit in a Kafka queue (though it's more accurately a `distributed log`) until a `consumer` is available to read those values. 
+Before we get into how to run this project, let's briefly go over what this project does and how it works. We will get Kafka and GridDB running inside of docker containers, and once those are ready, we will run a python script which acts as a kafka `producer` to push up random data to the `broker`. This simulated iot data will then sit in a Kafka queue (though it's more accurately a `distributed log`) until a `consumer` is available to read those values. 
 
 In our case, GridDB will act as the `sink`, meaning it will `consume` the data topics made by our python script and then save that data into tables which will created by Kafka based on our topics' schemas set within our Python script. 
 
-To properly communicate how and where to save the Kafka topics, we will need to set up a GridDB Kafka Sink properties file. We will also need to grab and build the latest version (v5.6) of the GridDB kafka Connect and somehow share that with our running Kafka installation so that we can save time series data directly into time series containers of our choosing. 
+To properly communicate how and where to save the Kafka topics, we will need to set up a GridDB Kafka Sink properties file. But first, we will also need to grab and build the latest version (v5.6) of the GridDB Kafka Connect and somehow share that with our running Kafka installation so that we may save time series data directly into time series containers. 
 
 Within that properties file, we will need to set the container type to `time_series` along with various other important details.
 
@@ -31,7 +31,7 @@ We will also need to grab and build the GridDB Kafka Connect jar file.
 
 #### GridDB Kafka Connect (Optional)
 
-You can download the latedst version here: [griddb-kafka-connect](https://github.com/griddb/griddb-kafka-connect). To build, make sure you have `maven` installed and run: 
+You can download the latest version here: [griddb-kafka-connect](https://github.com/griddb/griddb-kafka-connect). To build, make sure you have `maven` installed and run: 
 
 ```bash
 $ mvn clean install
@@ -39,7 +39,7 @@ $ mvn clean install
 
 The `.jar` file will be created inside of the `target` directory under the name: `griddb-kafka-connector-0.6.jar`. 
 
-Note: The jar file is also included in source code provided by this repo (in the next section). If you clone the repo and run this project via docker compose, you do not need to download/build the jar file yourself.
+Note: The jar file is also included in the source code provided by this repo (in the next section). If you clone the repo and run this project via docker compose, you do not need to download/build the jar file yourself.
 
 ### Source Code
 
@@ -77,7 +77,7 @@ $ python3 scripts/producer.py
 
 ### GridDB Sink Properties
 
-In Kafka and other stream/event-driven architectures, the concept of sources and sinks mean to dictate data flow direction. The sink is where data flows *in*, or where the data ends up -- in this case, we want our data payloads to persist inside of GridDB as time series data inside of a time series container. And so we set the properties file as such: 
+In Kafka and other stream/event-driven architectures, the concept of sources and sinks mean to describe the direction of the flow of data. The sink is where data flows *in*, or where the data ends up -- in this case, we want our data payloads to persist inside of GridDB as time series data inside of a time series container. And so we set the properties file as such: 
 
 ```bash
         connector.class= com.github.griddb.kafka.connect.GriddbSinkConnector
@@ -88,9 +88,14 @@ In Kafka and other stream/event-driven architectures, the concept of sources and
         notification.member= griddb-server=10001
         container.type= TIME_SERIES
         topics= meter_0,meter_1,meter_2,meter_3
+        transforms=  TimestampConverter
+        transforms.TimestampConverter.type=  org.apache.kafka.connect.transforms.TimestampConverter$Value
+        transforms.TimestampConverter.format=  yyyy-MM-dd hh=mm=ss
+        transforms.TimestampConverter.field=  timestamp
+        transforms.TimestampConverter.target.type=  Timestamp
 ```
 
-Container type being set to time_series is what's new compared to our previous blog. The other values are simply allowing for our broker to know where to send the data topics to, which is our GridDB docker container with a hostname of `griddb-server`.
+As compared to our previous article, the main changes are the `container.type` designation and the transforms properties. The transforms properties tells our Kafka cluster which string value will be converted into timestamp, along with other useful information to help that process along. The other values are simply allowing for our broker to know where to send the data topics to, which is our GridDB docker container with a hostname of `griddb-server`.
 
 The topics are the name of the data topics and will also be the names of our GridDB time series containers. 
 
@@ -102,6 +107,22 @@ There isn't much to say here that you can't get from simply reading the (simple)
 #p=KafkaProducer(bootstrap_servers=['localhost:9092'])
 p=KafkaProducer(bootstrap_servers=['broker:9092'])
 ```
+
+One other thing to note is that though we are making time_series data containers with time_series data as the row key, you still need to set your payload data fields as type `string` (I teased this above when discussing the `transform` property in the sink section). 
+
+```python
+"schema": 
+{
+    "fields": [ 
+        { "field": "timestamp", "optional": False, "type": "string" },
+        { "field": "kwh", "optional": False, "type": "double" }, 
+        { "field": "temp", "optional": False, "type": "double" } 
+    ], 
+    "name": "iot", "optional": False, "type": "struct" 
+}   
+```
+
+The key here is that though the type is `string`, we must set the *first* field as our targeted timestamp type. And then in the sink for this dataset, we set the `transforms.TimestampConverter.field` as the name of our field we want to convert to type timestamp. With these things in place, Kafka and GridDB will create your tables with the set schema and the proper container type.
 
 ## Running Kafka in Docker Containers
 
