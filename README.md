@@ -1,1 +1,2 @@
-# Blogs
+# Video Summarizer
+
