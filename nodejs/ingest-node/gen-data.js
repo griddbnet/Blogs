@@ -5,11 +5,10 @@ var fs = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 var store = factory.getStore({
     "notificationMember": process.argv[2],
-    "clusterName": "myCluster",
-    "username": "admin",
-    "password": "admin"
+    "clusterName": 'myCluster',
+    "username": 'admin',
+    "password": 'admin'
 });
-
 const conInfo = new griddb.ContainerInfo({
     'name': "compressionBlog",
     'columnInfoList': [
@@ -29,6 +28,7 @@ const putCont = async (sensorCount, data, temperature) => {
     const rows = generateSensors(sensorCount, data, temperature);
     try {
         const cont = await store.putContainer(conInfo)
+        console.log("putting container and rows");
         await cont.multiPut(rows);
     } catch (error) {
         console.log("error: ", error)
@@ -47,7 +47,7 @@ const generateSensors = (sensorCount, data, temperature) => {
         tmp.push(temperature)
         arr.push(tmp)
     }
-//    console.log("arr: ", arr)
+    console.log("arr: ", arr)
     return arr;
 }
 

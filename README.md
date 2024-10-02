@@ -4,7 +4,9 @@ In this blog, we want to again touch on using GridDB on Docker, but will focus i
 
 ## Running GridDB & GridDB Applications with Docker
 
-First, you can read the source code that accompanies this article here: [https://github.com/griddbnet/griddb-docker-arm](https://github.com/griddbnet/griddb-docker-arm). It contains the docker image itself which you can build to run on your ARM machine. It is also available for pulling from the GridDB.net [Dockerhub](https://hub.docker.com/r/griddbnet/griddb) page.
+First, you can read the source code that accompanies this article here: [https://github.com/griddbnet/griddb-docker-arm](https://github.com/griddbnet/griddb-docker-arm). It contains the docker image itself which you can build to run on your ARM machine. 
+
+The image itself is also available for pulling from the GridDB.net [Dockerhub](https://hub.docker.com/r/griddbnet/griddb) page. The full image/tag name is: `griddbnet/griddb:arm-5.5.0`
 
 ### Running GridDB Server
 
@@ -12,36 +14,40 @@ To pull and run this image:
 
 ```bash
 $ docker network create griddb-net
-$ docker pull griddbnet/griddb
+$ docker pull griddbnet/griddb:arm-5.5.0
 $ docker run --name griddb-server \
     --network griddb-net \
     -e GRIDDB_CLUSTER_NAME=myCluster \
     -e GRIDDB_PASSWORD=admin \
     -e NOTIFICATION_MEMBER=1 \
-    -d -t griddbnet/griddb:5.5.0
+    -d -t griddbnet/griddb:arm-5.5.0
 ```
 
 These commands will create a network for your GridDB server and any containers you intend to run with it. It will also download the built image and then run the image on your machine. Once you confirm it's running, you can try running application code, using your GridDB container as the data store.
 
 ### Running Application Containers
 
-First, here are the commands to run some node.js GridDB code against your containerized server:
+First, let's grab the source code and build our nodejs container to run some arbitrary code using GridDB as our connection.
 
 ```bash
-$ git clone https://github.com/griddbnet/griddb-docker-arm.git
-$ cd griddb-docker-arm/node-api/centos7_arm/
-$ docker build -t griddb_node_app .
-$ docker run --name griddb-node   --network griddb-net     -e
-GRIDDB_CLUSTER_NAME=myCluster     -e GRIDDB_USERNAME=admin     -e
-GRIDDB_PASSWORD=admin     -e IP_NOTIFICATION_MEMBER=griddb-server
-griddb_node_app
+$ git clone https://github.com/griddbnet/Blogs.git --branch docker-arm
 ```
 
-First, we need to grab the source code which contains some modified files when compared to the official source code (changes to allow the C_Client to run on macos/ARM, which is required for non java programming language connectors). Then we build the image and run it, setting some options such as cluster name, user/pass combo, and finally the IP_NOTIFICATION_MEMBER which explictly tells the container the ip address of the GridDB server.
+Next, here are the commands to run some node.js GridDB code against your containerized server.
 
-Of course here, when running this, you are simply running the sample code we have provided. But it lays out the framework for running your own GridDB nodejs code. You write your code, build the docker image, and then run it with explict case of choosing the docker network and pointing to the correct hostname/ip address.
+First, let's run the sample code that accompanies the official node.js GridDB repo
 
-To go along with the nodejs application interface, JDBC and Java have also been tested and confirmed to work with an ARM based Mac using an M1.
+```bash
+$ cd Blogs/nodejs/node-api
+$ docker build -t griddb_node_app .
+$ docker run --name griddb-node --network griddb-net -e GRIDDB_CLUSTER_NAME=myCluster -e GRIDDB_USERNAME=admin -e GRIDDB_PASSWORD=admin -e IP_NOTIFICATION_MEMBER=griddb-server griddb_node_app
+```
+
+First, we need to grab the source code which contains some modified files when compared to the official source code (changes to allow the C_Client to run on macos/ARM, which is required for non java programming language connectors). Then we build the image and run it, setting some options such as cluster name, user/pass combo, and finally the IP_NOTIFICATION_MEMBER which explictly tells the container the ip address of the GridDB server container.
+
+Of course here, when running this, you are simply running the sample code provided, not your own. But it also lays out the framework for running your own GridDB nodejs code. The flow is as follows: you write your code, build the docker image, and then run it with explict case of choosing the docker network and pointing to the correct hostname/ip address.
+
+To go along with the nodejs application interface, JDBC and Java have also been tested and confirmed to work with an ARM based Mac using an M-series chip.
 
 ### Examples of Creating Application Container
 
@@ -49,41 +55,92 @@ To build and run your own application in docker, the process is simple: you writ
 
 #### Node.js
 
-For example, let's say you wrote a quick node.js script to ingest data as we did here: [previous blog](). NOTE: Source code for this example nodejs script is also included in the source code for this article.
+For example, let's say you wrote a quick node.js script to generate some 'fake' data.
 
-To keep the application connection agnostic, you can keep the connection details as command line arguments, meaning when you run your docker container, you can simply enter in the docker container you wish to connect to. For example, here's a Dockerfile of a nodejs application we want to use with a docker griddb server: 
+To keep the application connection agnostic, you can keep the connection details as command line arguments, meaning when you run your docker container, you can simply enter in the docker container you wish to connect to similar to how it was done above. If you enter in the environment details when running the docker container. These details will then be picked up by our entry point script.
+
+Here is the Dockerfile for installing the GridDB Node.js connector, along with the c_client connector on an ARM machine. Most of the file is installing everything necessary, including installing the included c_client rpm file. In this instance, we are simply copying over the one file we want to run (`gen-data.js`) along with the entrypoint script.
 
 ```bash
-FROM node:18
+FROM rockylinux:9.3
 
-# download c_client
-WORKDIR /
-RUN wget --no-check-certificate https://github.com/griddb/c_client/releases/download/v5.6.0/griddb-c-client_5.6.0_amd64.deb
-RUN dpkg -i griddb-c-client_5.6.0_amd64.deb
+ENV GRIDDB_NODE_API_VERSION=0.8.5
+ENV NODE_PATH=/root/node-api-${GRIDDB_NODE_API_VERSION}
 
+# Install griddb server
+RUN set -eux \
+    && dnf update -y \
+    # Install nodejs version 16.x and c client for griddb nodejs_client
+    && dnf install -y curl make python3 tar --allowerasing \
+    && dnf groupinstall -y 'Development Tools'
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+RUN source ~/.nvm/nvm.sh && nvm install 20 && nvm use 20
+
+
+COPY ./lib/griddb-c-client-5.5.0-linux.aarch64.rpm /
+RUN rpm -Uvh /griddb-c-client-5.5.0-linux.aarch64.rpm
+
+SHELL ["/bin/bash", "--login", "-c"]
+# Copy entrypoint script and sample for fixlist
+RUN mkdir /app
+COPY run-griddb.sh gen-data.js /app/
+
+WORKDIR /root
+
+# Install nodejs client
+RUN curl -L https://github.com/griddb/node-api/archive/refs/tags/${GRIDDB_NODE_API_VERSION}.tar.gz -o ${GRIDDB_NODE_API_VERSION}.tar.gz -sS \
+    && tar -xzvf ${GRIDDB_NODE_API_VERSION}.tar.gz \
+    && cd node-api-${GRIDDB_NODE_API_VERSION} 
+
+WORKDIR /root/node-api-${GRIDDB_NODE_API_VERSION}
+RUN  npm install 
+RUN rm ../${GRIDDB_NODE_API_VERSION}.tar.gz
 
 WORKDIR /app
-COPY package.json /app/package.json
-COPY package-lock.json /app/package-lock.json
-COPY gen-data.js /app/gen-data.js
+# Set permission executable for script
+RUN chmod a+x run-griddb.sh
 
-RUN npm i
-
-ENTRYPOINT ["node", "gen-data.js"]
+# Run sample
+CMD ["/bin/bash", "run-griddb.sh"]
 ```
-The instructions are straight forward, we want to copy all source code and package information and build it into a docker container. The code itself expects command line arguments for the connection details: 
 
-```javascript
-var fs = require('fs');
-var factory = griddb.StoreFactory.getInstance();
-var store = factory.getStore({
-    "notificationMember": process.argv[2],
-    "clusterName": "myCluster",
-    "username": "admin",
-    "password": "admin"
-});
+And here is the simple `run-griddb.sh` script. All it does is basically run the node command with the proper arg details to connect to our GridDB docker container.
+
+```bash
+#!/bin/bash
+
+if [ -z "$GRIDDB_CLUSTER_NAME" ]; then
+    GRIDDB_CLUSTER_NAME='dockerGridDB'
+fi
+
+if [ -z "$NOTIFICATION_ADDRESS" ]; then
+    NOTIFICATION_ADDRESS=239.0.0.1
+fi
+
+if [ -z "$NOTIFICATION_PORT" ]; then
+    NOTIFICATION_PORT=31999
+fi
+
+if [ -z "$GRIDDB_USERNAME" ]; then
+    GRIDDB_USERNAME='admin'
+fi
+
+if [ -z "$GRIDDB_PASSWORD" ]; then
+    GRIDDB_PASSWORD='admin'
+fi
+
+if [ -z "$IP_NOTIFICATION_MEMBER" ]; then
+    echo "Run GridDB node_api client with GridDB server mode MULTICAST : $NOTIFICATION_ADDRESS $NOTIFICATION_PORT $GRIDDB_CLUSTER_NAME $GRIDDB_USERNAME $GRIDDB_PASSWORD"
+    source ~/.nvm/nvm.sh && nvm use 20
+    node sample1.js $NOTIFICATION_ADDRESS $NOTIFICATION_PORT $GRIDDB_CLUSTER_NAME $GRIDDB_USERNAME $GRIDDB_PASSWORD
+else
+    echo "Run GridDB node_api client with GridDB server mode FixedList : $IP_NOTIFICATION_MEMBER:10001 $GRIDDB_CLUSTER_NAME $GRIDDB_USERNAME $GRIDDB_PASSWORD"
+    source ~/.nvm/nvm.sh && nvm use 20.
+    node gen-data.js $IP_NOTIFICATION_MEMBER:10001 $GRIDDB_CLUSTER_NAME $GRIDDB_USERNAME $GRIDDB_PASSWORD
+fi
 ```
-So when we build this docker container, we can specify the connection details. Here are the full instructions of getting this running: 
 
 ```bash
 $ docker build -t nodejs-gen-griddb .
@@ -92,14 +149,14 @@ $ docker build -t nodejs-gen-griddb .
 We are building our current Dockerfile with the tag of `nodejs-gen-griddb`. Then we run it, specifying the connection details: 
 
 ```bash
-$ docker run  --network griddb-net nodejs-gen-griddb griddb-server:10001
+$ docker run  --network griddb-net -e GRIDDB_CLUSTER_NAME=myCluster -e GRIDDB_USERNAME=admin -e GRIDDB_PASSWORD=admin -e IP_NOTIFICATION_MEMBER=griddb-server nodejs-gen-griddb 
 ```
 
 #### JDBC 
 
 Here is another example, connecting to our GridDB server using Java and JDBC so that we can run SQL commands.
 
-First, we create out java program. In this case, we simply want to make a connection and then create a new table. 
+First, we create our java program. In this case, we simply want to make a connection and then create a new table. 
 
 ```java
     String notificationMember = args[0];
@@ -155,5 +212,4 @@ In this case, we left the command line arguments within the Dockerfile itself, m
 
 ## Conclusion
 
-And now you should be able to run both nodejs and JDBC containers on your ARM devices. If you get other programming languages running ony our machines, please let us know.
-
+And now you should be able to run both nodejs and JDBC containers on your ARM devices. If you get other programming languages running ony our machines, please let us know in the GridDB forum: [https://forum.griddb.net](https://forum.griddb.net)
