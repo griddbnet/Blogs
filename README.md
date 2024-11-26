@@ -169,7 +169,13 @@ This will output a list of about 40 possible IP Addresses and save it into a tex
 
 Obviously, while hand-writing each of these IP addresses is technically feasible, it'd be tedious and horrifying. To add each of these with a simple `do while` loop in bash, we first need to grab the endpoint with all authorization headers. 
 
-To do so, open up your GridDB Cloud Web Portal, open up the dev console, navigate to the network tab, filter for XHR requests, clear everything out, and add one of the 40 IP addresses on your list. You will see a 201 POST Request, now do the following: right click -> Copy Value -> Copy as cURL. You will now have the cURL Command saved in your clipboard.
+To do so, open up your GridDB Cloud Web Portal, open up the dev console, navigate to the network tab, filter for XHR requests, clear everything out, and add one of the 40 IP addresses on your list.
+
+![dummy-ip](/images/adding-dummy-ip.png)
+
+When you hit submit, you will see a 201 POST Request, now do the following: right click -> Copy Value -> Copy as cURL. You will now have the cURL Command saved in your clipboard.
+
+![curl-value](/images/getting-curl-from-dev-console.png)
 
 Open up the `whitelistIp.sh` script and enter in the endpoint unique to you inside of the `runCurl` script sans the IP Address at the end. Here is what the entire script looks like: 
 
