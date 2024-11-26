@@ -4,13 +4,15 @@ One of GridDB's main draws are its inherent strengths at managing an IoT system,
 
 For this article, we want to use the VS Code extensions for the Azure IoT Hub to create all of the resources we will need to create, test, and manage our virtual devices with our IoT Hub. We will also be utilizing the Azure CLI Tools to get a list of possible IP Addresses to be whitelisted in the GridDB Cloud. And then finally, we will create some Azure Functions (with VS Code), deploy them onto your Azure subscription, and then pair it with your Iot Hub. Again, the goal is for the device to emit data, trigger an event, and then send the data payload out to GridDB Cloud, seamlessly. 
 
+![image-0](/images/diagram.jpg)
+
 ## Implementation
 
 We will now go through how to make this project work. 
 
 ### Prerequisites
 
-To follow along, you will need an account with Microsoft Azure with credits (unfortunately we can't get this up and running for free) and a free trial to GridDB Cloud. 
+To follow along, you will need an account with Microsoft Azure with credits (unfortunately we can't get this up and running for free) and a free trial to GridDB Cloud. The cheapest available IoT Hub is estimated at $10/month.
 
 Though not required, this article will reference completing many of the actions through VS Code and through the [Azure CLI tool](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
 
@@ -30,6 +32,9 @@ To build with VS Code, first install the proper extension: [https://marketplace.
 
 Next, open up the Command Palette (F1 key) and select `Azure IoT Hub: Create IoT Hub` and fill out all of the necessary information, including region, subscription, and choose a globally unique name (the hub needs to be unique because it gets is own public facing DNS name).
 
+![image-1](/images/create-iot-hub.png)
+![image-2](/images/created-hub.png)
+
 #### Adding Virtual Devices to the Hub
 
 Now we want to add virtual IoT devices, so once again open up the Command Palette and select `Azure IoT Hub: Create Device` and give it a device name. You can add as many devices as you'd like, but for now we'll keep it at one device. We will dicuss how to send data from this device to the Hub later.
@@ -42,13 +47,16 @@ To do so, we will need one more VS Code Extension: [Azure Functions](https://mar
 
 And now, once again, open up your Command Palette and select `Azure Functions: Create Function App in Azure...` to create a function. At this stage, we are naming it, creating a local instance of it, and choosing a runtime, of which we chose the latest version of node.js available. 
 
+For more information on how these event monitoring system works within Azure, here is some of the documentation: [https://learn.microsoft.com/en-us/azure/iot-hub/iot-hub-event-grid](https://learn.microsoft.com/en-us/azure/iot-hub/iot-hub-event-grid)
+
+
 ### Sending our Data Payloads to GridDB Cloud
 
-With our resources in place, the next step is to set up the event monitoring. We want for our hub to make HTTP Requests of our data payloads whenever it detects that one of its devices emits data. To do so, we will use the Azure Function that we created in the previous step. 
+With our resources in place, the next step is to set up the event monitoring. We want for our hub to make HTTP Requests of our data payloads whenever it detects that one of its devices emits data. To do so, we will use the Azure Function that we created in the previous step and event monitoring.
 
 #### Azure Function: Source Code for when Event is Triggered
 
-We have already created the source code necessary for this step, so please clone the rep as indicated above. The code is very simple: it takes the sample code built by Azure for `eventGridTriggers` and simply adds a component to make HTTP Requests whenever the trigger is fired. Here is what the source code looks like: 
+We have already created the source code necessary for this step, so please clone the repo as indicated above. The code is very simple: it takes the sample code built by Azure for `eventGridTriggers` and simply adds a component to make HTTP Requests whenever the trigger is fired. Here is what the source code looks like: 
 
 ```javascript
 const { app } = require('@azure/functions');
@@ -133,15 +141,19 @@ So now, once again, make sure you have the source code provided by this blog in 
 
 Next, in the Command Palette, select `Azure Functions: Deploy to Function App` and select the Function you created above. This will create a zip of your current working directory (meaning all of the source code you downloaded from this article's repo) and deploy it directly to your Azure Account. And now we want to tie this source code with our IoT Hub and our test virtual device.
 
+![image-3](/images/deploy%20to%20function%20app.png)
+
 #### Tying Azure Function to IoT Hub
 
 For this last step, we would like for our hub to utilize the Azure Function created in the previous step. For this step, we will use the Azure Web Portal.
 
-Open up the portal and find your IoT Hub Resource. Within that page navigate to: Events -> Azure Functions. We will be creating a new event, so give it a name and system topic. For the "filter for event types" box, keep it selected only to `Device Telemetry`. And lastly, click `Configure an Endpoint`. 
+Open up the portal and find your IoT Hub Resource. Within that page navigate to: Events -> Azure Function. We will be creating a new event, so give it a name and system topic. For the "filter for event types" box, keep it selected only to `Device Telemetry`. And lastly, click `Configure an Endpoint`. 
 
 In the side panel, most likely everything will self-populate, but if not, choose the azure function app and functions we made previous (ie. function is called: `eventGridTrigger1`). NOTE: For this to work, your account will need the registry `Microsoft.EventGrid` in the subscription page enabled.
 
-### Recieving Data from IoT Hub 
+![image-4](/images/associate-event-with-function.png)
+
+### Receiving Data from IoT Hub 
 
 Lastly, even if we were to trigger an event of some payload to our hub from our device, the HTTP Request would fail because the GridDB Cloud requires all incoming IP Addresses to be whitelisted. 
 
@@ -191,7 +203,12 @@ Now that we've got everything set up, the last thing we will do is send data fro
 
 From your VS Code window, in the explorer tab, find the Azure IoT Hub Resource panel and find your IoT Hub Manager and its devices. Right click the device you want to use and select `Send D2C Messages to IoT Hub` (D2C = Device to Cloud). 
 
+![image-5](/images/sending-data-from-vs-code.png)
+![image-6](/images/sending-message-to-device.png)
+
 Once your message is sent, you should have a new container in your GridDB Cloud instance called 'azureTest' and it should have one row of data inside of it with a value of 'GRID EVENT TRIGGERED' -- cool!
+
+![image-7](/images/successful-query-in-cloud.png)
 
 ## Conclusion
 
