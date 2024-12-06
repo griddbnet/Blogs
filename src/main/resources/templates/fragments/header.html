@@ -1,0 +1,26 @@
+<header th:fragment="header">
+  <nav class="navbar navbar-expand-md navbar navbar-light fixed-top" style="background-color: #171280;">
+    <div class="container mx-auto">
+      <a class="navbar-brand" th:href="@{/}">
+        <span class="navbar-brand text-white">Powered by Spring Boot & GridDB</span>
+      </a>
+      <span class="navbar-brand text-white">|</span>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topNavbar">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="topNavbar">
+        <ul class="navbar-nav justify-content-center">
+          <li class="nav-item">
+            <a class="nav-link text-white" th:href="@{/snippets}">Snippets</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" th:href="@{/snippets/new}">Create Snippets</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" th:href="@{/users}">Users</a>
+          </li>   
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>

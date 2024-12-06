@@ -1,0 +1,43 @@
+version: '3.3'
+services:
+  app:
+    container_name: textstorageapp
+    build:
+      context: ./
+      dockerfile: dev.Dockerfile
+    volumes:
+      - ./src:/app/src
+      - ~/.m2:/root/.m2
+      # - ./.m2:/root/.m2
+    environment:
+      - GRIDDB_NOTIFICATION_MEMBER=db:10001
+      - GRIDDB_CLUSTER_NAME=dockerGridDB
+      - GRIDDB_USER=admin
+      - GRIDDB_PASSWORD=admin
+      - spring.thymeleaf.prefix=file:src/main/resources/templates/
+    command: sh ./docker-entrypoint-dev.sh
+    ports:
+      - 8080:8080
+      - 35729:35729
+      - 5005:5005
+    networks:
+      - textstorageservice-net
+    depends_on:
+      - db
+  db:
+    container_name: textstoragedb
+    build:
+      context: ./griddbdocker
+      dockerfile: Dockerfile55
+    volumes:
+      - textstoragedb-vol:/var/lib/gridstore
+    ports:
+      - 10001:10001
+      - 20001:20001
+    networks:
+      - textstorageservice-net
+
+networks:
+  textstorageservice-net:
+volumes:
+  textstoragedb-vol:

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" />
+    <title>New Snippet</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+        integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+    
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script type="text/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <style>
+        .badge {
+            margin-left: -10px;
+            background-color: #E91E63 !important;
+        }
+
+        .spacer {
+            padding-top: 40px;
+            padding-bottom: 40px
+        }
+
+        .container {
+            width: auto;
+            max-width: 680px;
+            padding: 0 15px;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column h-100 min-vh-100" style="padding-top: 70px;">
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <div class="container">
+    <!-- <div class="container-fluid" style="max-width: 900px; margin: 0 auto;"> -->
+        <div class="my-3">
+            <h2 class="text-center">Create new snippet</h2>
+        </div>
+        <div class="my-3">
+            <form th:action="@{/snippets/save}" method="post" enctype="multipart/form-data" th:object="${snippet}"
+                id="snippetForm" style="max-width: 550px; margin: 0 auto">
+
+                <div class="p-3">
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="title">Title</label>
+                        <div class="col-sm-9">
+                            <input type="text" th:field="*{title}" required minlength="2" maxlength="128"
+                                class="form-control" id="title" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="content">Content</label>
+                        <div class="col-sm-9">
+                            <textarea rows="20" cols="80" th:field="*{content}" form="snippetForm" class="form-control"
+                                id="content" required/>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label" for="userId">User</label>
+                        <div class="col-sm-9">
+                            <select th:field="*{userId}">
+                                <option th:each="user : ${users}" th:text="${user.fullName}" th:value="${user.id}">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <input type="submit" value="Save" class="btn btn-primary btn-sm mr-2" />
+                        <input type="button" value="Cancel" id="btnCancel" class="btn btn-secondary btn-sm" />
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#btnCancel").on("click", function () {
+                window.location = "[[@{/snippets}]]";
+            });
+        });
+        if (document.querySelector('.js-alert')) {
+            document.querySelectorAll('.js-alert').forEach(function ($el) {
+                setTimeout(() => {
+                    $el.classList.remove('show');
+                }, 2000);
+            });
+        }
+    </script>
+
+</body>
+
+</html>
