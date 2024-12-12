@@ -1,6 +1,6 @@
 #!/bin/bash
 
-curl -i -X POST --location "${GRIDDB_CLOUD_URL}/containers" \
+curl -i -X POST --location "${GRIDDB_WEBAPI_URL}/containers" \
 --header 'Content-Type: application/json' \
 --header "Authorization: Basic ${USER_PASS}"  \
 --data '{

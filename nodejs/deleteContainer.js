@@ -1,6 +1,6 @@
 require('dotenv').config()
 var request = require('request');
-const base = process.env.GRIDDB_CLOUD_URL
+const base = process.env.GRIDDB_WEBAPI_URL
 const creds = process.env.USER_PASS
 var options = {
   'method': 'DELETE',

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-curl --location --request PUT "${GRIDDB_CLOUD_URL}/containers/device1/rows" \
+curl --location --request PUT "${GRIDDB_WEBAPI_URL}/containers/device1/rows" \
 --header 'Content-Type: application/json' \
 --header "Authorization: Basic ${USER_PASS}"  \
 --data '[

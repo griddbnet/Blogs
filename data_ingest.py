@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import json
-base=os.environ['GRIDDB_CLOUD_URL']
+base=os.environ['GRIDDB_WEBAPI_URL']
 creds=os.environ['USER_PASS']
 
 import requests

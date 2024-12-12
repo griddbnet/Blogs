@@ -5,7 +5,7 @@ import requests
 import plotly.express as px
 from IPython.display import Image
 
-base=os.environ['GRIDDB_CLOUD_URL']
+base=os.environ['GRIDDB_WEBAPI_URL']
 creds=os.environ['USER_PASS']
 
 # ts           object

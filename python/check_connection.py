@@ -1,6 +1,6 @@
 import requests
 import os
-base=os.environ['GRIDDB_CLOUD_URL']
+base=os.environ['GRIDDB_WEBAPI_URL']
 creds=os.environ['USER_PASS']
 
 url = base+"/checkConnection"

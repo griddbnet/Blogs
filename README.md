@@ -1,50 +1,88 @@
 ## Introducing GridDB Cloud v2.0
 
-GridDB Cloud v2.0 has officially been released, has a new free tier, and is officially available worldwide.
+GridDB Cloud v2.0 has officially been released, has a new free tier, and is officially available worldwide. 
+
+In this quick start guide, you will learn how to insert IoT data into the GridDB Cloud, learn how to test the viability of your connection, and learn the basic CRUD commands (Create, Read, Update, Delete).
 
 ### How To Sign Up
 
-If you would like to sign up for a GridDB free trial, you can do so in the following link: [https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=intro-blog). 
+If you would like to sign up for a GridDB Cloud Free instance, you can do so in the following link: [https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=intro-blog). 
+
+## Following Along with the Sample Code
+
+To follow along and run these sample code snippets, please clone the repository here: 
+
+`$ git clone https://github.com/griddbnet/Blogs.git --branch cloud-quick-start-worldwide`
+
+### Source Code Overview
+
+We have prepared some basic HTTP Requests that can help jumpstart your journey with GridDB Cloud. These requests are shared via three different programming interfaces: CLI scripts (aka bash, in the `bash/` dir), node.js, and python.
+
+For example, the first command will be to make sure the connection between your machine and the cloud can be made; to do so, we will run an HTTP Requests to a specific endpoint using just bash (with cURL), and then with node.js/python scripts.
 
 ## First Steps with GridDB Cloud
 
 Your GridDB Cloud instance can be communicated with via HTTP Requests; every action needed to interact with GridDB will require formulating and issuing an HTTP Request with different URLs, parameters, methods, and payload bodies.
 
-### Whitelisting Your IP Address
+### 1. Whitelisting Your IP Address
 
-If you haven't already, please whitelist your public IP address in the network settings of your GridDB Cloud Management dashboard.
+If you haven't already, please whitelist your public IP address in the network settings of your GridDB Cloud Management dashboard. You can find your own IP Address by using a simple Google Search: "What is my IP Address?"
+
+Or you can go here: [https://whatismyipaddress.com/](https://whatismyipaddress.com/)
+
+Go to the network tab and add in your IP address.
 
 ![whitelisting](images/whitelist-ip.png)
 
-### GridDB Users with Database Access
+### 2. GridDB Users with Database Access
 
-Next, we should create a new GridDB User. From the side panel, click the icon which says GridDB User. From this page, click `CREATE DATABASE USER`. This user's name and password will be attached to all of our HTTP Requests as a Basic Authorization Header. You will need to encode the username/password combination into base 64, separated by a colon; for example: admin:admin becomes `YWRtaW46YWRtaW4=`.
+Next, we should create a new GridDB User. From the side panel, click the icon which says GridDB User. From this page, click `CREATE DATABASE USER`. This user's name and password will be attached to all of our HTTP Requests as a Basic Authorization Header when using the Web API. You will need to encode the username/password combination into base 64, separated by a colon; for example: admin:admin becomes `YWRtaW46YWRtaW4=`. You can encode those values by using the following website: [https://www.base64encode.org/](https://www.base64encode.org/)
 
-![database](images/griddb-database.png)
+![database](images/create-user.png)
 
 Once you create the new user, you will also need to grant access to your database. Click on the user from the table of users in GridDB Users page and from this page, grant access to your database (either READ or ALL). Now we can move on to making actual HTTP requests.
 
-## Environment Variables
+![database](images/grant-permissions.png)
 
-If you would like to run the samples included with this article, you can do so by copying the env.example file and renaming it to `.env`. You must also fill in your personal variables (ie. your GridDB Cloud Web API endpoint as well as your user/pass combo encoded into base64)
+### 3. Environment Variables
 
-### Checking your GridDB Connection
+Next, copy the env.example file (from the GitHub Repo shared in the section above) and rename it to `.env`. You must fill in your personal variables (ie. your GridDB Cloud Web API endpoint as well as your user/pass combo encoded into base64).
 
-Let's start with a sanity check and make sure that we can reach out to the GridDB instance.
+The WEBAPI Url can found on the main page of your GridDB Dashboard. 
+
+Here is an example of a `.env` file.
+
+```bash
+export GRIDDB_WEBAPI_URL="https://cloud51e32re97.griddb.com:443/griddb/v2/gs_clustermfcloud5314927/dbs/ZV8YUerterlQ8"
+export USER_PASS="TTAxZ2FYMFrewwerZrRy1pc3JrerehZWw6avdfcvxXNyYWVs"
+```
+
+Now run `$ source .env` to load these values into your environment so that you can run these scripts from your CLI.
+
+
+### 4. Checking your GridDB Connection
+
+Let's start with a sanity check and make sure that we can reach out to the GridDB Cloud instance.
+
+With your `.env` file made and ready to go, you can make sure you get the variables loaded into your environment using the following command: `$ source .env`.
+
+And now run the bash script:
 
 ![checkConnection](images/checkConnection.png)
+
+If you see a status code of 200, that's good! That means your connection was succesful. If you are met with a status code of `403 Forbidden`, that likely means you have not whitelisted your machine's IP Address in the network tab. Likewise, a returned code of `401 Unauthorized` likely means your credentials are incorrect -- please make sure you use `user:pass` encoded into base64!
 
 #### Check Connection URL Endpoint
 
 The Web API uses a `base url` which we will use and expand upon to build out our requests. The base url looks like this:
 
-## `https://cloud<number>.griddb.com/griddb/v2/<clusterName>/dbs/<database name>`
+### `https://cloud<number>.griddb.com/griddb/v2/<clusterName>/dbs/<database name>`
 
 To check that our connection exists, we can append the following to our base url `/checkConnection`. Because we are not sending any data back to the server, we will use the `GET` HTTP method. 
 
 Lastly, we need to include `basic authentication` in our HTTP Request's headers. For this, we will need to include our username and password encoded into base64. With all that said, here is the final result 
 
-`https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/checkConnection`
+`https://cloud51ergege97.griddb.com/griddb/v2/gs_clustermfcloud51fgerge97/dbs/B2vderewDSJy/checkConnection`
 
 We can now use this URL with any number of programming languages to communicate with our database.
 
@@ -54,10 +92,12 @@ And as a note, the examples in this article will contain the URLs and credential
 
 To check our connection with cURL, you can use the following command (`check_connection.sh`)
 
-curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/checkConnection' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+```bash
+curl -i --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/checkConnection' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
+```
 
-Because it's a `GET` request, it's rather simple and we only needed to add in the authorization header. You should be able to run this and get an HTTP Response of `200`. If you receive `401 (unauthorized)`, check the credentials of your GridDB User. If you recieve `403 (forbidden)`, ensure that your IP address is allowed to pass through the Cloud's firewall.
+Because it's a `GET` request, it's rather simple and we only needed to add in the authorization header. You should be able to run this and get an HTTP Response of `200`.
 
 #### Python Request
 
@@ -67,11 +107,11 @@ Here is that same request written in Python
 # check_connection.py
 import requests
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/checkConnection"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/checkConnection"
 
 payload = {}
 headers = {
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -87,9 +127,9 @@ print(response.status_code)
 const request = require('request');
 const options = {
   'method': 'GET',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/checkConnection',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/checkConnection',
   'headers': {
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   }
 };
 request(options, function (error, response) {
@@ -98,7 +138,7 @@ request(options, function (error, response) {
 });
 ```
 
-### Creating your First Containers Time Series & Collection
+### 5. Creating your First Time Series & Collection Containers
 
 With our connection firmly established, we can create our first containers -- both Collection and Time Series -- of which are similar to relational tables. You can read more about that here: [GridDB Data Model](https://docs.griddb.net/architecture/data-model/). 
 
@@ -159,9 +199,9 @@ Now we simply attach this to the body when we make our Request and we should cre
 
 ```bash
 #create_container.sh
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '{
     "container_name": "device1",
     "container_type": "TIME_SERIES",
@@ -211,7 +251,7 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers"
 
 payload = json.dumps({
   "container_name": "device1",
@@ -254,7 +294,7 @@ payload = json.dumps({
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -271,10 +311,10 @@ print(response.status_code)
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify({
     "container_name": "device1",
@@ -331,9 +371,9 @@ Now let's create a collection container. These containers don't require a time s
 
 ```bash
 #create_collection.sh
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '{
     "container_name": "deviceMaster",
     "container_type": "COLLECTION",
@@ -374,7 +414,7 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers"
 
 payload = json.dumps({
   "container_name": "deviceMaster",
@@ -409,7 +449,7 @@ payload = json.dumps({
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -425,10 +465,10 @@ print(response.status_code)
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify({
     "container_name": "deviceMaster",
@@ -469,11 +509,11 @@ request(options, function (error, response) {
 });
 ```
 
-## CRUD with GridDB Cloud (Create, Read, Update, Delete)
+### 6. CRUD with GridDB Cloud (Create, Read, Update, Delete)
 
 Next, let's go over the commands to Create, Read, Update, and Delete. 
 
-### Adding Rows of Data (Create)
+#### Adding Rows of Data (Create)
 
 We have already created some containers before, but to add to that, we will be creating rows of data to add to our container. We can add rows of data directly inside of our containers. The URL suffix: `/containers/:container/rows`
 
@@ -493,15 +533,15 @@ Let's add rows to our `device1` container.
 
 You of course also need to be sure that your row's schema matches your container's. If it doesn't, you will be met with an error message and a status code of `400 (Bad Request)`.
 
-#### cURL
+##### cURL
 
-https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers
+https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers
 
 ```bash
 #add_rows.sh
-curl --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows' \
+curl --location --request PUT 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   ["2024-01-09T10:00:01.234Z", 0.003551, 50.0, false, 0.00754352, false, 0.0232432, 21.6],
   ["2024-01-09T11:00:01.234Z", 0.303551, 60.0, false, 0.00754352, true, 0.1232432, 25.3],
@@ -509,14 +549,14 @@ curl --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_cluster
 ]'
 ```
 
-#### Python
+##### Python
 
 ```python
 #add_rows.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows"
 
 payload = json.dumps([
   [
@@ -552,7 +592,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -561,17 +601,17 @@ response = requests.request("PUT", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-#### node.js
+##### node.js
 
 ```js
 //addRows.js
 var request = require('request');
 var options = {
   'method': 'PUT',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     [
@@ -613,7 +653,7 @@ request(options, function (error, response) {
 });
 ```
 
-### Querying Container (Read)
+#### Querying Container (Read)
 
 After writing to our containers, we will want to read from our containers. The URL suffix is exactly the same as before: `/:cluster/dbs/:database/containers/:container/rows` except now we will be using the `POST` method request. The data expected by the server in these requests are how we expect our row data returned to us -- for example, we can choose a row limit, an offset, any conditions, and a sort method. Here is what that body looks like: 
 
@@ -687,12 +727,12 @@ If successful, you should get a server response with a status code of `200 (OK)`
 ```
 
 
-#### cURL
+##### cURL
 
 ```bash
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '{
   "offset" : 0,
   "limit"  : 100,
@@ -701,14 +741,14 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 }'
 ```
 
-#### Python
+##### Python
 
 ```python
 #query_container.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows"
 
 payload = json.dumps({
   "offset": 0,
@@ -718,7 +758,7 @@ payload = json.dumps({
 })
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -728,17 +768,17 @@ print(response.text)
 ```
 
 
-#### nodejs
+##### nodejs
 
 ```js
 //queryContainer.js
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify({
     "offset": 0,
@@ -755,7 +795,7 @@ request(options, function (error, response) {
 
 ```
 
-### Updating a Row (Update)
+#### Updating a Row (Update)
 
 To cover updates, adding rows of data can be considered updating, but we can also directly update a row (if the container has rowkeys). The way it works is if you push a row of data to your container which has rowkey set as true, and send up a row of data with a rowkey that already exists in your container, it will update the row with whatever new information is pushed along. 
 
@@ -771,26 +811,26 @@ Let's craft our row of data
 
 Now let's form our HTTP Requests
 
-#### cURL
+##### cURL
 
 ```bash
 #update_collection.sh
-curl -i --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows' \
+curl -i --location --request PUT 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   ["device1", "01", "CA", "23412", "2023-12-15T10:45:00.032Z", "working"]
 ]'
 ```
 
-#### Python
+##### Python
 
 ```python
 #update_collection.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows"
 
 payload = json.dumps([
   [
@@ -804,7 +844,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0' 
 }
 
@@ -813,17 +853,17 @@ response = requests.request("PUT", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-#### node.js
+##### node.js
 
 ```javascript
 //updateCollection.js
 var request = require('request');
 var options = {
   'method': 'PUT',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     [
@@ -843,14 +883,14 @@ request(options, function (error, response) {
 });
 ```
 
-### Updating a Row
+#### Updating a Row
 
 And now with that data in there, if you change any of the values outside of the first one (the rowkey, the device name), it will update that device's metadata will keeping the row inside of your container. 
 
 ```bash
-curl -i --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows' \
+curl -i --location --request PUT 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   ["device1", "01", "NY", "23412", "2023-12-20T10:45:00.032Z", "working"]
 ]'
@@ -858,7 +898,7 @@ curl -i --location --request PUT 'https://cloud5197.griddb.com/griddb/v2/gs_clus
 
 Here we are changing the location and the time of last inspection. If you look at your dashboard, the values will be have been updated.
 
-### Deleting a Row (Delete)
+#### Deleting a Row (Delete)
 
 We can delete a row simply by using the appropriate HTTP Method (Delete) and then sending in a valid rowkey and container to our server. Let's delete our deviceMaster's lone row.
 
@@ -870,33 +910,33 @@ The body of the request looks like this. You can add multiple rowkeys inside her
 ]
 ```
 
-#### cURL
+##### cURL
 
 ```bash
 #delete_row.sh
-curl -v --location --request DELETE 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows' \
+curl -v --location --request DELETE 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   "device1"
 ]'
 ```
 
-#### Python
+##### Python
 
 ```python
 #delete_row.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows"
 
 payload = json.dumps([
   "device1"
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0' 
 }
 
@@ -905,17 +945,17 @@ response = requests.request("DELETE", url, headers=headers, data=payload)
 print(response.status_code)
 ```
 
-#### node.js
+##### node.js
 
 ```javascript
 //deleteRow.js
 var request = require('request');
 var options = {
   'method': 'DELETE',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/deviceMaster/rows',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/deviceMaster/rows',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     "device1"
@@ -928,22 +968,22 @@ request(options, function (error, response) {
 });
 ```
 
-#### Deleting a Row from Time Series Container
+##### Deleting a Row from Time Series Container
 
 You can also delete the row of a time series container. As stated before, the time stamp will always be the rowkey in a time series container, so here we just add our time stamp and those rows will be deleted.
 
 ```bash
 #delete_container.sh
-curl --location --request DELETE 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers/device1/rows' \
+curl --location --request DELETE 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers/device1/rows' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   "2024-01-09T10:00:01.234Z",
   "2024-01-09T12:00:01.234Z"
 ]'
 ```
 
-## TQL 
+### TQL 
 
 Next, let's try running a TQL Query. If you're unfamiliar, TQL is GridDB's special [query language](https://griddb.net/en/blog/griddb-query-language/).
 
@@ -1036,13 +1076,13 @@ And this is the response of the above query:
 ]
 ```
 
-### cURL
+#### cURL
 
 ```bash
 #tql.sh
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/tql' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/tql' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '
 [
   {"name" : "deviceMaster", "stmt" : "select * limit 100", "columns" : null},
@@ -1051,14 +1091,14 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 '
 ```
 
-### Python
+#### Python
 
 ```python
 #tql.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/tql"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/tql"
 
 payload = json.dumps([
   {
@@ -1077,7 +1117,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0' 
 }
 
@@ -1086,17 +1126,17 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-### node.js
+#### node.js
 
 ```javascript
 //tql.js
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/tql',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/tql',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     {
@@ -1121,11 +1161,11 @@ request(options, function (error, response) {
 });
 ```
 
-## SQL
+### SQL
 
 On top of TQL, GridDB and the GridDB Cloud also have SQL functionality. Though the SQL functionality for the GridDB Cloud is limited to reading results (SELECT) and updating some rows (UPDATE). 
 
-### SQL SELECT
+#### SQL SELECT
 
 base url + `/sql`
 
@@ -1208,13 +1248,13 @@ Here is the response body:
 ]
 ```
 
-### cURL
+#### cURL
 
 ```bash
 #sql_select.sh
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   {"type" : "sql-select", "stmt" : "SELECT * FROM deviceMaster"},
   {"type" : "sql-select", "stmt" : "SELECT temp, co FROM device1 WHERE temp>=24"}
@@ -1222,14 +1262,14 @@ curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfc
 '
 ```
 
-### Python
+#### Python
 
 ```python
 #sql_select.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql"
 
 payload = json.dumps([
   {
@@ -1243,7 +1283,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0' 
 }
 
@@ -1252,17 +1292,17 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-### node.js
+#### node.js
 
 ```javascript
 //sqlSelect.js
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     {
@@ -1282,7 +1322,7 @@ request(options, function (error, response) {
 });
 ```
 
-### SQL SELECT GROUP BY RANGE
+#### SQL SELECT GROUP BY RANGE
 
 Because we are using SQL Select, you can use the GridDB's Group By Range as well. You can learn more about that here: [Exploring GridDB’s Group By Range Functionality](https://griddb.net/en/blog/exploring-griddbs-group-by-range-functionality/).
 
@@ -1298,23 +1338,23 @@ We will make our query and group by hours:
 
 ```bash
 #sql_select_groupby.sh
-curl -i --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql' \
+curl -i --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   {"type" : "sql-select", "stmt" : "SELECT temp, co FROM device1 WHERE ts > TO_TIMESTAMP_MS(1594515625984) AND ts < TO_TIMESTAMP_MS(1595040779336) GROUP BY RANGE (ts) EVERY (1, HOUR)"}
 ]
 '
 ```
 
-#### Python
+##### Python
 
 ```python
 # sql_select_groupby.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql"
 
 payload = json.dumps([
   {
@@ -1324,7 +1364,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -1333,7 +1373,7 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-### SQL Insert
+#### SQL Insert
 
 The base URL is the same as SELECT, but you need to append 'update'
 
@@ -1345,26 +1385,26 @@ base url + `/:cluster/dbs/:database/sql/update`
 ]
 ```
 
-#### cURL 
+###### cURL 
 
 ```bash
 #sql_insert.sh
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql/update' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql/update' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[ 
   {"stmt" : "insert into deviceMaster(equipment, equipmentID, location, serialNumber, lastInspection, information) values('\''device2'\'', '\''02'\'', '\''MA'\'', '\''34412'\'', TIMESTAMP('\''2023-12-21T10:45:00.032Z'\''), '\''working'\'')"}
 ]'
 ```
 
-#### Python
+###### Python
 
 ```python
 #sql_insert.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql/update"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql/update"
 
 payload = json.dumps([
   {
@@ -1373,7 +1413,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0' 
 }
 
@@ -1382,17 +1422,17 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-#### node.js
+###### node.js
 
 ```javascript
 //sqlInsert.js
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql/update',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql/update',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     {
@@ -1407,7 +1447,7 @@ request(options, function (error, response) {
 });
 ```
 
-### SQL Update
+#### SQL Update
 
 The base URL is the same as above, but you need to append 'update'
 
@@ -1421,26 +1461,26 @@ base url + `/sql/update`
 
 This command allows you to Update, similar to the NoSQL method described above. We can both update existing rows, or update containers to add new rows.
 
-#### cURL 
+##### cURL 
 
 ```bash
 #sql_update.sh
-curl -i -X POST --location 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql/update' \
+curl -i -X POST --location 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql/update' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[ 
   {"stmt" : "update deviceMaster set location = '\''LA'\'' where equipmentID = '\''01'\''"}
 ]'
 ```
 
-#### Python
+##### Python
 
 ```python
 #sql_update.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql/update"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql/update"
 
 payload = json.dumps([
   {
@@ -1449,7 +1489,7 @@ payload = json.dumps([
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0' 
 }
 
@@ -1458,17 +1498,17 @@ response = requests.request("POST", url, headers=headers, data=payload)
 print(response.text)
 ```
 
-#### node.js
+##### node.js
 
 ```javascript
 //sqlUpdate.js
 var request = require('request');
 var options = {
   'method': 'POST',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/sql/update',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/sql/update',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     {
@@ -1484,7 +1524,7 @@ request(options, function (error, response) {
 ```
 
 
-## Dropping Containers
+### Dropping Containers
 
 We can also drop containers.
 
@@ -1500,33 +1540,33 @@ The request's body can contain one or multiple container names of which will be 
 
 If successful, you will receive a status code of `204 (No Content)`
 
-### cURL
+#### cURL
 
 ```bash
 #delete_container.sh
-curl -i --location --request DELETE 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers' \
+curl -i --location --request DELETE 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers' \
 --header 'Content-Type: application/json' \
---header 'Authorization: Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs' \
+--header 'Authorization: Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs' \
 --data '[
   "deviceMaster"
 ]'
 ```
 
-### Python
+#### Python
 
 ```python
 #delete_container.py
 import requests
 import json
 
-url = "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers"
+url = "https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers"
 
 payload = json.dumps([
   "deviceMaster"
 ])
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   'User-Agent': 'PostmanRuntime/7.29.0'
 }
 
@@ -1535,17 +1575,17 @@ response = requests.request("DELETE", url, headers=headers, data=payload)
 print(response.status_code)
 ```
 
-### node.js
+#### node.js
 
 ```javascript
 //deleteContainer.js
 var request = require('request');
 var options = {
   'method': 'DELETE',
-  'url': 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/containers',
+  'url': 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/containers',
   'headers': {
     'Content-Type': 'application/json',
-    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs'
+    'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs'
   },
   body: JSON.stringify([
     "deviceMaster"
@@ -1558,7 +1598,7 @@ request(options, function (error, response) {
 });
 ```
 
-## Ingesting CSV Data
+### Ingesting CSV Data
 
 Next, let's take a look at ingesting CSV data. We will ingest IoT data from Kaggle. You can download the raw file from their website here: [https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k).
 
@@ -1576,11 +1616,11 @@ from datetime import datetime as dt, timezone
 
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   "User-Agent":"PostmanRuntime/7.29.0"
 }
 
-base_url = 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/'
+base_url = 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/'
 
 data_obj = {
     "container_name": "device1",
@@ -1648,7 +1688,7 @@ for subset in  iot_subsets:
 
 As you run the script, it should be printing our successful messages for each chunk uploaded, complete with how many rows got successfully updated. Once done, you can check out your `device1` with an HTTP Request query or through the portal.
 
-## Data Analysis
+### Data Analysis
 
 Lastly, let's do some simple python analysis. We will query our iot data and then use that data to do some simple analysis and charting of our data.
 
@@ -1672,10 +1712,10 @@ from IPython.display import Image
 
 headers = {
   'Content-Type': 'application/json',
-  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3JhZWw6aXNyYWVs',
+  'Authorization': 'Basic TTAxMU1sd0MxYS1pc3ewrwqJhZWw6aXNyYWVs',
   "User-Agent":"PostmanRuntime/7.29.0"
 }
-base_url = 'https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud5197/dbs/B2vdDSJy/'
+base_url = 'https://cloud5197422.griddb.com/griddb/v2/gs_clustermfcloud5197422/dbs/B2vdfewfwDSJy/'
 
 sql_query1 = (f"""SELECT * from device1 WHERE co < 0.0019050147565559603 """)
 
@@ -1710,3 +1750,7 @@ scatter_plot.show()
 ```
 
 ![images/python_chart.png](images/python_chart.png)
+
+## Conclusion
+
+And with that, we have shown you how to interact with your GridDB Cloud and do all sorts of database-related functions. 
