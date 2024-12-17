@@ -4,11 +4,15 @@ GridDB Cloud v2.0 has officially been released, has a new free tier, and is offi
 
 In this quick start guide, you will learn how to insert IoT data into the GridDB Cloud, learn how to test the viability of your connection, and learn the basic CRUD commands (Create, Read, Update, Delete).
 
-### How To Sign Up
+## Preparation
 
-If you would like to sign up for a GridDB Cloud Free instance, you can do so in the following link: [https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=intro-blog). 
+Before we jump into *how* to use the GridDB Cloud, let's go over some basic preparation.
 
-## Following Along with the Sample Code
+### Sign Up for GridDB Cloud Free Plan
+
+If you would like to sign up for a GridDB Cloud Free instance, you can do so in the following link: [https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=quickstartblog). 
+
+### Clone GitHub Repository
 
 To follow along and run these sample code snippets, please clone the repository here: 
 
@@ -19,6 +23,23 @@ To follow along and run these sample code snippets, please clone the repository 
 We have prepared some basic HTTP Requests that can help jumpstart your journey with GridDB Cloud. These requests are shared via three different programming interfaces: CLI scripts (aka bash, in the `bash/` dir), node.js, and python.
 
 For example, the first command will be to make sure the connection between your machine and the cloud can be made; to do so, we will run an HTTP Requests to a specific endpoint using just bash (with cURL), and then with node.js/python scripts.
+
+ ### Set Up For Sample Code
+
+To ensure your HTTP Requests have the proper connection details, copy the env.example file (from the GitHub Repo shared in the section above) and rename it to `.env`. You must fill in your personal variables (ie. your GridDB Cloud Web API endpoint as well as your user/pass combo encoded into base64). 
+
+To get proper creds, you will need to gather the username/password combination into base 64separated by a colon; for example: admin:admin becomes `YWRtaW46YWRtaW4=`. You can encode those values by using the following website: [https://www.base64encode.org/](https://www.base64encode.org/)
+
+The WEBAPI Url can found on the main page of your GridDB Dashboard. 
+
+Here is an example of a `.env` file.
+
+```bash
+export GRIDDB_WEBAPI_URL="https://cloud51e32re97.griddb.com:443/griddb/v2/gs_clustermfcloud5314927/dbs/ZV8YUerterlQ8"
+export USER_PASS="TTAxZ2FYMFrewwerZrRy1pc3JrerehZWw6avdfcvxXNyYWVs"
+```
+
+Now run `$ source .env` to load these values into your environment so that you can run these scripts from your CLI.
 
 ## First Steps with GridDB Cloud
 
@@ -34,9 +55,11 @@ Go to the network tab and add in your IP address.
 
 ![whitelisting](images/whitelist-ip.png)
 
-### 2. GridDB Users with Database Access
+Note: CIDR Ranges are compatible, so please feel free to add your own if you know it.
 
-Next, we should create a new GridDB User. From the side panel, click the icon which says GridDB User. From this page, click `CREATE DATABASE USER`. This user's name and password will be attached to all of our HTTP Requests as a Basic Authorization Header when using the Web API. You will need to encode the username/password combination into base 64, separated by a colon; for example: admin:admin becomes `YWRtaW46YWRtaW4=`. You can encode those values by using the following website: [https://www.base64encode.org/](https://www.base64encode.org/)
+### 2. Adding GridDB Users and Granting DB Access
+
+Next, we should create a new GridDB User. From the side panel, click the icon which says GridDB User. From this page, click `CREATE DATABASE USER`. This user's name and password will be attached to all of our HTTP Requests as a Basic Authorization Header when using the Web API. 
 
 ![database](images/create-user.png)
 
@@ -44,23 +67,8 @@ Once you create the new user, you will also need to grant access to your databas
 
 ![database](images/grant-permissions.png)
 
-### 3. Environment Variables
 
-Next, copy the env.example file (from the GitHub Repo shared in the section above) and rename it to `.env`. You must fill in your personal variables (ie. your GridDB Cloud Web API endpoint as well as your user/pass combo encoded into base64).
-
-The WEBAPI Url can found on the main page of your GridDB Dashboard. 
-
-Here is an example of a `.env` file.
-
-```bash
-export GRIDDB_WEBAPI_URL="https://cloud51e32re97.griddb.com:443/griddb/v2/gs_clustermfcloud5314927/dbs/ZV8YUerterlQ8"
-export USER_PASS="TTAxZ2FYMFrewwerZrRy1pc3JrerehZWw6avdfcvxXNyYWVs"
-```
-
-Now run `$ source .env` to load these values into your environment so that you can run these scripts from your CLI.
-
-
-### 4. Checking your GridDB Connection
+### 3. Checking your GridDB Connection
 
 Let's start with a sanity check and make sure that we can reach out to the GridDB Cloud instance.
 
@@ -138,7 +146,7 @@ request(options, function (error, response) {
 });
 ```
 
-### 5. Creating your First Time Series & Collection Containers
+### 4. Creating your First Time Series & Collection Containers
 
 With our connection firmly established, we can create our first containers -- both Collection and Time Series -- of which are similar to relational tables. You can read more about that here: [GridDB Data Model](https://docs.griddb.net/architecture/data-model/). 
 
@@ -509,7 +517,7 @@ request(options, function (error, response) {
 });
 ```
 
-### 6. CRUD with GridDB Cloud (Create, Read, Update, Delete)
+### 5. CRUD with GridDB Cloud (Create, Read, Update, Delete)
 
 Next, let's go over the commands to Create, Read, Update, and Delete. 
 
@@ -1598,7 +1606,7 @@ request(options, function (error, response) {
 });
 ```
 
-### Ingesting CSV Data
+### 6. Ingesting Sample IoT Data
 
 Next, let's take a look at ingesting CSV data. We will ingest IoT data from Kaggle. You can download the raw file from their website here: [https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k).
 
@@ -1688,7 +1696,7 @@ for subset in  iot_subsets:
 
 As you run the script, it should be printing our successful messages for each chunk uploaded, complete with how many rows got successfully updated. Once done, you can check out your `device1` with an HTTP Request query or through the portal.
 
-### Data Analysis
+### Running Data Analysis
 
 Lastly, let's do some simple python analysis. We will query our iot data and then use that data to do some simple analysis and charting of our data.
 
