@@ -17,7 +17,7 @@ headers = {
 }
 
 data_obj = {
-    "container_name": "device1",
+    "container_name": "device2",
     "container_type": "TIME_SERIES",
     "rowkey": True,
     "columns": []
@@ -39,6 +39,7 @@ for variable, data_type in zip(input_variables, data_types):
 # Create Container
 url = base + '/containers'
 r = requests.post(url, json = data_obj, headers = headers)
+#--------------------------------------------------------------
 
 iot_data = pd.read_csv('iot_telemetry_data.csv')
 
@@ -51,7 +52,7 @@ iot_data = iot_data.drop('device', axis=1)
 iot_subsets = np.array_split(iot_data, 20)
 
 # Ingest Data
-url = base + '/containers/device1/rows'
+url = base + '/containers/device2/rows'
 
 for subset in  iot_subsets:
     #Convert the data in the dataframe to the JSON format

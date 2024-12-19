@@ -24,7 +24,7 @@ headers = {
   "User-Agent":"PostmanRuntime/7.29.0"
 }
 
-sql_query1 = (f"""SELECT * from device1 WHERE co < 0.0019050147565559603 """)
+sql_query1 = (f"""SELECT * from device2 WHERE co < 0.0019050147565559603 """)
 
 url = base + '/sql'
 request_body = '[{"type":"sql-select", "stmt":"'+sql_query1+'"}]'

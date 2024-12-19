@@ -13,5 +13,5 @@ headers = {
 
 response = requests.request("GET", url, headers=headers, data=payload)
 
-print(response.status_code)
+print(response)
 
