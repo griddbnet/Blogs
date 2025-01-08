@@ -110,4 +110,3 @@ GrantedDB: public
            testing1         ALL
 ```
 
-## SQL Working Memory Limit
