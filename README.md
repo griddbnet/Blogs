@@ -1,4 +1,4 @@
-With the release of completely free GridDB Cloud, we wanted to pair its free service with Grafana Cloud, another free Cloud-based service which can get you up and running in seconds. For this article, we will walk through the steps of how to display time-series data from your GridDB Cloud shared instance to Grafana Cloud.
+With the release of a completely free GridDB Cloud, we wanted to pair its free service with Grafana Cloud, another free Cloud-based service which can get you up and running in seconds. For this article, we will walk through the steps of how to display time-series data from your GridDB Cloud shared instance to Grafana Cloud.
 
 If you are unfamiliar with GridDB Cloud, you can read our quick start guide here: [GridDB Cloud Quick Start Guide](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/) -- that article will teach you how to sign up, how to begin using GridDB Cloud and more of the basics: who, what, when, where, why. If you are also unfamiliar with Grafana, you can read about its capabilities and strength from their docs: [https://grafana.com/docs/grafana/latest/introduction/](https://grafana.com/docs/grafana/latest/introduction/).
 
@@ -12,14 +12,13 @@ First, here's a link to the Grafana dashboard that we will be using for this art
 
 ##### GITHUB LINK HERE
 
-
 ### Prereqs
 
 To follow along, you will need to have access to a free account of both [GridDB Cloud](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=blog) and [Grafana Cloud](https://grafana.com/products/cloud/). 
 
 ### Technical Overview
 
-To query our GridDB Cloud data from Grafana, we will be sending HTTP Requests directly from Grafana to our GridDB Cloud. And indeed, any sort of interactions we want to make with our free GridDB Cloud instance will be down via Web API interface; this topic is covered in the quick start linked above, as well as in this article: [GridDB WebAPI](https://griddb.net/en/blog/griddb-webapi/). You can also of course check out the official docs: [GridDB_Web_API_Reference](https://github.com/griddb/webapi/blob/master/GridDB_Web_API_Reference.md).
+To query our GridDB Cloud data from Grafana, we will be sending HTTP Requests directly from Grafana to our GridDB Cloud. And indeed, any sort of interactions we want to make with our free GridDB Cloud instance will be done via Web API interface; this topic is covered in the quick start linked above, as well as in this article: [GridDB WebAPI](https://griddb.net/en/blog/griddb-webapi/). You can also of course check out the official docs: [GridDB_Web_API_Reference](https://github.com/griddb/webapi/blob/master/GridDB_Web_API_Reference.md).
 
 The specifics of how to form our query and how to create our allowlist to get around GridDB's firewall will be the subject of our next few sections.
 
@@ -67,13 +66,22 @@ We should be able to query our GridDB Cloud Database now!
 
 ![adding-infinity](/images/adding-infinity.png)
 
-#### Ingesting Usuable Time Series Data
+#### Ingesting Usable Time Series Data
 
 Before we query our data, let's first ensure that we have working data in our GridDB Cloud. If you are following along and have just now made a new account, you can follow our quick start guide to ingest an IoT sample data that can be found on Kaggle. Here is a direct link to the section in the guide: [https://griddb.net/en/blog/griddb-cloud-quick-start-guide/#ingest](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/#ingest). Here, we are ingesting a `csv` file and calling the container `device1`. 
 
 #### Forming Our HTTP Requests
 
-Now that we can communicate between services, let's get the data we want. From the Grafana Cloud menu, select Dashboards and then select "new"  in the top right corner and then finally `Add visualization`. From here, select Infinity and you will now have a blank graph and a place to put your query. And now for some options: 
+Now that we can communicate between services, let's get the data we want. From the Grafana Cloud menu, select Dashboards and then select "new"  in the top right corner and then finally `Add visualization`. 
+
+![create-dashboard](images/create-dashboard.png)
+
+
+From here, select Infinity and you will now have a blank graph and a place to put your query. 
+
+![blank-infinity](images/blank-infinity.png)
+
+And now for some options: 
 
 ```bash
 Type: JSON
@@ -82,6 +90,10 @@ Source: URL
 Format: Data Frame
 Method: POST
 ```
+
+Note: Here is a screenshot of the entire query we will form in the ensuing lines of text (screenshot will be displayed again at the end once you can better understand what all of the words mean)
+
+![group-by](/images/group-by-range.png)
 
 The parser and format being what they are allows for us to properly name and label the data being received from GridDB Cloud because of the unusual way in which responds to the requestor with data. Instead of sending back the rows of data in JSON format (which, to be fair, if you've got a thousand rows, it's a lot of unnecessary bloat), GridDB Cloud sends back the information as a JSON file, but the actual rows of data are in array form, with the schema being listed under another JSON key name (`columns`). 
 
@@ -92,7 +104,7 @@ As for the URL, you can take a look at the links above about how to form your We
 
 In each case, we will have different selectors for our returned data, as well as different body payloads that we will be sending off as a request. First, let's take a look at the SQL Query.
 
-##### Making a simpel SQL-Select Query
+##### Making a Simple SQL-Select Query
 
 First, set your URL to match the query above. The format is as follows: `https://[cloud-portal-name].griddb.com/griddb/[clustername]/dbs/[database-name]/sql/dml/query`. And then we form our SQL Query within the body of the request.
 
