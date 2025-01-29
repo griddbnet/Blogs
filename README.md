@@ -10,7 +10,7 @@ This article's goal is simple: showcase how to use the cloud offerings from both
 
 First, here's a link to the Grafana dashboard that we will be using for this article: [https://imru.grafana.net/public-dashboards/8a9f9f8ed9d34582aecca867a50c9613](https://imru.grafana.net/public-dashboards/8a9f9f8ed9d34582aecca867a50c9613). Source code can be found here: 
 
-##### GITHUB LINK HERE
+`$ git clone https://github.com/griddbnet/Blogs.git --branch 4_grafana_cloud`
 
 ### Prereqs
 
