@@ -3,7 +3,7 @@ const axios = require('axios');
 
 app.eventGrid('griddbTesting', {
     handler: async (event, context) => {
-        context.log('Event grid function processed event:', event);
+        //    context.log('Event grid function processed event:', event);
 
         const container = 'azureTest'
         const auth = {
@@ -20,7 +20,7 @@ app.eventGrid('griddbTesting', {
             "container_type": "COLLECTION",
             "rowkey": false,
             "columns": [
-                { "name": "test", "type": "STRING" }
+                { "name": "name", "type": "STRING" }
             ]
         }
 
@@ -33,16 +33,16 @@ app.eventGrid('griddbTesting', {
             auth
         }
 
-        // try {
-        //     const response = await axios.request(configCreation)
-        //     context.log(response.statusText);
-        //     context.log(JSON.stringify(response.data));
-        //     context.done()
-        //     return response
-        // } catch (error ) {
-        //     context.error(error);
+        try {
+            const response = await axios.request(configCreation)
+            context.log(response.statusText);
+            context.log(JSON.stringify(response.data));
+            context.done()
+            return response
+        } catch (error) {
+            context.error(error);
 
-        // }
+        }
 
         //HTTP Request to send data to our container
         const data = JSON.stringify([
@@ -64,7 +64,7 @@ app.eventGrid('griddbTesting', {
             context.log(JSON.stringify(response.data));
             context.done()
             return response
-        } catch (error ) {
+        } catch (error) {
             context.error(error);
 
         }
