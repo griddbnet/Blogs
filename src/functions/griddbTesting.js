@@ -6,7 +6,7 @@ sslRootCAs.inject().addFile("./griddb-com-chain.pem")
 
 app.eventGrid('griddbTesting', {
     handler: async (event, context) => {
-        context.log('Event grid function processed event:', event);
+        //    context.log('Event grid function processed event:', event);
 
         const topic = event.topic;
         const substrings = topic.split('/');
@@ -48,7 +48,7 @@ app.eventGrid('griddbTesting', {
             context.log(response.statusText);
             context.log(JSON.stringify(response.data));
             return response
-        } catch (error ) {
+        } catch (error) {
             context.error(error);
 
         }
