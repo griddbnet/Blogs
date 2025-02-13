@@ -1,46 +1,79 @@
 const { app } = require('@azure/functions');
-var https = require('follow-redirects').https;
+const axios = require('axios');
+
+const sslRootCAs = require('ssl-root-cas/latest')
+sslRootCAs.inject().addFile("./griddb-com-chain.pem")
 
 app.eventGrid('eventGridTrigger1', {
-    handler: (event, context) => {
+    handler: async (event, context) => {
         context.log('Event grid function processed event:', event);
 
-        var options = {
-        'method': 'POST',
-        'hostname': 'cloud5197.griddb.com',
-        'port': 443,
-        'path': '/griddb/v2/gs_clustermfcloud5197/dbs/ZV8YUlQ8/containers',
-        'headers': {
-            'Authorization': 'Basic TTAxZ2FYMFZrRy1pc3JhZWw6aXNyYWVs',
+        const deviceId = event.data.deviceId;
+        const hubName = event.data.hubName;
+        const container = hubName + "_" + deviceId;
+
+        const ts = event.eventTime;
+
+        const auth = {
+            username: process.env.CLOUD_USERNAME,
+            password: process.env.CLOUD_PASSWORD
+        }
+        const headers = {
             'Content-Type': 'application/json'
-        },
-        'maxRedirects': 20
+        }
+
+        const createTable = `CREATE TABLE IF NOT EXISTS "${container}" (date TIMESTAMP NOT NULL PRIMARY KEY, temperature FLOAT, speed FLOAT) USING TIMESERIES`
+
+        //HTTP Request to send data to our container
+        const data = JSON.stringify([
+            { "stmt": createTable }
+        ]);
+
+        context.log("DATA: ", data)
+
+        let config = {
+            method: 'POST',
+            maxBodyLength: Infinity,
+            url: process.env.CLOUD_URL + "/sql/ddl",
+            headers,
+            data,
+            auth
         };
 
-        context.log(options)
-
-        var req = https.request(options, function (res) {
-        var chunks = [];
-
-        res.on("data", function (chunk) {
-            chunks.push(chunk);
-            context.log(chunk)
-        });
-
-        res.on("end", function (chunk) {
-            var body = Buffer.concat(chunks);
-            context.log(body.toString());
-        });
-
-        res.on("error", function (error) {
+        try {
+            const response = await axios.request(config)
+            context.log(response.statusText);
+            context.log(JSON.stringify(response.data));
+        } catch (error) {
             context.error(error);
-        });
-        });
+        }
 
-        var postData = JSON.stringify({"container_name":"testing","container_type":"COLLECTION","rowkey":false,"columns":[{"name":"test","type":"STRING"}]});
+        const dataPut = JSON.stringify([
+            [deviceId, ts]
+        ]);
 
-        req.write(postData);
+        context.log("putting row to device master");
+        context.log(dataPut);
 
-        req.end();
-            }
+        let configPut = {
+            method: 'PUT',
+            maxBodyLength: Infinity,
+            url: process.env.CLOUD_URL + "/containers/" + hubName + "_deviceMaster/rows",
+            headers,
+            data: dataPut,
+            auth
+        };
+
+
+
+        try {
+            const response = await axios.request(configPut)
+            context.log(response.statusText);
+            context.log(JSON.stringify(response.data));
+            return response
+        } catch (error) {
+            context.error(error);
+
+        }
+    }
 });
