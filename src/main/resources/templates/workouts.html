@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" />
+    <title>The Workouts</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+        integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+
+    <script type="text/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"
+        integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+        crossorigin="anonymous"></script>
+    <style>
+        .badge {
+            margin-left: -10px;
+            background-color: #E91E63 !important;
+        }
+
+        .spacer {
+            padding-top: 40px;
+            padding-bottom: 40px
+        }
+
+        .container {
+            width: auto;
+            max-width: 1024;
+            padding: 0 15px;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column h-100 min-vh-100" style="padding-top: 70px;">
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main role="main" class="flex-shrink-0">
+        <div class="container">
+            <!-- <div class="container-fluid" style="max-width: 900px; margin: 0 auto;"> -->
+
+            <div th:if="${message != null}"
+                class="alert alert-success alert-dismissible fade show text-center message js-alert" role="alert">
+                [[${message}]]
+                <button type="button" class="close btn-sm" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="my-3">
+                <h2 class="text-center">Workouts</h2>
+                </p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">Record
+                    Workout</button>
+
+            </div>
+            <div class="col-12">
+                <form th:action="@{/workouts/generate-dummy}" method="post">
+                    <input type="submit" value="Generate dummy workout" class="btn btn-primary" />
+                </form>
+            </div>
+            <div th:if="${workouts != null} and ${workouts.size() > 0}" class="container">
+                <table class="table table-hover table-responsive-xl table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">User</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Distance (KM)</th>
+                            <th scope="col">Started Time</th>
+                            <th scope="col">Ended Time</th>
+                            <th scope="col">Duration (hh:mm:ss)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        <tr th:each="workout : ${workouts}">
+                            <td id="user" scope="row" th:text="${workout.user} ? ${workout.user.fullName} : ''"></td>
+                            <th id="type" scope="row">[[${workout.type}]]</th>
+                            <td>
+                                <a class="small" th:href="@{/heartrate/{id}(id=${workout.id})}"
+                                    th:text="${workout.title}"></a>
+                            </td>
+                            <th id="distance" scope="row">[[${workout.distance}]]</th>
+                            <td id="startTime" scope="row">[[${workout.startTime}]]</td>
+                            <th id="endTime" scope="row">[[${workout.endTime}]]</th>
+                            <th id="duration" scope="row">[[${workout.durationText}]]</th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${workouts != null} and ${workouts.size() > 0}">
+                <span>No workouts found!</span>
+            </div>
+
+            <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModal" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="newWorkoutModalTitle">New Workout</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form th:action="@{/workouts/record}" method="post" th:object="${createWorkout}">
+                            <script th:inline="javascript"
+                                th:if="${#fields.hasErrors('*')}">$("#addModal").modal("show");</script>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="title" class="col-form-label">Title:</label>
+                                    <!-- <textarea class="form-control" id="title" placeholder="Title of the workout" th:name="title"></textarea> -->
+                                    <textarea class="form-control" id="title" placeholder="Title of the workout"
+                                        th:field="*{title}" value="Your story begin here"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <!-- <select th:name="type"> -->
+                                    <select th:field="*{type}">
+                                        <option th:value="RUN">Run</option>
+                                        <option th:value="WALK">Walk</option>
+                                        <option th:value="SWIM">Swim</option>
+                                        <option th:value="BIKING">Bikin</option>
+                                        <option th:value="CYCLING">Cycling</option>
+                                        <option th:value="CARDIO">Cardio</option>
+                                        <option th:value="STRENGTH">Strength</option>
+                                        <option th:value="MIXED">Mixed</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="distance" class="col-form-label">Distance:</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" id="distance"
+                                        placeholder="Distance in KM" th:field="*{distance}" th:name="distance"
+                                        value="5">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="calories" class="col-form-label">Calories:</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" id="calories"
+                                        placeholder="Calories cc" th:field="*{calories}" th:name="calories" value="30">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="startTime" class="col-form-label">Start Time:</label>
+                                    <input type="datetime-local" required class="form-control" id="startTime"
+                                        th:field="*{startTime}" th:name="startTime">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="endTime" class="col-form-label">End Time:</label>
+                                    <input type="datetime-local" required class="form-control" id="endTime"
+                                        th:field="*{endTime}" th:name="endTime">
+                                    <span th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}">Error!</span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <input type="submit" value="Save" class="btn btn-primary" />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script type="text/javascript">
+        if (document.querySelector('.js-alert')) {
+            document.querySelectorAll('.js-alert').forEach(function ($el) {
+                setTimeout(() => {
+                    $el.classList.remove('show');
+                }, 2000);
+            });
+        }
+    </script>
+
+</body>
+
+</html>

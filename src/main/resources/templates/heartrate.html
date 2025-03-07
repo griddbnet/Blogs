@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" />
+    <title>Heart Rate</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}" />
+
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+        integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" /> -->
+
+    <script type="text/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"
+        integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+        crossorigin="anonymous"></script>
+    <style>
+        .badge {
+            margin-left: -10px;
+            background-color: #E91E63 !important;
+        }
+
+        .spacer {
+            padding-top: 40px;
+            padding-bottom: 40px
+        }
+
+        .container {
+            width: auto;
+            /* max-width: 1024; */
+            padding: 0 15px;
+        }
+
+        table tr {
+            border-bottom: 4px solid white;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column h-100 min-vh-100" style="padding-top: 70px;">
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main role="main" class="flex-shrink-0">
+        <div class="container">
+            <!-- <div class="container-fluid" style="max-width: 900px; margin: 0 auto;"> -->
+
+            <div th:if="${message != null}"
+                class="alert alert-success alert-dismissible fade show text-center message js-alert" role="alert">
+                [[${message}]]
+                <button type="button" class="close btn-sm" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="my-3">
+                <h2 class="text-center">Workouts</h2>
+                </p>
+            </div>
+
+            <div class="row">
+                <!-- Chart -->
+                <div class="col-xl-8 col-lg-7">
+                    <div class="card shadow mb-4">
+                        <!-- Card Header - Dropdown -->
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Heart Rate Overview</h6>
+                        </div>
+                        <!-- Card Body -->
+                        <div class="card-body">
+                            <div class="chart-area">
+                                <div id="heartrateChart" style="height:600px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="col-xl-4 col-lg-5">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Heart Rate Zones</h6>
+                        </div>
+                        <div class="card-body">
+                            <table>
+                                <tr>
+                                    <th></th>
+                                </tr>
+                                <tr th:each="sum : ${heartRateZoneSummaries}">
+                                    <td>
+                                        <span class="fw-bold" th:text="${sum.zoneValue}">zone</span>
+                                        <br>
+                                        <span class="fs-4" th:text="${sum.durationInMinuets}">duration</span>
+                                        <label class="font-monospace"> minutes</label>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card shadow mb-4">
+                        <!-- Card Header - Dropdown -->
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Workout</h6>
+                        </div>
+                        <!-- Card Body -->
+                        <div class="card-body" th:object="${workout}" th:unless="${workout} == null">
+                            <div class="mb-1">
+                                <span th:text="*{title}">title</span>
+                                <label for="title" class="font-monospace"></label>
+                            </div>
+                            <div class="mb-1">
+                                <span class="font-monospace" th:text="*{type}">type</span>
+                                <label for="title"> - </label>
+                                <span th:text="*{durationText}">durationText</span>
+                            </div>
+                            <div class="mb-1">
+                                <label for="startTime" class="font-monospace">Start Time:</label>
+                                <span th:text="*{startTime}">startTime</span>
+                            </div>
+                            <div class="mb-1">
+                                <label for="endTime" class="font-monospace">End Time:</label>
+                                <span th:text="*{endTime}">endTime</span>
+                            </div>
+                            <div class="mb-1">
+                                <label for="distance" class="font-monospace">Distance (km):</label>
+                                <span th:text="*{distance}">distance</span>
+                            </div>
+                            <div class="mb-1">
+                                <label for="calories" class="font-monospace">Calories:</label>
+                                <span th:text="*{calories}">calories</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+        integrity="sha256-6EJwvQzVvfYP78JtAMKjkcsugfTSanqe4WGFpUdzo88=" crossorigin="anonymous"></script>
+
+    <script th:inline="javascript">
+        var myChart = echarts.init(document.getElementById('heartrateChart'));
+        const heartRateZoneSummaries = /*[[${heartRateZoneSummaries}]]*/[]
+
+        const _data = /*[[${heartRates}]]*/[
+            { timestampLabel: "2024/01/01 04:18", value: 10 },
+            { timestampLabel: "2024/01/02 04:23", value: 5 }
+        ];
+
+        var option = {
+            title: {
+                text: 'Heart Rate',
+                left: '1%'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            grid: {
+                left: '10%',
+                right: '15%',
+                bottom: '10%'
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: _data.map(x => x.timestampLabel)
+            },
+            yAxis: {
+                type: 'value',
+                boundaryGap: [0, '100%']
+            },
+            toolbox: {
+                right: 10,
+                feature: {
+                    dataZoom: {
+                        yAxisIndex: 'none'
+                    },
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            series: [
+                {
+                    name: 'Heart Rate',
+                    type: 'line',                    
+                    data: _data.map(x => x.value),
+                    markLine: {
+                        silent: true,
+                        lineStyle: {
+                            color: '#333'
+                        },
+                        data: [
+                            {
+                                yAxis: 50
+                            },
+                            {
+                                yAxis: 100
+                            },
+                            {
+                                yAxis: 150
+                            },
+                            {
+                                yAxis: 200
+                            },
+                            {
+                                yAxis: 250
+                            }
+                        ]
+                    }
+                }
+            ],
+            visualMap: {
+                top: 50,
+                right: 10,
+                pieces: [
+                    {
+                        gt: 0,
+                        lte: 50,
+                        color: '#93CE07'
+                    },
+                    {
+                        gt: 50,
+                        lte: 100,
+                        color: '#FBDB0F'
+                    },
+                    {
+                        gt: 100,
+                        lte: 150,
+                        color: '#FC7D02'
+                    },
+                    {
+                        gt: 150,
+                        lte: 200,
+                        color: '#FD0100'
+                    },
+                    {
+                        gt: 250,
+                        color: '#AA069F'
+                    }
+                ],
+                outOfRange: {
+                    color: '#999'
+                }
+            },
+        };
+
+        // Display the chart using the configuration items and data just specified.
+        myChart.setOption(option);
+    </script>
+
+    <script type="text/javascript">
+        if (document.querySelector('.js-alert')) {
+            document.querySelectorAll('.js-alert').forEach(function ($el) {
+                setTimeout(() => {
+                    $el.classList.remove('show');
+                }, 2000);
+            });
+        }
+    </script>
+
+</body>
+
+</html>
