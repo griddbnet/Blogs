@@ -11,11 +11,13 @@ import org.apache.kafka.connect.transforms.field.FieldSyntaxVersion;
 import org.apache.kafka.connect.transforms.field.SingleFieldPath;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.kafka.connect.transforms.util.Requirements.requireMapOrNull;
@@ -36,7 +38,7 @@ public abstract class GridDBWebAPITransform<R extends ConnectRecord<R>> implemen
             new ConfigDef().define(
                 "fields", 
                 ConfigDef.Type.STRING, 
-                ConfigDef.Importance.HIGH, 
+                ConfigDef.Importance.LOW, 
                 "Comma-separated list of field names to extract.")
             );
 
@@ -72,7 +74,15 @@ public abstract class GridDBWebAPITransform<R extends ConnectRecord<R>> implemen
             for (Field f : fieldNames) {
                 String fName = f.name();
                 SingleFieldPath fPath = new SingleFieldPath(fName, FieldSyntaxVersion.V2);
-                row.add(fPath.valueFrom(value));
+                Object val = fPath.valueFrom(value);
+                String valType = val.getClass().getName();
+                if (valType.contains("String")) {
+                    val = "\"" + val + "\"";
+                    row.add(val);
+                } else {
+                    row.add(val);
+                }
+                
             }
             nestedArray.add(row);
     
@@ -112,5 +122,6 @@ public abstract class GridDBWebAPITransform<R extends ConnectRecord<R>> implemen
             return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), updatedSchema, updatedValue, record.timestamp());
         }
     }
+
 
 }
