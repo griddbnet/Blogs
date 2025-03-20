@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <title>VCS Activity Charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Center the content and add padding */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    /* Style containers for each chart */
+    .chart-container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin: 20px 0;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Canvas styling with a fixed height */
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+
+    /* Chart title styling */
+    h2 {
+      text-align: center;
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="chart-container">
+    <h2>Commit Activity</h2>
+    <canvas id="commitChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>Pull Request Activity</h2>
+    <canvas id="prChart"></canvas>
+  </div>
+
+  <!-- Inline JavaScript block to properly process Thymeleaf variables -->
+  <script th:inline="javascript">
+    // Thymeleaf will automatically insert the JSON string correctly
+    const commitData = [[${ commitDataJson }]];
+    const prData = [[${ prDataJson }]];
+
+    // Parse JSON data into JavaScript objects
+    const parsedCommitData = JSON.parse(commitData);
+    const parsedPrData = JSON.parse(prData);
+
+    // Helper function to sort the data by date keys
+    function sortByDate(data) {
+      return Object.keys(data)
+        .sort((a, b) => new Date(a) - new Date(b))  // Sort the date strings in ascending order
+        .reduce((obj, key) => {
+          obj[key] = data[key]; // Rebuild the object in sorted order
+          return obj;
+        }, {});
+    }
+
+    // Sort the commit and PR data by date
+    const sortedCommitData = sortByDate(parsedCommitData);
+    const sortedPrData = sortByDate(parsedPrData);
+
+    // Extract labels (dates) and values (counts) for Commit chart
+    const commitLabels = Object.keys(sortedCommitData);
+    const commitValues = Object.values(sortedCommitData);
+
+    // Extract labels (dates) and values (counts) for Pull Request chart
+    const prLabels = Object.keys(sortedPrData);
+    const prValues = Object.values(sortedPrData);
+
+    // Commit Activity Chart
+    const commitCtx = document.getElementById('commitChart').getContext('2d');
+    const commitChart = new Chart(commitCtx, {
+      type: 'line',
+      data: {
+        labels: commitLabels,
+        datasets: [{
+          label: 'Commits',
+          data: commitValues,
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    // Pull Request Activity Chart
+    const prCtx = document.getElementById('prChart').getContext('2d');
+    const prChart = new Chart(prCtx, {
+      type: 'line',
+      data: {
+        labels: prLabels,
+        datasets: [{
+          label: 'Pull Requests',
+          data: prValues,
+          backgroundColor: 'rgba(153, 102, 255, 0.2)',
+          borderColor: 'rgba(153, 102, 255, 1)',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+
+
+</body>
+
+</html>
