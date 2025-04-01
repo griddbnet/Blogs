@@ -1,10 +1,10 @@
-In a previous article, we showcased how one could pair GridDB Cloud's free infastructure with Kafka using a custom Single Message Transform and some SSL certs/rules; you can read that article here: [TODO: Add Blog Link](). In this article, we will expand on those efforts and add timestamp data types into the mix. By the time you finish this article, you should be able to able to understand how you can stream data from some source over to GridDB Cloud, with the added benefit of being able to push to time series containers which take timestamps as their rowkey (a must!)
+In a previous article, we showcased how one could pair GridDB Cloud's free infastructure with Kafka using a custom Single Message Transform and some SSL certs/rules; you can read that article here: [TODO: Add Blog Link](). In this article, we will expand on those efforts and add timestamp data types into the mix. By the time you finish this article, you should be able to understand how you can stream data from some source over to GridDB Cloud, with the added benefit of being able to push to time series containers which take timestamps as their rowkey (a must!)
 
-As stated above, the big addition for this article is the handling of time series data and pushing it out into the GridDB Cloud. There were two things that had to be learned in order to get this proeject to work: chaining together Single Message Transforms, and learning the exact time format the GridDB WebAPI accepts as acceptable for time series data; there was also a miniscule change made to the SMT we used in the previous article.
+As stated above, the big addition for this article is the handling of time series data and pushing it out into the GridDB Cloud. There were two things that had to be learned in order to get this project to work: chaining together Single Message Transforms, and learning the exact time format the GridDB WebAPI accepts as acceptable for time series data; there was also a miniscule change made to the SMT we used in the previous article.
 
 ## Prereqs
 
-This article is part II, and therefore a continuation of a previous effort; in part I, we go over the fundamentals of what this project is and how it works This means that understanding part I of this series is a psuedo-prerequisite for this article but not is not necessarily required. 
+This article is part II, and therefore a continuation of a previous effort; in part I, we go over the fundamentals of what this project is and how it works This means that understanding part I of this series is a pseudo-prerequisite for this article but is not necessarily required. 
 
 In any case, the prereqs for both of these articles are the same:
 
@@ -26,7 +26,7 @@ In part I of this series, we used our custom SMT to decouple the values from the
 
 However, when dealing with time series containers, an issue arises because the WebAPI expects a very specific data format for the time series data column. If your data is in milliseconds since epoch, for example, the GridDB WebAPI will not accept that as a valid time column type and will reject the HTTP Request. According to the [docs](https://github.com/griddb/webapi/blob/master/GridDB_Web_API_Reference.md), the format expected by GridDB WebAPI is this: `YYYY-MM-DDThh:mm:ss.SSSZ (ie. "2016-01-16T10:25:00.253Z")`.
 
-So, before we transform our data to extract the values and creat our nested array, we can run a Single Message Transform on just the `ts` column, transform whatever the value is into the format it likes, and *then* run the process of building our nested array. Using this flow allows for us to push data successfully but to also transform the timestamp column into the exact format expected. And please remember, the order of your transforms matter!
+So, before we transform our data to extract the values and create our nested array, we can run a Single Message Transform on just the `ts` column, transform whatever the value is into the format it likes, and *then* run the process of building our nested array. Using this flow allows for us to push data successfully but to also transform the timestamp column into the exact format expected. And please remember, the order of your transforms matter!
 
 ```bash
     "transforms.timestamp.type": "org.apache.kafka.connect.transforms.TimestampConverter$Value",
@@ -37,7 +37,7 @@ So, before we transform our data to extract the values and creat our nested arra
     "transforms.nestedList.fields": "ts",
 ```
 
-Here you see we target the `ts` column and we explicitly state the format we expect. One small gotcha is that you must wrap the `T` and `Z` characers in single quotes otherwise Kafka will reject the format as `illegal`. And of course, if you deviate from this form at all, you will be rejected by the GridDB Cloud -- ouch!
+Here you see we target the `ts` column and we explicitly state the format we expect. One small gotcha is that you must wrap the `T` and `Z` characters in single quotes otherwise Kafka will reject the format as `illegal`. And of course, if you deviate from this format at all, you will be rejected by the GridDB Cloud -- ouch!
 
 
 ### Handling Strings Sent to GridDB WebAPI
@@ -145,10 +145,10 @@ Caused by: org.apache.kafka.connect.errors.DataException: Failed to deserialize 
 Caused by: org.apache.kafka.common.errors.SerializationException: Unknown magic byte!
 ```
 
-I've found `Caused` to be the best way to debug the issues with the connectors, but you can try seaching for the topic name, the connector name, or maybe your URL endpoint. 
+I've found `Caused` to be the best way to debug the issues with the connectors, but you can try searching for the topic name, the connector name, or maybe your URL endpoint. 
 
 Another thing you can do is to modify the SMT code and print messages from there to observe how the SMT is handling your records.
 
 ### Conclusion
 
-Now you are able to stream data from anywhere directly into your GridDB Cloud Time Series containers. 
+And now we can successfully push our kafka data directly into GridDB Time Series Containers on the Cloud.
