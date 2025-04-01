@@ -20,6 +20,10 @@ The source code (and all of the required configs/yamls) can found on the GridDB.
 
 Most of the code implementation for this project was done in the previous effort, but there are still some changes we need to make to the existing code base. Mostly though, we will be using an existing Single Message Transform to be able to send time series data to GridDB Cloud. The way it works is this: an SMT allows for to transforming the Kafka records ***before*** it gets sent over to your Kafka sink. It also allows for using multiple SMTs (executed in order) before the data gets sent out.
 
+![transforms](./img/transforms.png)
+
+For our purposes, we are just using the right side of the diagram. The topic flows through to the sink, gets transformed (twice in this case!) and then out to our GridDB Cloud installation. The photo is credited to [confluent](https://www.confluent.io/blog/kafka-connect-single-message-transformation-tutorial-with-examples/).
+
 ### Chaining Single Message Transforms
 
 In part I of this series, we used our custom SMT to decouple the values from the field names from our Kafka record and form it into a nested array, which is the only data struct that a `PUT` to GridDB Cloud accepts. Using just this alone, we were able to successfully push data to a GridDB Collection container. 
@@ -36,6 +40,11 @@ So, before we transform our data to extract the values and create our nested arr
     "transforms.nestedList.type": "net.griddb.GridDBWebAPITransform$Value",
     "transforms.nestedList.fields": "ts",
 ```
+
+The following diagram was pulled from [confluent](https://www.confluent.io/blog/kafka-connect-single-message-transformation-tutorial-with-examples/). It showcases that the transformations happen in sequential order.
+
+![chaining](./img/multiple-transformations.png)
+
 
 Here you see we target the `ts` column and we explicitly state the format we expect. One small gotcha is that you must wrap the `T` and `Z` characters in single quotes otherwise Kafka will reject the format as `illegal`. And of course, if you deviate from this format at all, you will be rejected by the GridDB Cloud -- ouch!
 
