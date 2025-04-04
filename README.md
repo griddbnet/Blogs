@@ -1,4 +1,4 @@
-As we have discussed before, Kafka is an invaluable tool when dealing with certain IoT workloads. Kafka can gaurantee a robust pipeline of streaming your sensor data into almost anywhere due to its high flexibility and various connectors. And indeed, we have perviously written articles about using GridDB's official Kafka Source & Sink connectors to stream your data from place A to GridDB and vice versa. 
+As we have discussed before, Kafka is an invaluable tool when dealing with certain IoT workloads. Kafka can guarantee a robust pipeline of streaming your sensor data into almost anywhere due to its high flexibility and various connectors. And indeed, we have previously written articles about using GridDB's official Kafka Source & Sink connectors to stream your data from place A to GridDB and vice versa. 
 
 On the heels of GridDB Cloud now being free for most users worldwide, we thought we could again revisit using Kafka with GridDB, but now instead we would like to push our sensor data into the cloud using the Web API. To accomplish this, we needed to find an HTTP Sink Kafka connector and ensure that it could meet our requirements (namely data transformations and being able to change the HTTP method). 
 
@@ -34,9 +34,9 @@ Once we have the `SMT` finished, we can set up our SSL rules and certs and then 
 
 ### Single Message Transformations
 
-The code to get this working is not very complicated, essentially we want to take an obj structure coming in from a typical Kafka message and transform into an array of arrays with all of the values parsed out. We will ensure that the index positions match our schema outside of the context of the `SMT`.
+The code to get this working is not very complicated, essentially we want to take an objject structure coming in from a typical Kafka message and transform into an array of arrays with all of the values parsed out. We will ensure that the index positions match our schema outside of the context of the `SMT`.
 
-As mentioned earlier, the `.jar` file is included within this project so you don't need to do anything else, but if you would like to build it yourself or make changes, you can use `mvn` to build it. Here is the full java code (it's also availble in this repo in the `smt` directory). 
+As mentioned earlier, the `.jar` file is included within this project so you don't need to do anything else, but if you would like to build it yourself or make changes, you can use `mvn` to build it. Here is the full Java code (it's also availble in this repo in the `smt` directory). 
 
 ```java
     @Override
@@ -190,11 +190,11 @@ Before we try pushing our data to GridDB Cloud, we will need to create our conta
 
 We will then make a source connector provided by Confluent to generate mock data in the style of that schema. 
 
-Once you got it set up, it looks like this in the dashboard: 
+Once you have it set up, it looks like this in the dashboard: 
 
 ![topic-messages](images/topic-messages.png)
 
-Next, we make a connector for the HTTP Sink which takes that source connector's mock data and streams out to the HTTP we set it to (hint: it's GridDB Cloud!). But as the data moves through from the source to the sink, we will of course apply our `SMT` to change the data into an array of arrays to push to GridDB Cloud. And if we configured our SSL correctly, we should see our data inside of our GridDB Cloud container.
+Next, we make a connector for the HTTP Sink which takes that source connector's mock data and streams it out to the HTTP we set it to (hint: it's GridDB Cloud!). But as the data moves through from the source to the sink, we will of course apply our `SMT` to change the data into an array of arrays to push to GridDB Cloud. And if we configured our SSL correctly, we should see our data inside of our GridDB Cloud container.
 
 #### Connector Client Values and Rules 
 
@@ -291,7 +291,7 @@ curl -s \
     }'
 ```
 
-And then the same thing for the source connector. The main thing to take away from this section is the values you need to enter to successfully create push your data from Kafka to GridDB Cloud. For example, you can see in the transforms section that we are using the `SMT` we wrote and built earlier.
+And then the same thing for the source connector. The main thing to take away from this section is the values you need to enter to successfully push your data from Kafka to GridDB Cloud. For example, you can see in the transforms section that we are using the `SMT` we wrote and built earlier.
 
 ## Results
 
