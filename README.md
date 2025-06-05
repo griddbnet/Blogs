@@ -28,11 +28,15 @@ The pricing is as follows for the other plan:
 
 So let's try to do some quick napkin math and see what kind of scenario you'd need to be in to make the shared monthly $520 commitment the *right* choice.
 
+### Azure Budgeting
+
+Before we dive into some simple math to figure out some thresholds of use for the pay-as-you-go plan, I think it's also important to point out that Azure Marketplace does have guardrails in place to help control spending. Even if dealing with a massive budget, I implore all users to read and set an [Azure Spending Limit](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/spending-limit), this can and will help ease any concerns over accidentally spending the entire month's budget in a week -- every cloud engineer's nightmare!
+
 ### Rough Cost Estimations
 
-Let's assume, for a baseline, that you're storing exactly half of the maximum amount (100GB). At the price of $0.002/1GB/hour, that puts us at roughly $72/month on storage costs. Working from here, let's estimate how many data transfers we need to commit to reach our soft limit.
+Let's assume, for a baseline, that you're storing exactly half of the maximum amount (max is 100GB, so let's play with 50GB). At the price of $0.002/1GB/hour, that puts us at roughly $72/month on storage costs. Working from here, let's estimate how many data transfers we need to commit to reach our soft limit.
 
-To spend the rest of the $448 budget, let's take a look at some scenarios. We'd need to commit ~5000GB of data through Data Out to reach our allotment. For Data In, it's about 175GB (it costs a lot more to do this!). 
+To spend the rest of the $448 budget, let's take a look at some scenarios. We'd need to commit ~5000GB of data through Data Out to reach our allotment. For Data In, it's about 175GB (it costs a lot more to write to the Cloud than to read from it!). 
 
 If we wanted to do an even split between Data In and Data Out ($224 each), it'd be 2488.88GB for Data Out, 87.50GB for Data In. Requests cost are about 1,000,000 for $120, so accounting for that, we'd end up with this kind of scenario:
 
@@ -80,10 +84,30 @@ And then once finished:
 
 ![finished](/images/finished.png)
 
-And now, in that GridDB Cloud splash page, you will have access to your GridDB Cloud information, such as the management gui URL, as well as the user credentials. From this point on, you can now fully switch to the [GridDB Cloud Quickstart Guide](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/) which was linked above to get started. You can also feel free to use the [GridDB CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) as an easier way to interface with your instance from your shell. 
+And now, in that GridDB Cloud splash page, you will have access to your GridDB Cloud information, such as the management GUI URL, as well as the user credentials. 
 
-And though the instructions for this process was shown for the Pay-As-You-Go plan, the steps are the exact same for Monthly Commitment Plan
+Navigate to your Management GUI URL and enter your credentials. You should be now be logged in and greeted with your new Cloud dashboard
+
+![cloud-dashboard](/images/cloud-dashboard.png)
+
+Congrats!
+
+## Next Steps
+
+From this point, you have some branching options on what you can do next. First and foremost, I recommend you whitelist your current machine's IP Address in the cloud dashboard as told in the [GridDB Cloud Quickstart Guide: Whitelisting your IP Address](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/#whitelist) and then I'd also recommend following the next step of creating a new db user and granting db access to that user. Next, you have some options: 
+
+ 1. [GridDB Cloud Quickstart Guide: WebAPI checkConnection](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/#check-connection) will give the most comprehensive overview of how to use the Web API and what commands are available. This guide has lots of working examples of creating containers/tables, adding data, querying containers, etc. It shows examples using curl, python, and nodejs. It also briefly touches on what the API Endpoints look like and the general structure of how they look. A very good place to start!
+ 
+ 2. [GridDB CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) is a tool we wrote which helps to interact with the cloud-based dashboard. Because all commands are through HTTP Requests and must include basic authentication and some other headers, this tool aims to simplifiy the process of making these calls with simpler syntax. Also includes interactive container creation and CSV ingestion. Very helpful once familiar with the Cloud usage.
+
+ 3. [How to Utilize GridDB Cloud as the Backend to your No Code Bubble App](griddb.net/en/blog/how-to-utilize-griddb-as-the-backend-to-your-no-code-bubble-app/) is a blog which shows you how to make web request calls and utilize GridDB Cloud as your backend for a 'no code' frontend solution
+
+ 4. [Pairing GridDB Cloud with Grafana Cloud](https://griddb.net/en/blog/pairing-griddb-cloud-with-grafana-cloud/) will showcase pairing GridDB Cloud with another popular third party cloud-based implementation of Grafana. With these two paired together, you can visualize all sorts of intricate data trends -- cool!
+
+ 5. [Monitoring Air Quality in California using Home Assistant, Raspberry Pi, and GridDB Cloud](https://griddb.net/en/blog/griddb-air-quality-california-pi-cloud/) showcases using GridDB Cloud in a more local setting. It teaches you how to use GridDB Cloud in your smart home to gather your sensor data and make use of it to send alerts to the inhabitants. 
+
+
 
 ## Conclusion
 
-And with that, we have shown how easy it is to sign up for the new Azure-based GridDB Cloud shared instance and similar of a process usage will be! We also did some rough  math to estimate which plan might be best for you and your stage of data. 
+And with that, we have shown how easy it is to sign up for the new Azure-based GridDB Cloud shared instance and similar of a process usage will be! We also did some rough  math to estimate which plan might be best for you and your stage of data; and though the instructions for this process was shown for the Pay-As-You-Go plan, the steps are the exact same for Monthly Commitment Plan
