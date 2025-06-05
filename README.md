@@ -100,7 +100,7 @@ From this point, you have some branching options on what you can do next. First 
  
  2. [GridDB CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) is a tool we wrote which helps to interact with the cloud-based dashboard. Because all commands are through HTTP Requests and must include basic authentication and some other headers, this tool aims to simplifiy the process of making these calls with simpler syntax. Also includes interactive container creation and CSV ingestion. Very helpful once familiar with the Cloud usage.
 
- 3. [How to Utilize GridDB Cloud as the Backend to your No Code Bubble App](griddb.net/en/blog/how-to-utilize-griddb-as-the-backend-to-your-no-code-bubble-app/) is a blog which shows you how to make web request calls and utilize GridDB Cloud as your backend for a 'no code' frontend solution
+ 3. [How to Utilize GridDB Cloud as the Backend to your No Code Bubble App](https://griddb.net/en/blog/how-to-utilize-griddb-as-the-backend-to-your-no-code-bubble-app/) is a blog which shows you how to make web request calls and utilize GridDB Cloud as your backend for a 'no code' frontend solution
 
  4. [Pairing GridDB Cloud with Grafana Cloud](https://griddb.net/en/blog/pairing-griddb-cloud-with-grafana-cloud/) will showcase pairing GridDB Cloud with another popular third party cloud-based implementation of Grafana. With these two paired together, you can visualize all sorts of intricate data trends -- cool!
 
