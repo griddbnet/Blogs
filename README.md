@@ -1,113 +1,308 @@
-This article aims to be seen as supplemental to the original [GridDB Cloud Quickstart Guide](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/). In *that* article, we covered how to sign up for the FREE Trial version of the GridDB Cloud offering and then dived into usage via the GridDB Web API. 
+If you are thinking about switching to the [GridDB Cloud Azure Marketplace instance](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=overview), first, you can read about how to do that here: [GridDB Cloud on Microsoft Azure Marketplace](https://griddb.net/en/blog/griddb-cloud-azure-marketplace/). Second, you may be worried about how you may transfer your existing data from your [GridDB Free Plan](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=blog-migration), from your local GridDB CE instance, or even from Postgresql.
 
-In this one, we want to cover signing up for GridDB Cloud via the Azure Marketplace. There are two flavors of this: the Pay-As-You-Go Plan, and the Fixed Monthly Shared instance. We will cover signing up, the pricing, and differences with the Free trial version. Usage with the Web API will not be covered as it is identical to our previous efforts; you can also use the [GridDB CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) to interface with these Cloud offerings as well.
+In this blog, we will walkthrough the migration process of moving your data from a GridDB Free Plan, a local GridDB CE instance, and another third party database (postgresql in this case). The process is different for each one, so let's go through them 1-by-1.
 
-## The Plans (and how to pick)
+## Migrating from GridDB Free Plan
 
-First and foremost, to use GridDB Cloud on Azure, you will need a Microsoft Azure account. You can sign up via their website: [https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account](https://azure.microsoft.com/en-us/pricing/purchase-options/azure-account). 
+First of all, if you are unsure what the GridDB Free Plan is, you can look here: [GridDB Cloud Quick Start Guide](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/)
 
-Next, you will choose if you want to sign up for the plan which allows you to pay and scale as needed, or shoot for the fixed monthly commitment plan. 
+This is by far the easiest method of conducting a full-scale migration. The high level overview is that the TDSL (Toshiba Digital Solution) support team will handle everything for you. 
 
-- [Pay-As-You-Go](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=Overview)
-- [Fixed Monthly Commitment](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_shared_instance_with_1month_trial?tab=Overview)
+### TDSL Support 
 
-![pay-as-you-go](/images/pay-as-you-go-plan.png)
+When you sign up for the GridDB Pay As You Go plan, as part of the onboarding process, you will receive an email with the template you will need to use when contacting support for various functions, including data migration! So, grab your pertinent information (contract ID, GridDB ID, etc) and the template and let's send an email.
 
-![monthly](/images/monthly.png)
+Compose an email to `tdsl-ms-support@toshiba-sol.co.jp` with the following template
 
-The main difference between these two instances is the pricing -- with the monthly commitment you're paying $520/month, but you won't need to worry about possibly going over budget if you're moving lots of data in and out or making tons of requests. 
+```bash
+Contract ID: [your id]
+GridDB ID: [your id]
+Name: Israel Imru
+E-mail: imru@fixstars.com
+Inquiry Details: I would like to migrate from my GridDB Free Plan Instance to my GridDB pay as you go plan
+Occurrence Date:  --
+Collected Information:  --
+```
 
-The pricing is as follows for the other plan: 
+The team will usually respond within one business day to confirm your operation and with further instructions. For me, they sent me the following:
 
-| Service     | Price                   |
-|-------------|-------------------------|
-| Storage     | $0.002 per 1GB/hour     |
-| Data Out    | $0.09 per 1GB           |
-| Data In     | $0.0025 per 1MB         |
-| Request     | $0.012 per 100 requests |
+```bash
+Please perform the following operations in the management GUI of the source system.
+After completing the operations, inform us of the date and time when the operations were performed.
 
-So let's try to do some quick napkin math and see what kind of scenario you'd need to be in to make the shared monthly $520 commitment the *right* choice.
+1. Log in to the management GUI.
 
-### Azure Budgeting
+2. From the menu on the left side of the screen, click [Query].
 
-Before we dive into some simple math to figure out some thresholds of use for the pay-as-you-go plan, I think it's also important to point out that Azure Marketplace does have guardrails in place to help control spending. Even if dealing with a massive budget, I implore all users to read and set an [Azure Spending Limit](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/spending-limit), this can and will help ease any concerns over accidentally spending the entire month's budget in a week -- every cloud engineer's nightmare!
+3. Enter the following query in the [QUERY EDITOR]: SELECT 2012
 
-### Rough Cost Estimations
+4. Click the [Execute] button
 
-Let's assume, for a baseline, that you're storing exactly half of the maximum amount (max is 100GB, so let's play with 50GB). At the price of $0.002/1GB/hour, that puts us at roughly $72/month on storage costs. Working from here, let's estimate how many data transfers we need to commit to reach our soft limit.
+Best regards,
 
-To spend the rest of the $448 budget, let's take a look at some scenarios. We'd need to commit ~5000GB of data through Data Out to reach our allotment. For Data In, it's about 175GB (it costs a lot more to write to the Cloud than to read from it!). 
+Toshiba Managed Services Support Desk
+```
 
-If we wanted to do an even split between Data In and Data Out ($224 each), it'd be 2488.88GB for Data Out, 87.50GB for Data In. Requests cost are about 1,000,000 for $120, so accounting for that, we'd end up with this kind of scenario:
+Once I ran the query they asked me, I clicked on query history, and copied the timestamp and sent that over to them. That was all they needed -- armed with this information, they told me to wait 1-2 business days and they would seamlessly migrate my instance along with an estimated time slot when the migration would be completed. 
 
-| Service Component | Details / Volume                      | Cost      |
-|-------------------|---------------------------------------|-----------|
-| Storage           | 50 GB (for 720 hours)                 | $72.00    |
-| Requests          | 1,000,000 requests                    | $120.00   |
-| Data Out          | Approx. 1822.22 GB                    | $164.00   |
-| Data In           | 65,600 MB (or approx. 64.06 GB)       | $164.00   |
-| **Total** |                                       | **$520.00** |
-
-If your project grows to this size, it is of course recommended to commit to the $520 plan, but before that, you can comfortably use the Pay-As-You-Go Plan.
+Once it was done, all of my data, including the IP Whitelist and my Portal Users were all copied over to my pay as you go plan. Cool!
 
 
-## Signing Up
+## Migrating from Postgresql
 
-Now that you know which plan best suits you, let's walk through that process. As mentioned above, you will need an Azure account. And now simply click on the plan you want and click Get It Now. From there, sign in. You will be greeted with a permissions ask. You must accept to continue.
+There is no official way of doing conducting this sort of migration, so for now, we can try simply exporting our tables into CSV files and then importing those files individually into our Cloud instance. Luckily with the [GridDB Cloud CLI tool](https://griddb.net/en/blog/griddb-cloud-cli/) this process is much easier than ever before.
 
-![images](/images/permissions-0.png)
+So let's first export our data and go from there.
 
+### Exporting Postgresql Data
 
-And once you accept, you are greeted with the subscribe page
+First, the dataset I'm working with here is simply dummy data I ingested using a python script. Here's the script: 
 
-![subscribe](/images/pay-as-you-go-subscribe.png)
+```python
+import psycopg2
+import psycopg2.extras
+from faker import Faker
+import random
+import time
 
-Click Subscribe to fill out your normal Azure details like resource group (you can create a new one here) and the name of your service (this is just for internal use, it can be whatever you want). Once you fill it out, just hit Review + subscribe
+# --- YOUR DATABASE CONNECTION DETAILS ---
+# Replace with your actual database credentials
+DB_NAME = "template1"
+DB_USER = "postgres"
+DB_PASSWORD = "xe$$j4o8"
+DB_HOST = "localhost"  # Or your DB host
+DB_PORT = "5432"       # Default PostgreSQL port
 
-![azure-signing-up](/images/azure-signing-up.png)
+# --- DATA GENERATION SETTINGS ---
+NUM_RECORDS = 50000
 
-And once Azure provisions your instance, you are not *quite* done as you will also need to click `configure account now`, which will link you to GridDB Cloud's subscription page. Once you sign up there, it will link back to your Azure account.
+# Initialize Faker
+fake = Faker()
 
-And please note, in this portion, my browser was actively hiding all pop ups from the page and so I encountered an error like so: 
-
-![error](/images/possible-error.png)
-
-To get around it, find where your browser is blocking the pop up (it should be immediately easy to see), and then click allow. It will then ask for some Azure -> GridDB Cloud permissions to be accepted. 
-
-![permissions-2](/images/azure-permissions.png)
-
-Once accepted, your subscription will begin being fulfilled:
-
-![pending](/images/pending-fulfillment.png)
-
-And then once finished:
-
-![finished](/images/finished.png)
-
-And now, in that GridDB Cloud splash page, you will have access to your GridDB Cloud information, such as the management GUI URL, as well as the user credentials. 
-
-Navigate to your Management GUI URL and enter your credentials. You should be now be logged in and greeted with your new Cloud dashboard
-
-![cloud-dashboard](/images/cloud-dashboard.png)
-
-Congrats!
-
-## Next Steps
-
-From this point, you have some branching options on what you can do next. First and foremost, I recommend you whitelist your current machine's IP Address in the cloud dashboard as told in the [GridDB Cloud Quickstart Guide: Whitelisting your IP Address](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/#whitelist) and then I'd also recommend following the next step of creating a new db user and granting db access to that user. Next, you have some options: 
-
- 1. [GridDB Cloud Quickstart Guide: WebAPI checkConnection](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/#check-connection) will give the most comprehensive overview of how to use the Web API and what commands are available. This guide has lots of working examples of creating containers/tables, adding data, querying containers, etc. It shows examples using curl, python, and nodejs. It also briefly touches on what the API Endpoints look like and the general structure of how they look. A very good place to start!
- 
- 2. [GridDB CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) is a tool we wrote which helps to interact with the cloud-based dashboard. Because all commands are through HTTP Requests and must include basic authentication and some other headers, this tool aims to simplifiy the process of making these calls with simpler syntax. Also includes interactive container creation and CSV ingestion. Very helpful once familiar with the Cloud usage.
-
- 3. [How to Utilize GridDB Cloud as the Backend to your No Code Bubble App](https://griddb.net/en/blog/how-to-utilize-griddb-as-the-backend-to-your-no-code-bubble-app/) is a blog which shows you how to make web request calls and utilize GridDB Cloud as your backend for a 'no code' frontend solution
-
- 4. [Pairing GridDB Cloud with Grafana Cloud](https://griddb.net/en/blog/pairing-griddb-cloud-with-grafana-cloud/) will showcase pairing GridDB Cloud with another popular third party cloud-based implementation of Grafana. With these two paired together, you can visualize all sorts of intricate data trends -- cool!
-
- 5. [Monitoring Air Quality in California using Home Assistant, Raspberry Pi, and GridDB Cloud](https://griddb.net/en/blog/griddb-air-quality-california-pi-cloud/) showcases using GridDB Cloud in a more local setting. It teaches you how to use GridDB Cloud in your smart home to gather your sensor data and make use of it to send alerts to the inhabitants. 
+# Generate a list of fake records
+print(f"Generating {NUM_RECORDS} fake records...")
+records_to_insert = []
+for _ in range(NUM_RECORDS):
+    name = fake.catch_phrase()  # Using a more specific Faker provider
+    quantity = random.randint(1, 1000)
+    price = round(random.uniform(0.50, 500.00), 2)
+    records_to_insert.append((name, quantity, price))
+print("Finished generating records.")
 
 
+# SQL statements
+create_table_query = """
+CREATE TABLE IF NOT EXISTS sample_data (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    quantity INTEGER,
+    price REAL
+);
+"""
 
-## Conclusion
+# Using execute_batch is much more efficient for large inserts
+insert_query = "INSERT INTO sample_data (name, quantity, price) VALUES %s;"
 
-And with that, we have shown how easy it is to sign up for the new Azure-based GridDB Cloud shared instance and similar of a process usage will be! We also did some rough  math to estimate which plan might be best for you and your stage of data; and though the instructions for this process was shown for the Pay-As-You-Go plan, the steps are the exact same for Monthly Commitment Plan
+conn = None
+try:
+    # Establish a connection to the database
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT
+    )
+
+    # Create a cursor
+    cur = conn.cursor()
+
+    # Create the table if it doesn't exist
+    print("Ensuring 'sample_data' table exists...")
+    cur.execute(create_table_query)
+
+    # Optional: Clean the table before inserting new data
+    print("Clearing existing data from the table...")
+    cur.execute("TRUNCATE TABLE sample_data RESTART IDENTITY;")
+
+    # Start the timer
+    start_time = time.time()
+
+    print(f"Executing bulk insert of {len(records_to_insert)} records...")
+    psycopg2.extras.execute_values(
+        cur,
+        insert_query,
+        records_to_insert,
+        template=None,
+        page_size=1000  # The number of rows to send in each batch
+    )
+    print("Bulk insert complete.")
+
+    # Commit the changes to the database
+    conn.commit()
+
+    # Stop the timer
+    end_time = time.time()
+    duration = end_time - start_time
+
+    print(f"Successfully inserted {cur.rowcount} rows in {duration:.2f} seconds.")
+
+    # Close the cursor
+    cur.close()
+
+except (Exception, psycopg2.DatabaseError) as error:
+    print(f"Error while connecting to or working with PostgreSQL: {error}")
+    if conn:
+        conn.rollback()  # Roll back the transaction on error
+
+finally:
+    # Close the connection if it was established
+    if conn is not None:
+        conn.close()
+        print("Database connection closed.")
+```
+
+Once you run this script, you will have 50k rows in your PSQL instance. Now let's export this to CSV:
+
+```bash
+$ psql --host 127.0.0.1 --username postgres --password --dbname template1
+
+psql (14.18 (Ubuntu 14.18-0ubuntu0.22.04.1))
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
+Type "help" for help.
+
+template1=# select COUNT(*) from sample_data;
+ count 
+-------
+ 50000
+(1 row)
+
+template1=# COPY sample_data TO '/tmp/sample.csv' WITH (FORMAT CSV, HEADER);
+COPY 50000
+template1=# \q
+```
+
+And now that we have our CSV data, let's install the CLI Tool and ingest it.
+
+### Ingesting CSV Data into GridDB Cloud
+
+You can download the latest CLI Tool from the Github releases page:  [https://github.com/Imisrael/griddb-cloud-cli/releases](https://github.com/Imisrael/griddb-cloud-cli/releases). For me, I installed the `.deb` file
+
+```bash
+$ wget https://github.com/Imisrael/griddb-cloud-cli/releases/download/v0.1.4/griddb-cloud-cli_0.1.4_linux_amd64.deb
+$ sudo dpkg -i griddb-cloud-cli_0.1.4_linux_amd64.deb
+$ vim ~/.griddb.yaml
+```
+
+And enter your credentials: 
+
+```bash
+cloud_url: "https://cloud97.griddb.com:443/griddb/v2/gs_clustermfclo7/dbs/ZQ8"
+cloud_username: "kG-israel"
+cloud_pass: "password"
+```
+
+And ingest:
+
+```bash
+$ griddb-cloud-cli ingest /tmp/sample.csv
+
+✔ Does this container already exist? … NO
+Use CSV Header names as your GridDB Container Col names? 
+id,name,quantity,price
+✔ Y/n … YES
+✔ Container Name: … migrated_data
+✔ Choose: … COLLECTION
+✔ Row Key? … true
+✔ (id) Column Type … INTEGER
+✔ Column Index Type1 … TREE
+✔ (name) Column Type … STRING
+✔ (quantity) Column Type … INTEGER
+✔ (price) Column Type … FLOAT
+✔ Make Container? 
+{
+    "container_name": "migrated_data",
+    "container_type": "COLLECTION",
+    "rowkey": true,
+    "columns": [
+        {
+            "name": "id",
+            "type": "INTEGER",
+            "index": [
+                "TREE"
+            ]
+        },
+        {
+            "name": "name",
+            "type": "STRING",
+            "index": null
+        },
+        {
+            "name": "quantity",
+            "type": "INTEGER",
+            "index": null
+        },
+        {
+            "name": "price",
+            "type": "FLOAT",
+            "index": null
+        }
+    ]
+} … YES
+{"container_name":"migrated_data","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"id","type":"INTEGER","index":["TREE"]},{"name":"name","type":"STRING","index":null},{"name":"quantity","type":"INTEGER","index":null},{"name":"price","type":"FLOAT","index":null}]}
+201 Created
+Container Created. Starting Ingest
+0 id id
+1 name name
+2 quantity quantity
+3 price price
+✔ Is the above mapping correct? … YES
+Ingesting. Please wait...
+Inserting 1000 rows
+200 OK
+Inserting 1000 rows
+200 OK
+```
+
+And after some time, your data should be ready in your GridDB Cloud instance! 
+
+```bash
+$ griddb-cloud-cli sql query -s "SELECT COUNT(*) from migrated_data"
+
+[{"stmt": "SELECT COUNT(*) from migrated_data" }]
+[[{"Name":"","Type":"LONG","Value":50000}]]
+```
+
+And another confirmation
+
+```bash
+$ griddb-cloud-cli read migrated_data -p -l 1
+[ { "name": "migrated_data", "stmt": "select * limit 1", "columns": null, "hasPartialExecution": true }]
+[
+  [
+    {
+      "Name": "id",
+      "Type": "INTEGER",
+      "Value": 1
+    },
+    {
+      "Name": "name",
+      "Type": "STRING",
+      "Value": "Enterprise-wide multi-state installation"
+    },
+    {
+      "Name": "quantity",
+      "Type": "INTEGER",
+      "Value": 479
+    },
+    {
+      "Name": "price",
+      "Type": "FLOAT",
+      "Value": 194.8
+    }
+  ]
+]
+```
+
+## Migrating from GridDB CE
+
