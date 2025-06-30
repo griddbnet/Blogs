@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "apache-arrow": "^20.0.0"
+  }
+}
