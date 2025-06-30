@@ -1,4 +1,8 @@
-The GridDB Python client has been updated to now use the native GridDB Java interface with [JPype](https://pypi.org/project/jpype1/) and [Apache Arrow](https://pypi.org/project/pyarrow/). Prior to this release, the python client relied on the c_client, and translated some of those commands with swig and other tools. The main benefit of committing to this change in underlying technology is how SQL is now handled. With the c_client as the base, you could query the database only using TQL, but not SQL, meaning that certain partitioned tables were simply not accessible to your python client. There were workarounds, for example: [Pandas with Python GridDB SQL Queries](https://griddb.net/en/blog/pandas-with-python-griddb-sql-queries/), but now with this new client, this sort of thing will work out of the box.
+The GridDB Python client has been updated to now use the native GridDB Java interface with [JPype](https://pypi.org/project/jpype1/) and [Apache Arrow](https://pypi.org/project/pyarrow/). Prior to this release, the python client relied on the c_client, and translated some of those commands with swig and other tools. 
+
+The main benefit of committing to this change in underlying technology is being able to query GridDB and get back an Apache Arrow recordbatch object in return. We will go over how this change can directly affect your python workflows with a concrete example later on in this article.
+
+Another benefit is how SQL is now handled. With the c_client as the base, you could query the database only using TQL, but not SQL, meaning that certain partitioned tables were simply not accessible to your python client. There were workarounds, for example: [Pandas with Python GridDB SQL Queries](https://griddb.net/en/blog/pandas-with-python-griddb-sql-queries/), but now with this new client, this sort of thing will work out of the box.
 
 So with that out of the way, let's see how we can install the new GridDB Python Client and explore some of the changes in this new version
 
@@ -17,7 +21,7 @@ $ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ### Installation 
 
 
-To grab the source code, navigate to its [github](https://github.com/griddb/python_client) page and clone the repo. Once cloned, we can run a maven install to build our apache library and then install the python client.
+To grab the source code of the python client, navigate to its [github](https://github.com/griddb/python_client) page and clone the repo. Once cloned, we can run a maven install to build our apache library and then install the python client.
 
 
 ```bash
@@ -60,13 +64,11 @@ import griddb_python as griddb
 import sys
 ```
 
-or if you set the CLASSPATH and make this permanent (for example, editing your `.bashrc file`), you can get away with no options: 
+or if you set the CLASSPATH and make this permanent (for example, editing your `.bashrc file`), you can get away with not importing jpype at all as the modified pyarrow will do it for you.
 
 ```python
-import jpype
 
-# No options set here; still works
-jpype.startJVM()
+# No jpype set here; still works
 import griddb_python as griddb
 import sys
 ```
@@ -106,7 +108,7 @@ The README for the Python client page explains what features are still currently
 
 But there is also some functionality that is gained with this move: 
 
-    - Compsite RowKey, Composite Index GEOMETRY type and TIMESTAP(micro/nano-second) type 
+    - Compsite RowKey, Composite Index GEOMETRY type and TIMESTAMP(micro/nano-second) type 
     - Put/Get/Fetch with Apache Arrow 
     - Operations for Partitioning table
 
