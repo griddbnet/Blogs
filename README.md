@@ -306,3 +306,178 @@ $ griddb-cloud-cli read migrated_data -p -l 1
 
 ## Migrating from GridDB CE
 
+If you want to move all of your local data from GridDB Community Edition over to your GridDB Pay As You Go cloud database, you can now use the [GridDB Cloud CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) for the job! You will also of course need to export your CE containers that you wish to migrate.
+
+### Prereqs
+
+As explained above, you will need: the [GridDB Cloud CLI Tool from GitHub](https://github.com/Imisrael/griddb-cloud-cli) and the [GridDB CE Import/Export Tool](https://github.com/griddb/expimp) installed onto your machine. 
+
+### Step by Step Process of Migrating
+
+Let's run through an example of exporting out entier GridDB CE Database and then running the migration from the CLI tool. This is going to assume you have the Import tool already set up, you can read more about that here: [https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/](https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/)
+
+1. First, you'd run the export tool like so: 
+
+```bash
+$ cd expimp/bin
+$ ./gs_export -u admin/admin -d all --all 
+```
+
+This command will export all of your containers into a directory called 'all'. 
+
+    $ ./gs_export -u admin/admin -d all --all 
+    Export Start.
+    Directory       : /home/israel/development/expimp/bin/all
+    Number of target containers : 7
+
+    public.p01 : 2
+    public.p02 : 0
+    public.p03 : 0
+    public.device3 : 1015
+    public.device2 : 1092
+    public.device1 : 1944
+    public.col02 : 10000
+
+    Number of target containers:7 ( Success:7  Failure:0 )
+    Export Completed.
+
+2. Next, ensure your GridDB Cloud CLI Tool is set up, and once it is, you can run the migrate command. Let's look at how it works: 
+
+```bash
+$ griddb-cloud-cli migrate -h
+```
+
+    Use the export tool on your GridDB CE Instance to create the dir output of csv files and a properties file and then migrate those tables to GridDB Cloud
+
+    Usage:
+    griddb-cloud-cli migrate [flags]
+
+    Examples:
+    griddb-cloud-cli migrate <directory>
+
+    Flags:
+    -f, --force   Force create (no prompt)
+    -h, --help    help for migrate
+
+So in our case, we want to use migrate with the `-f` flag to not show us prompts because we have 7 containers to create and migrate!
+
+```bash
+$ griddb-cloud-cli migrate -f all
+```
+
+And here is an example of some of the output: 
+
+    {"container_name":"device2","container_type":"TIME_SERIES","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"co","type":"DOUBLE","index":null},{"name":"humidity","type":"DOUBLE","index":null},{"name":"light","type":"BOOL","index":null},{"name":"lpg","type":"DOUBLE","index":null},{"name":"motion","type":"BOOL","index":null},{"name":"smoke","type":"DOUBLE","index":null},{"name":"temp","type":"DOUBLE","index":null}]}
+    201 Created
+    inserting into (device2). csv: all/public.device2_2020-07-12_2020-07-13.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-13_2020-07-14.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-14_2020-07-15.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-15_2020-07-16.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-16_2020-07-17.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-17_2020-07-18.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-18_2020-07-19.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-19_2020-07-20.csv
+    200 OK
+    inserting into (device2). csv: all/public.device2_2020-07-20_2020-07-21.csv
+    200 OK
+    {"container_name":"device3","container_type":"TIME_SERIES","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"co","type":"DOUBLE","index":null},{"name":"humidity","type":"DOUBLE","index":null},{"name":"light","type":"BOOL","index":null},{"name":"lpg","type":"DOUBLE","index":null},{"name":"motion","type":"BOOL","index":null},{"name":"smoke","type":"DOUBLE","index":null},{"name":"temp","type":"DOUBLE","index":null}]}
+    201 Created
+    inserting into (device3). csv: all/public.device3_2020-07-12_2020-07-13.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-13_2020-07-14.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-14_2020-07-15.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-15_2020-07-16.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-16_2020-07-17.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-17_2020-07-18.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-18_2020-07-19.csv
+    200 OK
+    inserting into (device3). csv: all/public.device3_2020-07-19_2020-07-20.csv
+    200 OK
+    {"container_name":"p01","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"name","type":"STRING","index":null},{"name":"names","type":"STRING_ARRAY","index":null},{"name":"barr","type":"BOOL_ARRAY","index":null},{"name":"tsarr","type":"TIMESTAMP_ARRAY","index":null}]}
+    201 Created
+    {"container_name":"p02","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"id","type":"STRING","index":null},{"name":"date","type":"STRING","index":null}]}
+    201 Created
+    {"container_name":"p03","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"id","type":"LONG","index":null},{"name":"c1","type":"STRING","index":null},{"name":"c2","type":"BOOL","index":null}]}
+    201 Created
+    inserting into (p01). csv: all/public.p01.csv
+    200 OK
+
+Lastly we can verify that our containers are in there: 
+
+```bash
+$ griddb-cloud-cli show device3
+```
+
+    {
+        "container_name": "device3",
+        "container_type": "TIME_SERIES",
+        "rowkey": true,
+        "columns": [
+            {
+                "name": "ts",
+                "type": "TIMESTAMP",
+                "timePrecision": "MILLISECOND",
+                "index": []
+            },
+            {
+                "name": "co",
+                "type": "DOUBLE",
+                "index": []
+            },
+            {
+                "name": "humidity",
+                "type": "DOUBLE",
+                "index": []
+            },
+            {
+                "name": "light",
+                "type": "BOOL",
+                "index": []
+            },
+            {
+                "name": "lpg",
+                "type": "DOUBLE",
+                "index": []
+            },
+            {
+                "name": "motion",
+                "type": "BOOL",
+                "index": []
+            },
+            {
+                "name": "smoke",
+                "type": "DOUBLE",
+                "index": []
+            },
+            {
+                "name": "temp",
+                "type": "DOUBLE",
+                "index": []
+            }
+        ]
+    }
+
+```bash
+$ griddb-cloud-cli sql query -s "SELECT COUNT(*) FROM device2"
+```
+
+    [{"stmt": "SELECT COUNT(*) FROM device2" }]
+    [[{"Name":"","Type":"LONG","Value":1092}]]
+
+Looks good to me!
+
+## Conclusion
+
+And with that, we have learned three different methods of migrating from a variation of GridDB to the new Azure Marketplace GridDB Instance.
