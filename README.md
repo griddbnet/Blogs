@@ -1,483 +1,336 @@
-If you are thinking about switching to the [GridDB Cloud Azure Marketplace instance](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=overview), first, you can read about how to do that here: [GridDB Cloud on Microsoft Azure Marketplace](https://griddb.net/en/blog/griddb-cloud-azure-marketplace/). Second, you may be worried about how you may transfer your existing data from your [GridDB Free Plan](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=blog-migration), from your local GridDB CE instance, or even from Postgresql.
+The GridDB Cloud CLI Tool aims to make routine maintenance of checking of your GridDB Cloud instance a much easier endeavor. When we first [introduced it](https://griddb.net/en/blog/griddb-cloud-cli/), it was able to do your basic CRUD commands, but it lacked the ability to read from the filesystem to create containers/tables and to push data to those containers. Although maybe a subtle difference, essentially before, whenever the tool was run to CREATE, you needed manual intervention (known as interactive mode) to use the tool in this way.
 
-In this blog, we will walkthrough the migration process of moving your data from a GridDB Free Plan, a local GridDB CE instance, and another third party database (postgresql in this case). The process is different for each one, so let's go through them 1-by-1.
+I'm sure you know where I am going with this -- in this latest release, we have added some functionality revolved around reading JSON files from the filesystem which can help certain workflows and can help automate some testing that your Cloud, for instance. Being able to read from JSON programs to create tables also means we are able to migrate from GridDB CE to GridDB Cloud as discussed in this blog: []().
 
-## Migrating from GridDB Free Plan
+So for this article, since there's not much in the way of showcasing features, I will walk through the technical updates made to the tool, as well as a simple demo of how this tool can be useful.
 
-First of all, if you are unsure what the GridDB Free Plan is, you can look here: [GridDB Cloud Quick Start Guide](https://griddb.net/en/blog/griddb-cloud-quick-start-guide/)
+## Creating Container from JSON File
 
-This is by far the easiest method of conducting a full-scale migration. The high level overview is that the TDSL (Toshiba Digital Solution) support team will handle everything for you. 
+First off, I changed the way GridDB Cloud CLI Tool handles the create command as explained above. From now on, when you use Create, if you want to create a new container by filling out CLI prompts, you can use the `-i` flag to indicate `--interactive` mode. So if you run: `griddb-cloud-cli create -i`, it will begin the process of asking a series of questions until you get the container you want. 
 
-### TDSL Support 
+And now if you run `griddb-cloud-cli create` the tool will expect exactly one argument, a json file. The JSON file format is modeled to be the same as exported by the GridDB CE tool, here's an example: 
 
-When you sign up for the GridDB Pay As You Go plan, as part of the onboarding process, you will receive an email with the template you will need to use when contacting support for various functions, including data migration! So, grab your pertinent information (contract ID, GridDB ID, etc) and the template and let's send an email.
-
-Compose an email to `tdsl-ms-support@toshiba-sol.co.jp` with the following template
-
-```bash
-Contract ID: [your id]
-GridDB ID: [your id]
-Name: Israel Imru
-E-mail: imru@fixstars.com
-Inquiry Details: I would like to migrate from my GridDB Free Plan Instance to my GridDB pay as you go plan
-Occurrence Date:  --
-Collected Information:  --
-```
-
-The team will usually respond within one business day to confirm your operation and with further instructions. For me, they sent me the following:
-
-```bash
-Please perform the following operations in the management GUI of the source system.
-After completing the operations, inform us of the date and time when the operations were performed.
-
-1. Log in to the management GUI.
-
-2. From the menu on the left side of the screen, click [Query].
-
-3. Enter the following query in the [QUERY EDITOR]: SELECT 2012
-
-4. Click the [Execute] button
-
-Best regards,
-
-Toshiba Managed Services Support Desk
-```
-
-Once I ran the query they asked me, I clicked on query history, and copied the timestamp and sent that over to them. That was all they needed -- armed with this information, they told me to wait 1-2 business days and they would seamlessly migrate my instance along with an estimated time slot when the migration would be completed. 
-
-Once it was done, all of my data, including the IP Whitelist and my Portal Users were all copied over to my pay as you go plan. Cool!
-
-
-## Migrating from Postgresql
-
-There is no official way of doing conducting this sort of migration, so for now, we can try simply exporting our tables into CSV files and then importing those files individually into our Cloud instance. Luckily with the [GridDB Cloud CLI tool](https://griddb.net/en/blog/griddb-cloud-cli/) this process is much easier than ever before.
-
-So let's first export our data and go from there.
-
-### Exporting Postgresql Data
-
-First, the dataset I'm working with here is simply dummy data I ingested using a python script. Here's the script: 
-
-```python
-import psycopg2
-import psycopg2.extras
-from faker import Faker
-import random
-import time
-
-# --- YOUR DATABASE CONNECTION DETAILS ---
-# Replace with your actual database credentials
-DB_NAME = "template1"
-DB_USER = "postgres"
-DB_PASSWORD = "xe$$j4o8"
-DB_HOST = "localhost"  # Or your DB host
-DB_PORT = "5432"       # Default PostgreSQL port
-
-# --- DATA GENERATION SETTINGS ---
-NUM_RECORDS = 50000
-
-# Initialize Faker
-fake = Faker()
-
-# Generate a list of fake records
-print(f"Generating {NUM_RECORDS} fake records...")
-records_to_insert = []
-for _ in range(NUM_RECORDS):
-    name = fake.catch_phrase()  # Using a more specific Faker provider
-    quantity = random.randint(1, 1000)
-    price = round(random.uniform(0.50, 500.00), 2)
-    records_to_insert.append((name, quantity, price))
-print("Finished generating records.")
-
-
-# SQL statements
-create_table_query = """
-CREATE TABLE IF NOT EXISTS sample_data (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    quantity INTEGER,
-    price REAL
-);
-"""
-
-# Using execute_batch is much more efficient for large inserts
-insert_query = "INSERT INTO sample_data (name, quantity, price) VALUES %s;"
-
-conn = None
-try:
-    # Establish a connection to the database
-    conn = psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT
-    )
-
-    # Create a cursor
-    cur = conn.cursor()
-
-    # Create the table if it doesn't exist
-    print("Ensuring 'sample_data' table exists...")
-    cur.execute(create_table_query)
-
-    # Optional: Clean the table before inserting new data
-    print("Clearing existing data from the table...")
-    cur.execute("TRUNCATE TABLE sample_data RESTART IDENTITY;")
-
-    # Start the timer
-    start_time = time.time()
-
-    print(f"Executing bulk insert of {len(records_to_insert)} records...")
-    psycopg2.extras.execute_values(
-        cur,
-        insert_query,
-        records_to_insert,
-        template=None,
-        page_size=1000  # The number of rows to send in each batch
-    )
-    print("Bulk insert complete.")
-
-    # Commit the changes to the database
-    conn.commit()
-
-    # Stop the timer
-    end_time = time.time()
-    duration = end_time - start_time
-
-    print(f"Successfully inserted {cur.rowcount} rows in {duration:.2f} seconds.")
-
-    # Close the cursor
-    cur.close()
-
-except (Exception, psycopg2.DatabaseError) as error:
-    print(f"Error while connecting to or working with PostgreSQL: {error}")
-    if conn:
-        conn.rollback()  # Roll back the transaction on error
-
-finally:
-    # Close the connection if it was established
-    if conn is not None:
-        conn.close()
-        print("Database connection closed.")
-```
-
-Once you run this script, you will have 50k rows in your PSQL instance. Now let's export this to CSV:
-
-```bash
-$ psql --host 127.0.0.1 --username postgres --password --dbname template1
-
-psql (14.18 (Ubuntu 14.18-0ubuntu0.22.04.1))
-SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
-Type "help" for help.
-
-template1=# select COUNT(*) from sample_data;
- count 
--------
- 50000
-(1 row)
-
-template1=# COPY sample_data TO '/tmp/sample.csv' WITH (FORMAT CSV, HEADER);
-COPY 50000
-template1=# \q
-```
-
-And now that we have our CSV data, let's install the CLI Tool and ingest it.
-
-### Ingesting CSV Data into GridDB Cloud
-
-You can download the latest CLI Tool from the Github releases page:  [https://github.com/Imisrael/griddb-cloud-cli/releases](https://github.com/Imisrael/griddb-cloud-cli/releases). For me, I installed the `.deb` file
-
-```bash
-$ wget https://github.com/Imisrael/griddb-cloud-cli/releases/download/v0.1.4/griddb-cloud-cli_0.1.4_linux_amd64.deb
-$ sudo dpkg -i griddb-cloud-cli_0.1.4_linux_amd64.deb
-$ vim ~/.griddb.yaml
-```
-
-And enter your credentials: 
-
-```bash
-cloud_url: "https://cloud97.griddb.com:443/griddb/v2/gs_clustermfclo7/dbs/ZQ8"
-cloud_username: "kG-israel"
-cloud_pass: "password"
-```
-
-And ingest:
-
-```bash
-$ griddb-cloud-cli ingest /tmp/sample.csv
-
-✔ Does this container already exist? … NO
-Use CSV Header names as your GridDB Container Col names? 
-id,name,quantity,price
-✔ Y/n … YES
-✔ Container Name: … migrated_data
-✔ Choose: … COLLECTION
-✔ Row Key? … true
-✔ (id) Column Type … INTEGER
-✔ Column Index Type1 … TREE
-✔ (name) Column Type … STRING
-✔ (quantity) Column Type … INTEGER
-✔ (price) Column Type … FLOAT
-✔ Make Container? 
+```json
 {
-    "container_name": "migrated_data",
-    "container_type": "COLLECTION",
-    "rowkey": true,
-    "columns": [
+    "version":"5.6.0",
+    "database":"public",
+    "container":"device",
+    "containerType":"TIME_SERIES",
+    "containerFileType":"csv",
+    "containerFile":[
+        "public.device_2020-07-11_2020-07-12.csv",
+        "public.device_2020-07-12_2020-07-13.csv",
+        "public.device_2020-07-13_2020-07-14.csv",
+        "public.device_2020-07-14_2020-07-15.csv",
+        "public.device_2020-07-15_2020-07-16.csv",
+        "public.device_2020-07-16_2020-07-17.csv",
+        "public.device_2020-07-17_2020-07-18.csv",
+        "public.device_2020-07-18_2020-07-19.csv",
+        "public.device_2020-07-19_2020-07-20.csv"
+    ],
+    "partitionNo":14,
+    "columnSet":[
         {
-            "name": "id",
-            "type": "INTEGER",
-            "index": [
-                "TREE"
-            ]
+            "columnName":"ts",
+            "type":"timestamp",
+            "notNull":true
         },
         {
-            "name": "name",
-            "type": "STRING",
-            "index": null
+            "columnName":"co",
+            "type":"double",
+            "notNull":false
         },
         {
-            "name": "quantity",
-            "type": "INTEGER",
-            "index": null
+            "columnName":"humidity",
+            "type":"double",
+            "notNull":false
         },
         {
-            "name": "price",
-            "type": "FLOAT",
-            "index": null
+            "columnName":"light",
+            "type":"boolean",
+            "notNull":false
+        },
+        {
+            "columnName":"lpg",
+            "type":"double",
+            "notNull":false
+        },
+        {
+            "columnName":"motion",
+            "type":"boolean",
+            "notNull":false
+        },
+        {
+            "columnName":"smoke",
+            "type":"double",
+            "notNull":false
+        },
+        {
+            "columnName":"temp",
+            "type":"double",
+            "notNull":false
+        }
+    ],
+    "rowKeySet":[
+        "ts"
+    ],
+    "timeSeriesProperties":{
+        "compressionMethod":"NO",
+        "compressionWindowSize":-1,
+        "compressionWindowSizeUnit":"null",
+        "expirationDivisionCount":-1,
+        "rowExpirationElapsedTime":-1,
+        "rowExpirationTimeUnit":"null"
+    },
+    "compressionInfoSet":[
+    ],
+    "timeIntervalInfo":[
+        {
+            "containerFile":"public.device_2020-07-11_2020-07-12.csv",
+            "boundaryValue":"2020-07-11T17:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-12_2020-07-13.csv",
+            "boundaryValue":"2020-07-12T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-13_2020-07-14.csv",
+            "boundaryValue":"2020-07-13T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-14_2020-07-15.csv",
+            "boundaryValue":"2020-07-14T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-15_2020-07-16.csv",
+            "boundaryValue":"2020-07-15T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-16_2020-07-17.csv",
+            "boundaryValue":"2020-07-16T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-17_2020-07-18.csv",
+            "boundaryValue":"2020-07-17T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-18_2020-07-19.csv",
+            "boundaryValue":"2020-07-18T00:00:00.000-0700"
+        },
+        {
+            "containerFile":"public.device_2020-07-19_2020-07-20.csv",
+            "boundaryValue":"2020-07-19T00:00:00.000-0700"
         }
     ]
-} … YES
-{"container_name":"migrated_data","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"id","type":"INTEGER","index":["TREE"]},{"name":"name","type":"STRING","index":null},{"name":"quantity","type":"INTEGER","index":null},{"name":"price","type":"FLOAT","index":null}]}
-201 Created
-Container Created. Starting Ingest
-0 id id
-1 name name
-2 quantity quantity
-3 price price
-✔ Is the above mapping correct? … YES
-Ingesting. Please wait...
-Inserting 1000 rows
-200 OK
-Inserting 1000 rows
-200 OK
+}
 ```
 
-And after some time, your data should be ready in your GridDB Cloud instance! 
+Now, obviously, if you were just writing your own json files, you wouldn't need a lot of the information from the migration tool, so instead you can create something with just the bare minimum.
+
+```json
+{
+    "database":"public",
+    "container":"device10",
+    "containerType":"TIME_SERIES",
+    "columnSet":[
+        {
+            "columnName":"ts",
+            "type":"timestamp",
+            "notNull":true
+        },
+        {
+            "columnName":"co",
+            "type":"double",
+            "notNull":false
+        },
+        {
+            "columnName":"humidity",
+            "type":"double",
+            "notNull":false
+        },
+        {
+            "columnName":"light",
+            "type":"boolean",
+            "notNull":false
+        },
+        {
+            "columnName":"lpg",
+            "type":"double",
+            "notNull":false
+        },
+        {
+            "columnName":"motion",
+            "type":"boolean",
+            "notNull":false
+        },
+        {
+            "columnName":"smoke",
+            "type":"double",
+            "notNull":false
+        },
+        {
+            "columnName":"temp",
+            "type":"double",
+            "notNull":false
+        }
+    ],
+    "rowKeySet":[
+        "ts"
+    ]
+}
+```
+
+Small note, you can also use the `-f` flag to avoid the confirmation of the container you are about to create, again avoiding manual user input when commiting an action. 
+
+### Technical Details of Implementing
+
+Let's do a quick look at the underlying code of writing a program which can take the JSON file from the filesystem and push it to GridDB Cloud to be made into a new container. 
+
+First, let's look at interpreting the file after being read from the filesystem:
+
+```go
+func ParseJson(jsonName string) (cmd.ContainerInfo, []string) {
+
+	filename := jsonName
+	properties, err := os.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var exportProperties ExportProperties
+	err = json.Unmarshal(properties, &exportProperties)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//fmt.Println(exportProperties)
+
+	var conInfo cmd.ContainerInfo
+
+	conInfo.ContainerName = exportProperties.Container
+	conInfo.ContainerType = exportProperties.ContainerType
+	conInfo.RowKey = len(exportProperties.RowKeySet) > 0
+
+	cols := transformToConInfoCols(exportProperties.ColumnSet)
+	conInfo.Columns = cols
+
+	return conInfo, exportProperties.ContainerFile
+}
+```
+
+Here we read the file contents, create a data structure of type `ExportProperties` which was declared earlier (and shown below). We unmarshal (think of mapping) the json file to match our `struct` so that our program knows which values correspond to which keys. From there, we do some other processing to create the data object which will be sent to GriddB Cloud via an HTTP Web Request.
+
+```go
+// data struct to unmarshal user json file 
+type ExportProperties struct {
+	Version           string        `json:"version,omitempty"`
+	Database          string        `json:"database,omitempty"`
+	Container         string        `json:"container"`
+	ContainerType     string        `json:"containerType,omitempty"`
+	ContainerFileType string        `json:"containerFileType,omitempty"`
+	ContainerFile     ContainerFile `json:"containerFile"`
+	ColumnSet         []ColumnSet   `json:"columnSet"`
+	RowKeySet         []string      `json:"rowKeySet"`
+}
+```
+
+Here we define the entire struct which may read from either the user-made json, or the GridDB CE migration tool-generated json (notice the keys which are omitted in the user jsons have a special designation of `omitempty`). 
+
+One last thing I'll point out is that we needed to use a custom unmarshaler for this specific struct (`ContainerFile`) because when the GridDB export tool outputs the meta json file, the containerFile value is sometimes a single string, and sometimes it's a slice of strings. Here's the custom unmarshaler: 
+
+```go
+// custom JSON unmarshaler for the case where sometimes the value is a slice
+// and sometimes it's just a singular string
+func (c *ContainerFile) UnmarshalJSON(data []byte) error {
+	var nums any
+	err := json.Unmarshal(data, &nums)
+	if err != nil {
+		return err
+	}
+
+	items := reflect.ValueOf(nums)
+	switch items.Kind() {
+	case reflect.String:
+		*c = append(*c, items.String())
+
+	case reflect.Slice:
+		*c = make(ContainerFile, 0, items.Len())
+		for i := 0; i < items.Len(); i++ {
+			item := items.Index(i)
+			switch item.Kind() {
+			case reflect.String:
+				*c = append(*c, item.String())
+			case reflect.Interface:
+				*c = append(*c, item.Interface().(string))
+			}
+		}
+	}
+	return nil
+}
+```
+
+## Examples Of Using New Features 
+
+As explained above, you can now use the tool as part of your workflow and bash scripting. So you can, for example, run a script with cron to track your Downloads folder list of files and general file size. Let's take a look at a working example.
+
+### Bash Script to Track Downloads Directory
+
+As a silly example of how you can use the tool in your bash scripts, let's create a TIME_SERIES container which will keep track of the status of your downloads directory. We will create a json file with the container's schema, then we will use a simple bash script to push the current datetime and a couple of data points to our table. We then schedule a cron to run the script every 1 hour so that we have up to date data. 
+
+First, the json file: 
+
+```json
+{
+    "database": "public",
+    "container": "download_data",
+    "containerType": "TIME_SERIES",
+    "columnSet": [
+        {
+            "columnName": "ts",
+            "type": "timestamp",
+            "notNull": true
+        },
+        {
+            "columnName": "file_count",
+            "type": "integer",
+            "notNull": false
+        },
+        {
+            "columnName": "total_size",
+            "type": "string",
+            "notNull": false
+        }
+    ]
+}
+```
+
+And then our script, which will create the table (I realize it's not the best showcase as we are using just one table, but you could also create a situation where you push logs to a table and create new daily tables, kind of like fluentd), and then push up to date data of your directory: 
 
 ```bash
-$ griddb-cloud-cli sql query -s "SELECT COUNT(*) from migrated_data"
+#!/bin/bash
 
-[{"stmt": "SELECT COUNT(*) from migrated_data" }]
-[[{"Name":"","Type":"LONG","Value":50000}]]
+DOWNLOADS_DIR="/Users/israelimru/Downloads"
+
+FILE_COUNT=$(ls -1A "$DOWNLOADS_DIR" | wc -l | xargs)
+
+TOTAL_SIZE=$(du -sh "$DOWNLOADS_DIR" | awk '{print $1}')
+
+LOG_DATA="NOW(),$FILE_COUNT,$TOTAL_SIZE"
+
+griddb-cloud-cli create /Users/israelimru/download_table.json -f
+griddb-cloud-cli put -n download_data -v $LOG_DATA
+
+echo "Log complete."
 ```
 
-And another confirmation
+NOTE: It's crucial to use the `-f` flag when calling the create command because it won't ask for a prompt, it will simply create the table for you (and simply fail if the table already exists, which is fine!)
+
+Here you can see our `LOG_DATA` uses the `NOW()` variable; this will be auto translated by the tool to be a current timestamp in the proper format. And then we just grab the relevant data points using simple linux commands and push that data to the Cloud. 
+
+Then set up the cronjob: 
 
 ```bash
-$ griddb-cloud-cli read migrated_data -p -l 1
-[ { "name": "migrated_data", "stmt": "select * limit 1", "columns": null, "hasPartialExecution": true }]
-[
-  [
-    {
-      "Name": "id",
-      "Type": "INTEGER",
-      "Value": 1
-    },
-    {
-      "Name": "name",
-      "Type": "STRING",
-      "Value": "Enterprise-wide multi-state installation"
-    },
-    {
-      "Name": "quantity",
-      "Type": "INTEGER",
-      "Value": 479
-    },
-    {
-      "Name": "price",
-      "Type": "FLOAT",
-      "Value": 194.8
-    }
-  ]
-]
+0 * * * * /your/script/testing.sh
 ```
-
-## Migrating from GridDB CE
-
-If you want to move all of your local data from GridDB Community Edition over to your GridDB Pay As You Go cloud database, you can now use the [GridDB Cloud CLI Tool](https://griddb.net/en/blog/griddb-cloud-cli/) for the job! You will also of course need to export your CE containers that you wish to migrate.
-
-### Prereqs
-
-As explained above, you will need: the [GridDB Cloud CLI Tool from GitHub](https://github.com/Imisrael/griddb-cloud-cli) and the [GridDB CE Import/Export Tool](https://github.com/griddb/expimp) installed onto your machine. 
-
-### Step by Step Process of Migrating
-
-Let's run through an example of exporting out entier GridDB CE Database and then running the migration from the CLI tool. This is going to assume you have the Import tool already set up, you can read more about that here: [https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/](https://griddb.net/en/blog/using-the-griddb-import-export-tools-to-migrate-from-postgresql-to-griddb/)
-
-1. First, you'd run the export tool like so: 
-
-```bash
-$ cd expimp/bin
-$ ./gs_export -u admin/admin -d all --all 
-```
-
-This command will export all of your containers into a directory called 'all'. 
-
-    $ ./gs_export -u admin/admin -d all --all 
-    Export Start.
-    Directory       : /home/israel/development/expimp/bin/all
-    Number of target containers : 7
-
-    public.p01 : 2
-    public.p02 : 0
-    public.p03 : 0
-    public.device3 : 1015
-    public.device2 : 1092
-    public.device1 : 1944
-    public.col02 : 10000
-
-    Number of target containers:7 ( Success:7  Failure:0 )
-    Export Completed.
-
-2. Next, ensure your GridDB Cloud CLI Tool is set up, and once it is, you can run the migrate command. Let's look at how it works: 
-
-```bash
-$ griddb-cloud-cli migrate -h
-```
-
-    Use the export tool on your GridDB CE Instance to create the dir output of csv files and a properties file and then migrate those tables to GridDB Cloud
-
-    Usage:
-    griddb-cloud-cli migrate [flags]
-
-    Examples:
-    griddb-cloud-cli migrate <directory>
-
-    Flags:
-    -f, --force   Force create (no prompt)
-    -h, --help    help for migrate
-
-So in our case, we want to use migrate with the `-f` flag to not show us prompts because we have 7 containers to create and migrate!
-
-```bash
-$ griddb-cloud-cli migrate -f all
-```
-
-And here is an example of some of the output: 
-
-    {"container_name":"device2","container_type":"TIME_SERIES","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"co","type":"DOUBLE","index":null},{"name":"humidity","type":"DOUBLE","index":null},{"name":"light","type":"BOOL","index":null},{"name":"lpg","type":"DOUBLE","index":null},{"name":"motion","type":"BOOL","index":null},{"name":"smoke","type":"DOUBLE","index":null},{"name":"temp","type":"DOUBLE","index":null}]}
-    201 Created
-    inserting into (device2). csv: all/public.device2_2020-07-12_2020-07-13.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-13_2020-07-14.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-14_2020-07-15.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-15_2020-07-16.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-16_2020-07-17.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-17_2020-07-18.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-18_2020-07-19.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-19_2020-07-20.csv
-    200 OK
-    inserting into (device2). csv: all/public.device2_2020-07-20_2020-07-21.csv
-    200 OK
-    {"container_name":"device3","container_type":"TIME_SERIES","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"co","type":"DOUBLE","index":null},{"name":"humidity","type":"DOUBLE","index":null},{"name":"light","type":"BOOL","index":null},{"name":"lpg","type":"DOUBLE","index":null},{"name":"motion","type":"BOOL","index":null},{"name":"smoke","type":"DOUBLE","index":null},{"name":"temp","type":"DOUBLE","index":null}]}
-    201 Created
-    inserting into (device3). csv: all/public.device3_2020-07-12_2020-07-13.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-13_2020-07-14.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-14_2020-07-15.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-15_2020-07-16.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-16_2020-07-17.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-17_2020-07-18.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-18_2020-07-19.csv
-    200 OK
-    inserting into (device3). csv: all/public.device3_2020-07-19_2020-07-20.csv
-    200 OK
-    {"container_name":"p01","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"name","type":"STRING","index":null},{"name":"names","type":"STRING_ARRAY","index":null},{"name":"barr","type":"BOOL_ARRAY","index":null},{"name":"tsarr","type":"TIMESTAMP_ARRAY","index":null}]}
-    201 Created
-    {"container_name":"p02","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"id","type":"STRING","index":null},{"name":"date","type":"STRING","index":null}]}
-    201 Created
-    {"container_name":"p03","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"id","type":"LONG","index":null},{"name":"c1","type":"STRING","index":null},{"name":"c2","type":"BOOL","index":null}]}
-    201 Created
-    inserting into (p01). csv: all/public.p01.csv
-    200 OK
-
-Lastly we can verify that our containers are in there: 
-
-```bash
-$ griddb-cloud-cli show device3
-```
-
-    {
-        "container_name": "device3",
-        "container_type": "TIME_SERIES",
-        "rowkey": true,
-        "columns": [
-            {
-                "name": "ts",
-                "type": "TIMESTAMP",
-                "timePrecision": "MILLISECOND",
-                "index": []
-            },
-            {
-                "name": "co",
-                "type": "DOUBLE",
-                "index": []
-            },
-            {
-                "name": "humidity",
-                "type": "DOUBLE",
-                "index": []
-            },
-            {
-                "name": "light",
-                "type": "BOOL",
-                "index": []
-            },
-            {
-                "name": "lpg",
-                "type": "DOUBLE",
-                "index": []
-            },
-            {
-                "name": "motion",
-                "type": "BOOL",
-                "index": []
-            },
-            {
-                "name": "smoke",
-                "type": "DOUBLE",
-                "index": []
-            },
-            {
-                "name": "temp",
-                "type": "DOUBLE",
-                "index": []
-            }
-        ]
-    }
-
-```bash
-$ griddb-cloud-cli sql query -s "SELECT COUNT(*) FROM device2"
-```
-
-    [{"stmt": "SELECT COUNT(*) FROM device2" }]
-    [[{"Name":"","Type":"LONG","Value":1092}]]
-
-Looks good to me!
 
 ## Conclusion
 
-And with that, we have learned three different methods of migrating from a variation of GridDB to the new Azure Marketplace GridDB Instance.
+Being able to use the GridDB Cloud CLI Tool without user intervention opens up some new possibilities and we hope these changes can be useful for you and your team.
