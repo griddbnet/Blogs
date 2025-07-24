@@ -1,6 +1,13 @@
 If you are thinking about switching to the [GridDB Cloud Azure Marketplace instance](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=overview), first, you can read about how to do that here: [GridDB Cloud on Microsoft Azure Marketplace](https://griddb.net/en/blog/griddb-cloud-azure-marketplace/). Second, you may be worried about how you may transfer your existing data from your [GridDB Free Plan](https://form.ict-toshiba.jp/download_form_griddb_cloud_freeplan_e?utm_source=griddbnet&utm_medium=blog-migration), from your local GridDB CE instance, or even from Postgresql.
 
-In this blog, we will walkthrough the migration process of moving your data from a GridDB Free Plan, a local GridDB CE instance, and another third party database (postgresql in this case). The process is different for each one, so let's go through them 1-by-1.
+Here are the distinct sections: 
+
+- [Migrating from GridDB Free Plan](#migrating-from-griddb-free-plan)
+- [Migrating From PostgreSQL](#migrating-from-postgresql)
+- [Migrating From GridDB CE](#migrating-from-griddb-ce)
+
+In this blog, we will walkthrough the migration process of moving your data from a GridDB Free Plan, a third party database (postgresql in this case), and a local GridDB CE instance. The process is different for each one, so let's go through them 1-by-1.
+
 
 ## Migrating from GridDB Free Plan
 
@@ -12,7 +19,7 @@ This is by far the easiest method of conducting a full-scale migration. The high
 
 When you sign up for the GridDB Pay As You Go plan, as part of the onboarding process, you will receive an email with the template you will need to use when contacting support for various functions, including data migration! So, grab your pertinent information (contract ID, GridDB ID, etc) and the template and let's send an email.
 
-Compose an email to `tdsl-ms-support@toshiba-sol.co.jp` with the following template
+Compose an email to `tdsl-ms-support AT toshiba-sol.co.jp` with the following template
 
 ```bash
 Contract ID: [your id]
