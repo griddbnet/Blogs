@@ -21,20 +21,20 @@ When you sign up for the GridDB Pay As You Go plan, as part of the onboarding pr
 
 Compose an email to `tdsl-ms-support AT toshiba-sol.co.jp` with the following template
 
-```bash
-Contract ID: [your id]
+<div class="clipboard">
+<pre><code class="language-sh">Contract ID: [your id]
 GridDB ID: [your id]
 Name: Israel Imru
 E-mail: imru@fixstars.com
 Inquiry Details: I would like to migrate from my GridDB Free Plan Instance to my GridDB pay as you go plan
 Occurrence Date:  --
-Collected Information:  --
-```
+Collected Information:  --</code></pre>
+</div>
 
 The team will usually respond within one business day to confirm your operation and with further instructions. For me, they sent me the following:
 
-```bash
-Please perform the following operations in the management GUI of the source system.
+<div class="clipboard">
+<pre><code class="language-sh">Please perform the following operations in the management GUI of the source system.
 After completing the operations, inform us of the date and time when the operations were performed.
 
 1. Log in to the management GUI.
@@ -47,8 +47,8 @@ After completing the operations, inform us of the date and time when the operati
 
 Best regards,
 
-Toshiba Managed Services Support Desk
-```
+Toshiba Managed Services Support Desk</code></pre>
+</div>
 
 Once I ran the query they asked me, I clicked on query history, and copied the timestamp and sent that over to them. That was all they needed -- armed with this information, they told me to wait 1-2 business days and they would seamlessly migrate my instance along with an estimated time slot when the migration would be completed. 
 
@@ -65,8 +65,8 @@ So let's first export our data and go from there.
 
 First, the dataset I'm working with here is simply dummy data I ingested using a python script. Here's the script: 
 
-```python
-import psycopg2
+<div class="clipboard">
+<pre><code class="language-python">import psycopg2
 import psycopg2.extras
 from faker import Faker
 import random
@@ -76,7 +76,7 @@ import time
 # Replace with your actual database credentials
 DB_NAME = "template1"
 DB_USER = "postgres"
-DB_PASSWORD = "xe$$j4o8"
+DB_PASSWORD = "yourpassword"
 DB_HOST = "localhost"  # Or your DB host
 DB_PORT = "5432"       # Default PostgreSQL port
 
@@ -166,13 +166,13 @@ finally:
     # Close the connection if it was established
     if conn is not None:
         conn.close()
-        print("Database connection closed.")
-```
+        print("Database connection closed.")</code></pre>
+</div>
 
 Once you run this script, you will have 50k rows in your PSQL instance. Now let's export this to CSV:
 
-```bash
-$ psql --host 127.0.0.1 --username postgres --password --dbname template1
+<div class="clipboard">
+<pre><code class="language-sh">$ psql --host 127.0.0.1 --username postgres --password --dbname template1
 
 psql (14.18 (Ubuntu 14.18-0ubuntu0.22.04.1))
 SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
@@ -186,8 +186,8 @@ template1=# select COUNT(*) from sample_data;
 
 template1=# COPY sample_data TO '/tmp/sample.csv' WITH (FORMAT CSV, HEADER);
 COPY 50000
-template1=# \q
-```
+template1=# \q</code></pre>
+</div>
 
 And now that we have our CSV data, let's install the CLI Tool and ingest it.
 
@@ -195,24 +195,24 @@ And now that we have our CSV data, let's install the CLI Tool and ingest it.
 
 You can download the latest CLI Tool from the Github releases page:  [https://github.com/Imisrael/griddb-cloud-cli/releases](https://github.com/Imisrael/griddb-cloud-cli/releases). For me, I installed the `.deb` file
 
-```bash
-$ wget https://github.com/Imisrael/griddb-cloud-cli/releases/download/v0.1.4/griddb-cloud-cli_0.1.4_linux_amd64.deb
+<div class="clipboard">
+<pre><code class="language-sh">$ wget https://github.com/Imisrael/griddb-cloud-cli/releases/download/v0.1.4/griddb-cloud-cli_0.1.4_linux_amd64.deb
 $ sudo dpkg -i griddb-cloud-cli_0.1.4_linux_amd64.deb
-$ vim ~/.griddb.yaml
-```
+$ vim ~/.griddb.yaml</code></pre>
+</div>
 
 And enter your credentials: 
 
-```bash
-cloud_url: "https://cloud97.griddb.com:443/griddb/v2/gs_clustermfclo7/dbs/ZQ8"
+<div class="clipboard">
+<pre><code class="language-sh">cloud_url: "https://cloud97.griddb.com:443/griddb/v2/gs_clustermfclo7/dbs/ZQ8"
 cloud_username: "kG-israel"
-cloud_pass: "password"
-```
+cloud_pass: "password"</code></pre>
+</div>
 
 And ingest:
 
-```bash
-$ griddb-cloud-cli ingest /tmp/sample.csv
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli ingest /tmp/sample.csv
 
 ✔ Does this container already exist? … NO
 Use CSV Header names as your GridDB Container Col names? 
@@ -268,22 +268,22 @@ Ingesting. Please wait...
 Inserting 1000 rows
 200 OK
 Inserting 1000 rows
-200 OK
-```
+200 OK</code></pre>
+</div>
 
 And after some time, your data should be ready in your GridDB Cloud instance! 
 
-```bash
-$ griddb-cloud-cli sql query -s "SELECT COUNT(*) from migrated_data"
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli sql query -s "SELECT COUNT(*) from migrated_data"
 
 [{"stmt": "SELECT COUNT(*) from migrated_data" }]
-[[{"Name":"","Type":"LONG","Value":50000}]]
-```
+[[{"Name":"","Type":"LONG","Value":50000}]]</code></pre>
+</div>
 
 And another confirmation
 
-```bash
-$ griddb-cloud-cli read migrated_data -p -l 1
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli read migrated_data -p -l 1
 [ { "name": "migrated_data", "stmt": "select * limit 1", "columns": null, "hasPartialExecution": true }]
 [
   [
@@ -308,8 +308,8 @@ $ griddb-cloud-cli read migrated_data -p -l 1
       "Value": 194.8
     }
   ]
-]
-```
+]</code></pre>
+</div>
 
 ## Migrating from GridDB CE
 
@@ -325,10 +325,10 @@ Let's run through an example of exporting out entier GridDB CE Database and then
 
 1. First, you'd run the export tool like so: 
 
-```bash
-$ cd expimp/bin
-$ ./gs_export -u admin/admin -d all --all 
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ cd expimp/bin
+$ ./gs_export -u admin/admin -d all --all </code></pre>
+</div>
 
 This command will export all of your containers into a directory called 'all'. 
 
@@ -350,9 +350,9 @@ This command will export all of your containers into a directory called 'all'.
 
 2. Next, ensure your GridDB Cloud CLI Tool is set up, and once it is, you can run the migrate command. Let's look at how it works: 
 
-```bash
-$ griddb-cloud-cli migrate -h
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli migrate -h</code></pre>
+</div>
 
     Use the export tool on your GridDB CE Instance to create the dir output of csv files and a properties file and then migrate those tables to GridDB Cloud
 
@@ -368,9 +368,9 @@ $ griddb-cloud-cli migrate -h
 
 So in our case, we want to use migrate with the `-f` flag to not show us prompts because we have 7 containers to create and migrate!
 
-```bash
-$ griddb-cloud-cli migrate -f all
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli migrate -f all</code></pre>
+</div>
 
 And here is an example of some of the output: 
 
@@ -423,9 +423,9 @@ And here is an example of some of the output:
 
 Lastly we can verify that our containers are in there: 
 
-```bash
-$ griddb-cloud-cli show device3
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli show device3</code></pre>
+</div>
 
     {
         "container_name": "device3",
@@ -476,9 +476,9 @@ $ griddb-cloud-cli show device3
         ]
     }
 
-```bash
-$ griddb-cloud-cli sql query -s "SELECT COUNT(*) FROM device2"
-```
+<div class="clipboard">
+<pre><code class="language-sh">$ griddb-cloud-cli sql query -s "SELECT COUNT(*) FROM device2"</code></pre>
+</div>
 
     [{"stmt": "SELECT COUNT(*) FROM device2" }]
     [[{"Name":"","Type":"LONG","Value":1092}]]
