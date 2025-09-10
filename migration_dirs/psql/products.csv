@@ -1,0 +1,41 @@
+id,name,category,price,stock_quantity
+1,Laptop,Electronics,1200.00,50
+2,Keyboard,Electronics,75.50,150
+3,Coffee Mug,Kitchenware,15.99,200
+4,Notebook,Office Supplies,5.25,500
+5,Desk Chair,Furniture,250.00,30
+6,Smartphone,Electronics,799.99,120
+7,4K Monitor,Electronics,349.50,80
+8,Mousepad,Electronics,12.00,400
+9,USB-C Hub,Electronics,29.95,250
+10,Noise-Cancelling Headphones,Electronics,199.00,95
+11,Webcam 1080p,Electronics,59.99,130
+12,Power Bank 20000mAh,Electronics,45.00,300
+13,Smart Speaker,Electronics,89.99,110
+14,Blender,Kitchenware,99.95,70
+15,Toaster,Kitchenware,35.00,150
+16,Electric Kettle,Kitchenware,42.50,180
+17,Non-Stick Frying Pan,Kitchenware,28.75,220
+18,Chef's Knife,Kitchenware,65.00,100
+19,Bamboo Cutting Board Set,Kitchenware,22.99,300
+20,Pens (12-pack),Office Supplies,8.99,1000
+21,Stapler,Office Supplies,11.50,450
+22,Sticky Notes Cube,Office Supplies,6.00,800
+23,3-Ring Binder,Office Supplies,4.75,600
+24,Highlighters (5-pack),Office Supplies,5.50,900
+25,Bookshelf,Furniture,180.00,40
+26,Standing Desk,Furniture,399.99,25
+27,LED Floor Lamp,Furniture,55.00,65
+28,Cotton T-Shirt,Clothing,19.99,500
+29,Denim Jeans,Clothing,59.95,350
+30,Pullover Hoodie,Clothing,49.99,400
+31,Athletic Socks (3-pack),Clothing,14.50,700
+32,The Art of SQL,Books,39.99,150
+33,A Brief History of Time,Books,15.99,200
+34,Dune by Frank Herbert,Books,12.99,300
+35,Yoga Mat,Sports & Outdoors,25.00,250
+36,Dumbbell Set (20 lbs),Sports & Outdoors,79.99,80
+37,Insulated Water Bottle,Sports & Outdoors,18.50,600
+38,Hiking Backpack,Sports & Outdoors,85.00,90
+39,Scented Candle,Home Goods,16.00,400
+40,Throw Pillow,Home Goods,24.99,320

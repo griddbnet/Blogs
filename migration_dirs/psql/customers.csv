@@ -1,0 +1,6 @@
+customer_id,first_name,last_name,email,phone_number,address,created_at
+1,Alice,Johnson,alice.j@email.com,555-0101,"123 Maple St, Springfield",2025-09-04 13:32:05.147016+00
+2,Bob,Smith,bob.smith@email.com,555-0102,"456 Oak Ave, Shelbyville",2025-09-04 13:32:05.147016+00
+3,Charlie,Brown,charlie@email.com,555-0103,"789 Pine Ln, Capital City",2025-09-04 13:32:05.147016+00
+4,Diana,Prince,diana.p@email.com,,"901 Birch Rd, Themyscira",2025-09-04 13:32:05.147016+00
+5,Ethan,Hunt,ethan.hunt@email.com,555-0105,"1122 Mission St, Los Angeles",2025-09-04 13:32:05.147016+00

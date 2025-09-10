@@ -1,315 +1,393 @@
-As we have discussed before, Kafka is an invaluable tool when dealing with certain IoT workloads. Kafka can guarantee a robust pipeline of streaming your sensor data into almost anywhere due to its high flexibility and various connectors. And indeed, we have previously written articles about using GridDB's official Kafka Source & Sink connectors to stream your data from place A to GridDB and vice versa. 
+[![Go Report Card](https://goreportcard.com/badge/github.com/Imisrael/griddb-cloud-cli)](https://goreportcard.com/report/github.com/Imisrael/griddb-cloud-cli)
 
-On the heels of GridDB Cloud now being free for most users worldwide, we thought we could again revisit using Kafka with GridDB, but now instead we would like to push our sensor data into the cloud using the Web API. To accomplish this, we needed to find an HTTP Sink Kafka connector and ensure that it could meet our requirements (namely data transformations and being able to change the HTTP method). 
+A simple CLI tool wrapper for making HTTP Requests to your GridDB Cloud instance.
 
-Eventually we landed on using Confluent's own HTTP Sink connector, as it was the only one we could find which allowed for us to use the `PUT` method when making our HTTP Requests. As for transforming the data, Kafka already provided a method of doing this with something they call SMT (Single Message Transform).
+## Getting Started
 
-And then finally, the last challenge we needed to overcome is being able to securely push our data through HTTPS as GridDB cloud's endpoint is protected by SSL. 
-
-## Following Along
-
-All source code for this project are available on our GitHub page. 
-
-`$ git clone https://github.com/griddbnet/Blogs.git --branch kafka_http`
-
-Within that repo you will find the source code, the docker compose file, and the SSL certificates.
-
-As this entire project is dockerized, to run the project yourself, you will simply need docker installed. From there, you can run the project: `docker compose up -d`. We have already included the `.jar` file in the library dir so you won't need to build the custom SMT code to push data to GridDB Cloud.
-
-## Implementation
-
-To connect to push data to GridDB Cloud via the Web API, you must make an HTTP Request with a data structure that the Web API expects. If you look at the [docs](https://github.com/griddb/webapi/blob/master/GridDB_Web_API_Reference.md), you will see that to push data into a container we need to ensure a couple of things: first we need to ensure we make a `PUT` HTTP Request. Second, we need to ensure the data is set up as an array of arrays in the order of the schema. For example: 
+To start, first gather your GridDB Cloud credentials and stick them in $HOME/.griddb.yaml (or, you can simply use the `--config` flag and point to your file when using the cli tool) Required fields:
 
 ```bash
+cloud_url: "url"
+cloud_username: "example"
+cloud_pass: "pass"
+```
+
+## Examples
+
+$ griddb-cloud-cli checkConnection
+
+```bash
+    200 OK
+```
+
+$ griddb-cloud-cli list 
+
+```bash
+0: actual_reading_1
+1: actual_reading_10
+2: boiler_control_10
+3: device1
+4: device2
+5: device3
+6: device4
+7: device6
+```
+
+griddb-cloud-cli show device2        
+
+```bash
+{
+    "container_name": "device2",
+    "container_type": "TIME_SERIES",
+    "rowkey": true,
+    "columns": [
+        {
+            "name": "ts",
+            "type": "TIMESTAMP",
+            "timePrecision": "MILLISECOND",
+            "index": []
+        },
+        {
+            "name": "device",
+            "type": "STRING",
+            "index": []
+        },
+        {
+            "name": "co",
+            "type": "DOUBLE",
+            "index": []
+        },
+        {
+            "name": "humidity",
+            "type": "FLOAT",
+            "index": []
+        },
+        {
+            "name": "light",
+            "type": "BOOL",
+            "index": []
+        },
+        {
+            "name": "lpg",
+            "type": "DOUBLE",
+            "index": []
+        },
+        {
+            "name": "motion",
+            "type": "BOOL",
+            "index": []
+        },
+        {
+            "name": "smoke",
+            "type": "DOUBLE",
+            "index": []
+        },
+        {
+            "name": "temperature",
+            "type": "DOUBLE",
+            "index": []
+        }
+    ]
+}
+```
+
+$ griddb-cloud-cli read device2 --limit 1 --pretty
+
+```bash
+    [ { "name": "device2", "stmt": "select * limit 1", "columns": null, "hasPartialExecution": true }]
+
 [
-  ["2025-01-16T10:25:00.253Z", 100.5, "normal"],
-  ["2025-01-16T10:35:00.691Z", 173.9, "normal"],
-  ["2025-01-16T10:45:00.032Z", 173.9, null]
+  [
+    {
+      "Name": "ts",
+      "Type": "TIMESTAMP",
+      "Value": "2006-01-02T07:04:05.700Z"
+    },
+    {
+      "Name": "device",
+      "Type": "STRING",
+      "Value": "b8:27:eb:bf:9d:51"
+    },
+    {
+      "Name": "co",
+      "Type": "DOUBLE",
+      "Value": 0.004955938648391245
+    },
+    {
+      "Name": "humidity",
+      "Type": "FLOAT",
+      "Value": 51
+    },
+    {
+      "Name": "light",
+      "Type": "BOOL",
+      "Value": false
+    },
+    {
+      "Name": "lpg",
+      "Type": "DOUBLE",
+      "Value": 0.00765082227055719
+    },
+    {
+      "Name": "motion",
+      "Type": "BOOL",
+      "Value": false
+    },
+    {
+      "Name": "smoke",
+      "Type": "DOUBLE",
+      "Value": 0.02041127012241292
+    },
+    {
+      "Name": "temperature",
+      "Type": "DOUBLE",
+      "Value": 22.7
+    }
+  ]
 ]
 ```
 
-In order to get our Kafka messages to output  messages like this, we will need to write a custom `SMT`. Here's an excellent article on how flexible and useful these can be: [Single Message Transformations - The Swiss Army Knife of Kafka Connect](https://www.morling.dev/blog/single-message-transforms-swiss-army-knife-of-kafka-connect/). 
+$ griddb-cloud-cli read device2 --limit 9 --rows
 
-Once we have the `SMT` finished, we can set up our SSL rules and certs and then make our connectors and topics via Confluent's UI or through JSON files.
+```bash
+[ { "name": "device2", "stmt": "select * limit 9", "columns": null, "hasPartialExecution": true }]
 
-### Single Message Transformations
+ts,device,co,humidity,light,lpg,motion,smoke,temperature,
+[2006-01-02T07:04:05.700Z b8:27:eb:bf:9d:51 0.004955938648391245 51 false 0.00765082227055719 false 0.02041127012241292 22.7]
+[2020-07-11T17:01:34.700Z 00:0f:00:70:91:0a 0.0028400886071015706 76 false 0.005114383400977071 false 0.013274836704851536 19.700000762939453]
+[2020-07-11T17:01:38.700Z b8:27:eb:bf:9d:51 0.004976012340421658 50.9 false 0.007673227406398091 false 0.02047512557617824 22.6]
+[2020-07-11T17:01:39.700Z 1c:bf:ce:15:ec:4d 0.004403026829699689 76.8 true 0.007023337145877314 false 0.018628225377018803 27]
+[2020-07-11T17:01:41.700Z b8:27:eb:bf:9d:51 0.004967363641908952 50.9 false 0.007663577282372411 false 0.020447620810233658 22.6]
+[2020-07-11T17:01:44.700Z 1c:bf:ce:15:ec:4d 0.004391003954583357 77.9 true 0.007009458543138704 false 0.01858890754005078 27]
+[2020-07-11T17:01:45.700Z b8:27:eb:bf:9d:51 0.004976025118224167 50.9 false 0.007673241660297752 false 0.020475166204362245 22.6]
+[2020-07-11T17:01:46.700Z 00:0f:00:70:91:0a 0.0029381156266604295 76 false 0.005241481841731117 false 0.013627521132019194 19.700000762939453]
+[2020-07-11T17:01:48.700Z 1c:bf:ce:15:ec:4d 0.004345471359573249 77.9 true 0.006956802377235561 false 0.01843978190211682 27]
+```
 
-The code to get this working is not very complicated, essentially we want to take an objject structure coming in from a typical Kafka message and transform into an array of arrays with all of the values parsed out. We will ensure that the index positions match our schema outside of the context of the `SMT`.
 
-As mentioned earlier, the `.jar` file is included within this project so you don't need to do anything else, but if you would like to build it yourself or make changes, you can use `mvn` to build it. Here is the full Java code (it's also availble in this repo in the `smt` directory). 
 
-```java
-    @Override
-    public R apply(R record) {
-        final Schema schema = operatingSchema(record);
-        
-        if (schema == null) {
-            final Map<String, Object> value = requireMapOrNull(operatingValue(record), PURPOSE);
-            return newRecord(record, null, value == null ? null : fieldPath.valueFrom(value));
-        } else {
-            final Struct value = requireStructOrNull(operatingValue(record), PURPOSE);
-            fieldNames = schema.fields(); 
+$ griddb-cloud-cli read graph device2 -l 10
 
-            List<List<Object>> nestedArray = new ArrayList<>();
-            List<Object> row = new ArrayList<>();
-            for (Field f : fieldNames) {
-                String fName = f.name();
-                SingleFieldPath fPath = new SingleFieldPath(fName, FieldSyntaxVersion.V2);
-                row.add(fPath.valueFrom(value));
-            }
-            nestedArray.add(row);
-    
-            return newRecord(record, schema, value == null ? null : nestedArray);
+```bash
+[ { "name": "device2", "stmt": "select * limit 10", "columns": null, "hasPartialExecution": true }]
+
+Column ts (of type TIMESTAMP ) is not a `number` type. Omitting
+Column device (of type STRING ) is not a `number` type. Omitting
+Column light (of type BOOL ) is not a `number` type. Omitting
+Column motion (of type BOOL ) is not a `number` type. Omitting
+ 77.90 ┤                                                             ╭╮                           ╭────────
+ 75.30 ┤           ╭─╮                     ╭──╮                     ╭╯╰╮                     ╭────╯
+ 72.71 ┤          ╭╯ ╰╮                   ╭╯  ╰╮                  ╭─╯  ╰╮                   ╭╯
+ 70.11 ┤        ╭─╯   ╰╮                 ╭╯    ╰╮                ╭╯     ╰─╮                ╭╯
+ 67.51 ┤       ╭╯      ╰─╮              ╭╯      ╰─╮             ╭╯        ╰╮             ╭─╯
+ 64.92 ┤      ╭╯         ╰╮           ╭─╯         ╰╮           ╭╯          ╰╮           ╭╯
+ 62.32 ┤    ╭─╯           ╰╮         ╭╯            ╰╮         ╭╯            ╰╮         ╭╯
+ 59.72 ┤   ╭╯              ╰─╮      ╭╯              ╰╮      ╭─╯              ╰╮      ╭─╯
+ 57.13 ┤  ╭╯                 ╰╮    ╭╯                ╰─╮   ╭╯                 ╰╮    ╭╯
+ 54.53 ┤ ╭╯                   ╰╮ ╭─╯                   ╰╮ ╭╯                   ╰─╮ ╭╯
+ 51.93 ┼─╯                     ╰─╯                      ╰─╯                      ╰─╯
+ 49.34 ┤
+ 46.74 ┤
+ 44.14 ┤
+ 41.55 ┤
+ 38.95 ┤
+ 36.35 ┤
+ 33.76 ┤
+ 31.16 ┤
+ 28.57 ┤
+ 25.97 ┤                              ╭────────────╮           ╭────────────╮                          ╭───
+ 23.37 ┼──╮                   ╭───────╯            ╰───────────╯            ╰───────╮             ╭────╯
+ 20.78 ┤  ╰───────────────────╯                                                     ╰─────────────╯
+ 18.18 ┤
+ 15.58 ┤
+ 12.99 ┤
+ 10.39 ┤
+  7.79 ┤
+  5.20 ┤
+  2.60 ┤
+  0.00 ┼───────────────────────────────────────────────────────────────────────────────────────────────────
+                                          Col names from container device2
+
+                                ■ co   ■ humidity   ■ lpg   ■ smoke   ■ temperature
+```
+
+\# Interactive mode with create and ingest
+
+$ griddb-cloud-cli create --interactive
+
+```bash
+✔ Container Name: … sample1
+✔ Choose: … TIME_SERIES
+✔ How Many Columns for this Container? … 2
+✔ Col name For col #1 … ts
+✔ Col #1(TIMESTAMP CONTAINERS ARE LOCKED TO TIMESTAMP FOR THEIR ROWKEY) … TIMESTAMP
+✔ Col name For col #2 … temp
+✔ Column Type for col #2 … DOUBLE
+✔ Make Container? 
+{
+    "container_name": "sample1",
+    "container_type": "TIME_SERIES",
+    "rowkey": true,
+    "columns": [
+        {
+            "name": "ts",
+            "type": "TIMESTAMP",
+            "index": null
+        },
+        {
+            "name": "temp",
+            "type": "DOUBLE",
+            "index": null
         }
-        
-    }
+    ]
+} … YES
+{"container_name":"sample1","container_type":"TIME_SERIES","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"temp","type":"DOUBLE","index":null}]}
+201 Created
 ```
 
-The main method we will be using is this `apply` function. We extract all of the values from the incoming messages, remove the field names, and make a new array of arrays and return that new array. That's it! Of course there's more to it, but this is the important bit. 
-
-Now that we've got the structure we need, let's set up our connectors and SSL information.
-
-### Docker SSL Parameters
-
-Because GridDB Cloud's endpoint is SSL protected, we need to ensure that our Kafka broker and HTTP Sink have the proper SSL Certs in place to securely communicate with the endpoint. If we miss any part of the process, the connection will fail with various errors, including the dreaded `Handshake failed`.
-
-Based on the `docker-compose` file I used as the base for this project, to get SSL working, we will need to add a ton SSL environment values for our broker and kafka-connect.
-
-Here are some of the values I added to the `broker` in order for it to get SSL working
+\# Create container with json
 
 ```bash
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,  PLAINTEXT:PLAINTEXT,  PLAINTEXT_HOST:PLAINTEXT,  SSL:SSL'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,  PLAINTEXT_HOST://localhost:9092,  SSL://broker:9093'
-      KAFKA_SSL_KEYSTORE_FILENAME: kafka.kafka-1.keystore.pkcs12
-      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka-1_keystore_creds
-      KAFKA_SSL_KEY_CREDENTIALS: kafka-1_sslkey_creds
-      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.client.truststore.jks
-      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka-1_trustore_creds
-      KAFKA_SECURITY_PROTOCOL: 'SSL'
-      KAFKA_SASL_MECHANISM: 'plain'
-      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: 
-      KAFKA_LISTENERS: 'PLAINTEXT://broker:29092,  CONTROLLER://broker:29093,  PLAINTEXT_HOST://0.0.0.0:9092,  SSL://broker:9093'
+$ griddb-cloud-cli create sample.json -f 
+
+{  sample COLLECTION  [] [{ts timestamp true} {name string false} {temp float[] false} {counts long[] false} {names string[] false} {daties timestamp[] true}] [name]}
+{"container_name":"gorg","container_type":"COLLECTION","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"name","type":"STRING","index":null},{"name":"temp","type":"FLOAT_ARRAY","index":null},{"name":"counts","type":"LONG_ARRAY","index":null},{"name":"names","type":"STRING_ARRAY","index":null},{"name":"daties","type":"TIMESTAMP_ARRAY","index":null}]}
+201 Created
 ```
 
-On top of adding these values, we also needed to generate these certificate files and copy them to the docker containers using a mounted volume. 
 
-#### Generating SSL Certificates
-
-First, let's take a look at the `.pkcs12` file, which is the `SSL_KEYSTORE_FILE`. This is a file you can generate on your local working machine, to do so, I followed a guide which gave me the following instructions: 
+$ griddb-cloud-cli put sample1
 
 ```bash
-$ openssl req -new -nodes \
-   -x509 \
-   -days 365 \
-   -newkey rsa:2048 \
-   -keyout ca.key \
-   -out ca.crt 
-
-$ openssl req -new \
-    -newkey rsa:2048 \
-    -keyout kafka-1.key \
-    -out kafka-1.csr \
-    -nodes
-
-$ openssl x509 -req \
-    -days 3650 \
-    -in kafka-1.csr \
-    -CA ca.crt \
-    -CAkey ca.key \
-    -CAcreateserial \
-    -out kafka-1.crt \
-    -extensions v3_req
-
-$ openssl pkcs12 -export \
-    -in kafka-1.crt \
-    -inkey afka-1.key \
-    -chain \
-    -CAfile ca.pem \
-    -name kafka-1 \
-    -out kafka-1.p12 \
-    -password pass:confluent
-
-$ keytool -importkeystore \
-    -deststorepass confluent \
-    -destkeystore kafka.kafka-1.keystore.pkcs12 \
-    -srckeystore kafka-1.p12 \
-    -deststoretype PKCS12  \
-    -srcstoretype PKCS12 \
-    -noprompt \
-    -srcstorepass confluent
+Container Name: sample1
+✔ Column 1 of 2
+ Column Name: ts
+ Column Type: TIMESTAMP … NOW()
+✔ Column 2 of 2
+ Column Name: temp
+ Column Type: DOUBLE … 20.2
+[["2025-04-30T07:43:03.700Z",  20.2]]
+✔ Add the Following to container sample1? … YES
+200 OK
 ```
 
-With that out of the way, we will also need to tell our server that the GridDB Cloud is safe by grabbing its certs and then generating some certs and including them into our broker and connect. From the GridDB Cloud web dashboard, if you click on the lock icon from the browser, you can view/manage the SSL Certificates. From that menu, you can download the `.pem` files. Alternatively, you can use the CLI: `openssl s_client -showcerts -connect cloud5197.griddb.com:443`.
-
-With the output, you can save the portions that say `BEGIN CERTIFICATE` to `END CERTIFICATE` into a separate file. Armed with this file, you can generate a truststore file to let your server know it's a trusted location. 
+$ griddb-cloud-cli ingest iot_telemetry_data.csv
 
 ```bash
-$ keytool -import -trustcacerts -alias griddb-cloud-cert -file ca.pem -keystore kafka.client.truststore.jks -storepass confluent -v
-```
-
-Now we have the two key files (`kafka.kafka-1.keystore.pkcs12` && `kafka.client.truststore.jks`) needed for secure communication with GridDB Cloud -- cool!
-
-### Connector Clients
-
-This next step is where we actually tell our kafka cluster which data we want streaming to where. So in this case, we will make a test topic with a simple schema of just three values: 
-
-```
-{
-  "connect.name": "net.griddb.webapi.griddb",
-  "connect.parameters": {
-    "io.confluent.connect.avro.field.doc.data": "The string is a unicode character sequence.",
-    "io.confluent.connect.avro.field.doc.temp": "The double type is a double precision (64-bit) IEEE 754 floating-point number.",
-    "io.confluent.connect.avro.field.doc.ts": "The int type is a 32-bit signed integer.",
-    "io.confluent.connect.avro.record.doc": "Sample schema to help you get started."
-  },
-  "doc": "Sample schema to help you get started.",
-  "fields": [
-    {
-      "doc": "The int type is a 32-bit signed integer.",
-      "name": "ts",
-      "type": "int"
-    },
-    {
-      "doc": "The double type is a double precision (64-bit) IEEE 754 floating-point number.",
-      "name": "temp",
-      "type": "double"
-    },
-    {
-      "doc": "The string is a unicode character sequence.",
-      "name": "data",
-      "type": "double"
-    }
-  ],
-  "name": "griddb",
-  "namespace": "net.griddb.webapi",
-  "type": "record"
-}
-```
-
-Before we try pushing our data to GridDB Cloud, we will need to create our container inside of our DB. You can use the Dashboard or simply send a CURL request using Postman or the CLI to create the container to match that schema. For me, I'm calling it `kafka`. In this case, I'm not going to make a Time Series container and will settle for a Collection container for educational purposes.
-
-We will then make a source connector provided by Confluent to generate mock data in the style of that schema. 
-
-Once you have it set up, it looks like this in the dashboard: 
-
-![topic-messages](images/topic-messages.png)
-
-Next, we make a connector for the HTTP Sink which takes that source connector's mock data and streams it out to the HTTP we set it to (hint: it's GridDB Cloud!). But as the data moves through from the source to the sink, we will of course apply our `SMT` to change the data into an array of arrays to push to GridDB Cloud. And if we configured our SSL correctly, we should see our data inside of our GridDB Cloud container.
-
-#### Connector Client Values and Rules 
-
-To send the connectors to your Kafka cluster, you can either manually enter in the values using the Kafka Control Center, which provides a nice UI for editing connectors, or simply take the `.json` files included with this repo and pushing them using CURL.
-
-Here are the values for the datagen which creates mock data for our GridDB Cloud to ingest: 
-
-```json
-{
-  "name": "web_api_datagen",
-  "config": {
-    "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
-    "kafka.topic": "griddb_test",
-    "schema.string": "{   \"connect.name\": \"net.griddb.webapi.griddb\",   \"connect.parameters\": {     \"io.confluent.connect.avro.field.doc.data\": \"The string is a unicode character sequence.\",     \"io.confluent.connect.avro.field.doc.temp\": \"The double type is a double precision (64-bit) IEEE 754 floating-point number.\",     \"io.confluent.connect.avro.field.doc.ts\": \"The int type is a 32-bit signed integer.\",     \"io.confluent.connect.avro.record.doc\": \"Sample schema to help you get started.\"   },   \"doc\": \"Sample schema to help you get started.\",   \"fields\": [     {       \"doc\": \"The int type is a 32-bit signed integer.\",       \"name\": \"ts\",       \"type\": \"int\"     },     {       \"doc\": \"The double type is a double precision (64-bit) IEEE 754 floating-point number.\",       \"name\": \"temp\",       \"type\": \"double\"     },     {       \"doc\": \"The string is a unicode character sequence.\",       \"name\": \"data\",       \"type\": \"double\"     }   ],   \"name\": \"griddb\",   \"namespace\": \"net.griddb.webapi\",   \"type\": \"record\" }"
-  }
-}
-```
-
-It is messy, but that's because the schema string includes the raw string of the schema I shared earlier (up above).
-
-
-And here are the values of the HTTP Sink itself:
-
-```json
-{
-  "name": "griddb_web_api_sink",
-  "config": {
-    "connector.class": "io.confluent.connect.http.HttpSinkConnector",
-    "transforms": "nestedList",
-    "topics": "griddb",
-    "transforms.nestedList.type": "net.griddb.GridDBWebAPITransform$Value",
-    "transforms.nestedList.fields": "ts",
-    "http.api.url": "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud97/dbs/ZUlQ8/containers/kafka/rows",
-    "request.method": "put",
-    "headers": "Content-Type: application/json",
-    "auth.type": "basic",
-    "connection.user": "user",
-    "connection.password": "password",
-    "https.ssl.key.password": "confluent",
-    "https.ssl.keystore.key": "",
-    "https.ssl.keystore.location": "/etc/kafka/secrets/kafka.kafka-1.keystore.pkcs12",
-    "https.ssl.keystore.password": "confluent",
-    "https.ssl.truststore.location": "/etc/kafka/secrets/kafka.client.truststore.jks",
-    "https.ssl.truststore.password": "confluent",
-    "https.ssl.enabled.protocols": "",
-    "https.ssl.keystore.type": "PKCS12",
-    "https.ssl.protocol": "TLSv1.2",
-    "https.ssl.truststore.type": "JKS",
-    "reporter.result.topic.replication.factor": "1",
-    "reporter.error.topic.replication.factor": "1",
-    "reporter.bootstrap.servers": "broker:29092"
-  }
-}
-```
-
-Some important values here: of course the SSL values and certs, as well as the URL as this contains the container name (kafka in our case). We also have our BASIC AUTHENICATION values in here as well as our `SMT`. All of this information is crucial to ensure that our Kafka cluster streams our mock data to the proper place with zero errors.
-
-You can push these connectors using HTTP Requests: 
-
-```bash
-$ #!/bin/sh
-
-curl -s \
-     -X "POST" "http://localhost:8083/connectors/" \
-     -H "Content-Type: application/json" \
-     -d '{
-    "name": "griddb_web_api_sink",
-    "config": {
-            "connector.class": "io.confluent.connect.http.HttpSinkConnector",
-            "transforms": "nestedList",
-            "topics": "griddb_test",
-            "transforms.nestedList.type": "net.griddb.GridDBWebAPITransform$Value",
-            "transforms.nestedList.fields": "ts",
-            "http.api.url": "https://cloud5197.griddb.com/griddb/v2/gs_clustermfcloud97/dbs/ZUlQ8/containers/kafka/rows",
-            "request.method": "put",
-            "headers": "Content-Type: application/json",
-            "auth.type": "basic",
-            "connection.user": "user",
-            "connection.password": "password",
-            "https.ssl.key.password": "confluent",
-            "https.ssl.keystore.key": "",
-            "https.ssl.keystore.location": "/etc/kafka/secrets/kafka.kafka-1.keystore.pkcs12",
-            "https.ssl.keystore.password": "confluent",
-            "https.ssl.truststore.location": "/etc/kafka/secrets/kafka.client.truststore.jks",
-            "https.ssl.truststore.password": "confluent",
-            "https.ssl.enabled.protocols": "",
-            "https.ssl.keystore.type": "PKCS12",
-            "https.ssl.protocol": "TLSv1.2",
-            "https.ssl.truststore.type": "JKS",
-            "reporter.result.topic.replication.factor": "1",
-            "reporter.error.topic.replication.factor": "1",
-            "reporter.bootstrap.servers": "broker:29092"
+✔ Does this container already exist? … NO
+Use CSV Header names as your GridDB Container Col names? 
+ts,device,co,humidity,light,lpg,motion,smoke,temp
+✔ Y/n … YES
+✔ Container Name: … device6
+✔ Choose: … TIME_SERIES
+✔ Col ts(TIMESTAMP CONTAINERS ARE LOCKED TO TIMESTAMP FOR THEIR ROWKEY) … TIMESTAMP
+✔ (device) Column Type … STRING
+✔ (co) Column Type … DOUBLE
+✔ (humidity) Column Type … DOUBLE
+✔ (light) Column Type … BOOL
+✔ (lpg) Column Type … DOUBLE
+✔ (motion) Column Type … BOOL
+✔ (smoke) Column Type … DOUBLE
+✔ (temp) Column Type … DOUBLE
+        },
+        {
+            "name": "device",
+            "type": "STRING",
+            "index": null
+        },
+        {
+            "name": "co",
+            "type": "DOUBLE",
+            "index": null
+        },
+        {
+            "name": "humidity",
+            "type": "DOUBLE",
+            "index": null
+        },
+        {
+            "name": "light",
+            "type": "BOOL",
+            "index": null
+        },
+        {
+            "name": "lpg",
+            "type": "DOUBLE",
+            "index": null
+        },
+        {
+            "name": "motion",
+            "type": "BOOL",
+            "index": null
+        },
+        {
+            "name": "smoke",
+            "type": "DOUBLE",
+            "index": null
+        },
+        {
+            "name": "temp",
+            "type": "DOUBLE",
+            "index": null
         }
-    }'
+    ]
+} … YES
+{"container_name":"device6","container_type":"TIME_SERIES","rowkey":true,"columns":[{"name":"ts","type":"TIMESTAMP","index":null},{"name":"device","type":"STRING","index":null},{"name":"co","type":"DOUBLE","index":null},{"name":"humidity","type":"DOUBLE","index":null},{"name":"light","type":"BOOL","index":null},{"name":"lpg","type":"DOUBLE","index":null},{"name":"motion","type":"BOOL","index":null},{"name":"smoke","type":"DOUBLE","index":null},{"name":"temp","type":"DOUBLE","index":null}]}
+201 Created
+
+Container Created. Starting Ingest
+
+0 ts ts
+1 device device
+2 co co
+3 humidity humidity
+4 light light
+5 lpg lpg
+6 motion motion
+7 smoke smoke
+8 temp temp
+✔ Is the above mapping correct? … YES
+Ingesting. Please wait...
+Inserting 1000 rows
+200 OK
+Inserting 1000 rows
+200 OK
+Inserting 1000 rows
 ```
 
-And then the same thing for the source connector. The main thing to take away from this section is the values you need to enter to successfully push your data from Kafka to GridDB Cloud. For example, you can see in the transforms section that we are using the `SMT` we wrote and built earlier.
+## SQL Examples
 
-## Results
 
-First, let's take a look at our logs to see if our data is going through
+$ griddb-cloud-cli sql create -s "CREATE TABLE IF NOT EXISTS pyIntPart1 (date TIMESTAMP NOT NULL PRIMARY KEY, value STRING) WITH (expiration_type='PARTITION',expiration_time=10,expiration_time_unit='DAY') PARTITION BY RANGE (date) EVERY (5, DAY);"
 
 ```bash
-$ docker logs -f connect
+[{"stmt": "CREATE TABLE IF NOT EXISTS pyIntPart1 (date TIMESTAMP NOT NULL PRIMARY KEY, value STRING) WITH (expiration_type='PARTITION',expiration_time=10,expiration_time_unit='DAY') PARTITION BY RANGE (date) EVERY (5, DAY);" }]
 ```
 
-Here you should see some sort of output. You can also check your Control Center and ensure that the GridDB Web API Sink doesn't have any errors. For me, this is what it looks like: 
+$ griddb-cloud-cli sql update -s "INSERT INTO pyIntPart2(date, value) VALUES (NOW(), 'fourth')"
 
-![no-error-control-center](images/no-error-control-center.png)
+```bash
+[{"stmt": "INSERT INTO pyIntPart2(date, value) VALUES (NOW(), 'fourth')" }]
+[{"updatedRows":1,"status":1,"message":null,"stmt":"INSERT INTO pyIntPart2(date, value) VALUES (NOW(), 'fourth')"}]
+```
 
-And then of course, let's check our GridDB dashboard to ensure our data is being routed to the correct container: 
+$ griddb-cloud-cli sql query -s "select * from pyIntPart2 limit 1" --pretty
 
-![griddb-query](images/griddb-query.png)
+```bash
+[{"stmt": "select * from pyIntPart2 limit 1" }]
 
-
-## Conclusion
-
-And with that, we have successfully pushed data from Kafka over to GridDB Cloud. For some next steps, you could try chaining SMTs to convert the mock data TS into timestamps that GridDB can understand and push to a time series container.
+[
+    [
+        {
+            "Name": "date",
+            "Type": "TIMESTAMP",
+            "Value": "2025-04-30T14:58:00.255Z"
+        },
+        {
+            "Name": "value",
+            "Type": "STRING",
+            "Value": "fourth"
+        }
+    ]
+]
+```

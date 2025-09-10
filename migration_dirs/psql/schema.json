@@ -1,0 +1,88 @@
+{
+    "customers": {
+        "primary_key": [
+            "customer_id"
+        ],
+        "columns": [
+            {
+                "column_name": "customer_id",
+                "data_type": "int4",
+                "is_nullable": "NO",
+                "column_default": "nextval('customers_customer_id_seq'::regclass)"
+            },
+            {
+                "column_name": "first_name",
+                "data_type": "varchar",
+                "is_nullable": "NO",
+                "column_default": null
+            },
+            {
+                "column_name": "last_name",
+                "data_type": "varchar",
+                "is_nullable": "NO",
+                "column_default": null
+            },
+            {
+                "column_name": "email",
+                "data_type": "varchar",
+                "is_nullable": "NO",
+                "column_default": null
+            },
+            {
+                "column_name": "phone_number",
+                "data_type": "varchar",
+                "is_nullable": "YES",
+                "column_default": null
+            },
+            {
+                "column_name": "address",
+                "data_type": "text",
+                "is_nullable": "YES",
+                "column_default": null
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": "now()"
+            }
+        ]
+    },
+    "products": {
+        "primary_key": [
+            "id"
+        ],
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "int4",
+                "is_nullable": "NO",
+                "column_default": "nextval('products_id_seq'::regclass)"
+            },
+            {
+                "column_name": "name",
+                "data_type": "varchar",
+                "is_nullable": "NO",
+                "column_default": null
+            },
+            {
+                "column_name": "category",
+                "data_type": "varchar",
+                "is_nullable": "YES",
+                "column_default": null
+            },
+            {
+                "column_name": "price",
+                "data_type": "numeric",
+                "is_nullable": "NO",
+                "column_default": null
+            },
+            {
+                "column_name": "stock_quantity",
+                "data_type": "int4",
+                "is_nullable": "YES",
+                "column_default": "0"
+            }
+        ]
+    }
+}
