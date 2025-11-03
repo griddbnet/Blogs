@@ -1,0 +1,49 @@
+{
+    "container": "device1",
+    "containerType": "TIME_SERIES",
+    "columnSet": [
+        {
+            "columnName": "ts",
+            "type": "timestamp",
+            "notNull": true
+        },
+        {
+            "columnName": "co",
+            "type": "double",
+            "notNull": false
+        },
+        {
+            "columnName": "humidity",
+            "type": "double",
+            "notNull": false
+        },
+        {
+            "columnName": "light",
+            "type": "bool",
+            "notNull": false
+        },
+        {
+            "columnName": "lpg",
+            "type": "double",
+            "notNull": false
+        },
+        {
+            "columnName": "motion",
+            "type": "bool",
+            "notNull": false
+        },
+        {
+            "columnName": "smoke",
+            "type": "double",
+            "notNull": false
+        },
+        {
+            "columnName": "temp",
+            "type": "double",
+            "notNull": false
+        }
+    ],
+    "rowKeySet": [
+        "ts"
+    ]
+}
