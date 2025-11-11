@@ -9,6 +9,8 @@ What exactly *is* a vnet peering connection? Here is the strict definition from 
 
 ### How to Set Up Vnet Peering
 
+Before you start on the GridDB Cloud side, you will first need to create some resources on the Microsoft Azure side. On Azure, create a [Virtual Network](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview) (VNet). You will also need to eventually set up a virtual machine that is on the same virtual network that you just created (which will be the one you link with GridDB Cloud below). With these two resources created, let's move on to the GridDB Cloud side.
+
 For this part of the process, you can read step-by-step instructions here in the official docs: https://www.toshiba-sol.co.jp/pro/griddbcloud/docs-en/v3_1/cloud_quickstart_guide_html/GridDB_Cloud_QuickStartGuide.html#connection-settings-for-vnet. Here's a summary of the steps needed to forge the vnet peering connection: 
 
 * From the navigation menu, select Network Access and then click the CREATE PEERING CONNECTION button.
@@ -58,6 +60,12 @@ And now you can run the sample code included in this repo. There is Java code fo
 #### Ingesting IoT Telemetry Data
 
  To ingest the dataset, first navigate to the `griddbCloudDataImport` dir inside of this repository. Within this dir, you will find that the [GridDB Cloud Import tool](https://www.toshiba-sol.co.jp/pro/griddbcloud/docs-en/v3_1/cloud_data_import_guide_html/GridDB_Cloud_Data_Import_Guide.html) is already installed. To use, open up the `.sh` file and edit lines 34-36 to include your credentials. Next, you must run the python file within this directory to clean up the data, namely changing the timestamp column to better adhere to the Web API's standard, and also to separate out the csv into 3 distinct csv files, one for each device found in the dataset. 
+
+ Here is the line of code that will transform the ts col into something the GridDB Web API likes. 
+ 
+ `df['ts'] = pd.to_datetime(df['ts'], unit='s').dt.strftime('%Y-%m-%dT%H:%M:%S.%f').str[:-3] + 'Z'`
+
+ You can make out from the format that it needs it to be like this: `"2020-07-12T00:01:34.385Z"` so that it can be ingested using the tool. The data which is supplied directly in the CSV before transformation looks like this: `"1.5945120943859746E9"`.
 
  Next, you must create the container within your GridDB Cloud. For this part, you can use the [GridB Cloud CLI tool](https://github.com/Imisrael/griddb-cloud-cli) or simply use the GridDB Cloud UI. The schema we want to ingest is found within the `schema.json` file in the directory.
 
@@ -175,11 +183,11 @@ $ python3.12 main.py
 
 ## Web API (Basic Authentication vs. Bearer Tokens)
 
-The GridDB Web API is one of the methods of orchestrating your CRUD methods for your GridDB Cloud instance. Prior to this release, the method of authenticating your HTTP Requests to your GridDB Cloud was solely using something called `Basic Autheticatation`, which is the method of attaching your Username and Password to each web request paired with an IP filtering firewall. Though this method was enough to keep things secure up until now, the GridDB team's release of utilizing Web Tokens greatly bolsters the safety in authentication strategy for GridDB Cloud.
+The GridDB Web API is one of the methods of orchestrating your CRUD methods for your GridDB Cloud instance. Prior to this release, the method of authenticating your HTTP Requests to your GridDB Cloud was solely using something called `Basic Authentication`, which is the method of attaching your Username and Password to each web request paired with an IP filtering firewall. Though this method was enough to keep things secure up until now, the GridDB team's release of utilizing Web Tokens greatly bolsters the safety in authentication strategy for GridDB Cloud.
 
 ### The Dangers of Basic Authentication
 
-Before I get into how to work the Bearer token into your work flow, I will showcase a simple example of why `Basic Authentication` can be problematic and lead to issues down the line. Sending your user/pass credentials in every request leaves you extrememly vulernable to man-in-the-middle attacks. Not only that, but there's issues with sometimes servers keeping logs of all headers incoming into it, meaning your user:pass combo could potentially be stored in plaintext somewhere on some server. If you share passwords at all, your entire online presense could be compromised. 
+Before I get into how to work the Bearer token into your work flow, I will showcase a simple example of why `Basic Authentication` can be problematic and lead to issues down the line. Sending your user/pass credentials in every request leaves you extremely vulnerable to man-in-the-middle attacks. Not only that, but there's issues with sometimes servers keeping logs of all headers incoming into it, meaning your user:pass combo could potentially be stored in plaintext somewhere on some server. If you share passwords at all, your entire online presense could be compromised. 
 
 I asked an LLM to put together a quick demo of a server reading your user and password combo. The LLM produced a server and a client; the client sends its user:pass as part of its headers and the server is able to intercept those and decode and store the user:pass in plaintext! After that, we send another request with a bearer token, and though the server can still read and intercept that, bearer tokens will naturally expire and won't potentially expose your password which may be used in other apps or anything else. Here is the output of the server: 
 
