@@ -73,7 +73,7 @@ And now you can run the sample code included in this repo. There is Java code fo
 
  You can make out from the format that it needs it to be like this: `"2020-07-12T00:01:34.385Z"` so that it can be ingested using the tool. The data which is supplied directly in the CSV before transformation looks like this: `"1.5945120943859746E9"`.
 
- Next, you must create the container within your GridDB Cloud. For this part, you can use the [GridB Cloud CLI tool](https://github.com/Imisrael/griddb-cloud-cli) or simply use the GridDB Cloud UI. The schema we want to ingest is found within the `schema.json` file in the directory.
+ Next, you must create the container within your GridDB Cloud. For this part, you can use the [GridDB Cloud CLI tool](https://github.com/Imisrael/griddb-cloud-cli) or simply use the GridDB Cloud UI. The schema we want to ingest is found within the `schema.json` file in the directory.
 
  ```json
 {
