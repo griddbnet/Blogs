@@ -9,7 +9,13 @@ What exactly *is* a vnet peering connection? Here is the strict definition from 
 
 ### How to Set Up Vnet Peering
 
-Before you start on the GridDB Cloud side, you will first need to create some resources on the Microsoft Azure side. On Azure, create a [Virtual Network](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview) (VNet). You will also need to eventually set up a virtual machine that is on the same virtual network that you just created (which will be the one you link with GridDB Cloud below). With these two resources created, let's move on to the GridDB Cloud side.
+Before you start on the GridDB Cloud side, you will first need to create some resources on the Microsoft Azure side. On Azure, create a [Virtual Network](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-overview) (VNet). 
+
+![vnet-create](./img/create-virtual-network.png)
+
+You will also need to eventually set up a virtual machine that is on the same virtual network that you just created (which will be the one you link with GridDB Cloud below). With these two resources created, let's move on to the GridDB Cloud side.
+
+![vm-create](./img/create-virtual-macine-with-vnet.png)
 
 For this part of the process, you can read step-by-step instructions here in the official docs: https://www.toshiba-sol.co.jp/pro/griddbcloud/docs-en/v3_1/cloud_quickstart_guide_html/GridDB_Cloud_QuickStartGuide.html#connection-settings-for-vnet. Here's a summary of the steps needed to forge the vnet peering connection: 
 
@@ -151,6 +157,13 @@ export GRIDDB_DATABASE="[database name]"
 ```bash
 $ java -jar target/java-samples-1.0-SNAPSHOT-jar-with-dependencies.jar 
 ```
+
+Running the sample code will run all of the java code, which includes connections to both JDBC and the NoSQL Interface. Here's a quick breakdown of the Java Sample files included with this repo:
+
+- The code in `App.java` simply runs the main function and all of the methods within the individual classes.
+- The code in `Device.java` is the class schema for the dataset we ingest
+- The code in `GridDB.java` is the NoSQL interface, connecting, creating tables, and querying from the dataset ingested above. The code also shows multiput, multiget, and various aggregation, time sampling etc examples.
+- `GridDBJdb.java` shows connecting to GridDB via the JDBC interface and also shows creating a table and querying a table. Also shows a GROUP BY RANGE SQL query.
 
 #### Running The Sample Code (Python)
 

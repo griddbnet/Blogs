@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 public class GridDBJdbc {
     public Connection conn;
 
+    // Create a connection to GridDB Cloud Through JDBC
     public GridDBJdbc() {
         try {
             String notificationProvider = System.getenv("GRIDDB_NOTIFICATION_PROVIDER");
@@ -35,6 +36,7 @@ public class GridDBJdbc {
         }
     }
 
+    // Create table and push row of data as example.
     public void CreateTable(String containerName) throws SQLException {
         Statement stmt = conn.createStatement();
         String sqlCreate = String.format("CREATE TABLE IF NOT EXISTS %s (id integer, value string);", containerName);
@@ -48,6 +50,7 @@ public class GridDBJdbc {
         stmt.executeUpdate(sqlUpdate);
     }
 
+    // Prints out an entire container to std out
     public void DumpContainer(String containerName) throws SQLException {
         Statement stmt = conn.createStatement();
         String sqlQuery = String.format("SELECT * FROM %s", containerName);
@@ -71,7 +74,7 @@ public class GridDBJdbc {
 
     /**
      * It performs a time-bucketed aggregation using the GridDB-specific
-     * SQL 'GROUP BY RANGE' function, as shown in the blog post.
+     * SQL 'GROUP BY RANGE' function
      */
     public void queryTimeBucketedAverages_SQL(String containerName) throws SQLException {
 

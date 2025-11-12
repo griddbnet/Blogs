@@ -13,6 +13,7 @@ class GridDB {
 
     public GridStore store = null;
 
+    // Connect to GridDB's NoSQL Interface
     public GridDB() throws GSException {
         try {
             Properties props = new Properties();
@@ -35,6 +36,7 @@ class GridDB {
         }
     }
 
+    // Create GridDB Container based on Device class
     public void CreateContainer(String containerName) {
         System.out.println("Creating Container");
         try {
@@ -46,6 +48,8 @@ class GridDB {
         System.out.println("Container Created");
     }
 
+    // Pushing a row of hardcoded data to our newly created
+    // container
     public void WriteToContainer(String containerName) {
         System.out.println("Writing some arbitrary data to container: " + containerName);
         try {
@@ -75,6 +79,8 @@ class GridDB {
 
     }
 
+    // Print all contents of Container
+    // In this case, a timeseries container of class Device
     public void DumpContainer(String containerName) {
         System.out.printf("Reading container %s\n", containerName);
 
@@ -95,6 +101,7 @@ class GridDB {
 
     }
 
+    // Example showcasing pushing many rows at once
     public void MultiPut() {
         try {
             Map<String, List<Row>> paramMap = new HashMap<String, List<Row>>();
@@ -134,6 +141,7 @@ class GridDB {
         }
     }
 
+    // Example reading many rows at once
     public void MultiGet() {
 
         try {
@@ -180,6 +188,7 @@ class GridDB {
         }
     }
 
+    // helper function for multiput
     private static void createContainer(GridStore store) throws Exception {
         {
             ContainerInfo containerInfo = new ContainerInfo();
@@ -208,6 +217,7 @@ class GridDB {
         }
     }
 
+    // help function for multiget
     private static void createContainerPutRow(GridStore store) throws Exception {
         ContainerInfo containerInfo = new ContainerInfo();
         containerInfo.setType(ContainerType.COLLECTION);
