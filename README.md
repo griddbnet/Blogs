@@ -1,134 +1,321 @@
-With GridDB Cloud 3.1, you can now access the native API of GridDB through Azure's virtual peering network connection. The way it works is that that any virtual network that you set up in your Azure cloud environment can set up what is called a peering connection, which allows two disparate sources to communicate through Azure's vast resources. Through this, any virtual machine connected to that vnet can communicate and use the GridDB Cloud native APIs. We discuss at greater length here: [TODO LINK]
+With GridDB Cloud now having the ability to connect to your code through what is known as `non-webapi`, aka through its native NoSQL interface (Java, Python, etc), we can now explore connecting to various Azure Services through the virtual network peering. Because our GridDB Cloud instance is connected to anything connected to our Virtual Network thanks to the peering connection, anything that allows connection to a virtual network can now directly communicate with GridDB Cloud.
 
-In this article, we will build upon that idea and teach you how to set up a VPN which will allow you to access your GridDB Cloud through your local enviroment, meaning you can freely use GridDB with your existing application code as long as you connect to the VPN. 
+## Introduction
 
-![diagram](diagram.jpg)
+In this article, we will explore connecting our GridDB Cloud instance to Azure's IoT Hub to store telemetry data. We have previously made a web course on how to set up the Azure IoT Hub with GridDB Cloud but through the Web API. That can be found here: [https://www.udemy.com/course/griddb-and-azure-iot-hub/?srsltid=AfmBOopFTwFHI7OvQOEXt4P_cWxuo3NaJ9XkbNDHHWX5Tgky4QZzJlD3](https://www.udemy.com/course/griddb-and-azure-iot-hub/?srsltid=AfmBOopFTwFHI7OvQOEXt4P_cWxuo3NaJ9XkbNDHHWX5Tgky4QZzJlD3). You can also learn about how to connect your GridDB Cloud instance to your Azure virtual network through the v-net peering here: [https://griddb.net/en/blog/griddb-cloud-v3-1-how-to-use-the-native-apis-with-azures-vnet-peering/](/en/blog/griddb-cloud-v3-1-how-to-use-the-native-apis-with-azures-vnet-peering/). 
 
-## Prereqs
+As a bonus, we have also made a blog on how to connect your local environment to your cloud-hosted GridDB instance through a VPN to be able to just use your local programming environment; blog here: TODO BLOG 2
 
-To fully utilize GridDB Cloud with native APIs in your local environment, you will need to, of course, have access to one of the paid GridDB Cloud instances: https://griddb.net/en/blog/griddb-cloud-azure-marketplace/. You will also need to have set up a the vnet peering as described in the opening parapgraphs of this article: [TODO LINK]. 
+So for this one, let's get started with our IoT Hub implementation. We will be setting up an IoT Hub with any number of devices which will trigger a GridDB write whenever telemetry data is detected. We will then also set up another Azure Function which will run on a simple timer (every 1 hour) that will run a simple aggregation of the IoT Sensor data to keep the data tidy and data analysis. 
 
-If you have this set up, you should have the following in your Azure resource: 
+There is also source code for setting up a Kafka connection through a timer which will read all data from within the past 5 minutes and stream that data out through Kafka, but we won't discuss it here.
 
-- GridDB Cloud (Pay As You Go)
-- Azure Virtual Network with peering connection to GridDB Cloud 
-- A virtual machine connected to the above vnet
+## Azure's Cloud Infrastructure
 
-## OpenVPN and IP Masquerading
+Let's talk briefly about Azure's services that we will need to master and use to get all of this running. First, the IoT Hub
 
-The way this set up works is through something called IP Masquerading which is "a process where one computer acts as an IP gateway for a network.  All computers on the network send their IP packets through the gateway, which replaces the source IP address with its own address and then forwards it to the internet." (https://www.linux.com/training-tutorials/what-ip-masquerading-and-when-it-use/). Essentially, it means that the traffic from your local machine will be intended for the GridDB Cloud IP, but instead will route through the VPN the DB will see the request coming and it will look like the request is coming from the local machine within the network (the vm) and accept it, and then make its response and push it back through the virtual network, through the virtual machine, and to your local env.
+### Azure's IoT Hub
 
-So to get this running, you simply need to set up openvpn on the Azure virtual machine and then turn on the rule to do IP Masquerading and it will work.
+You can read about what the IoT Hub does here: [https://learn.microsoft.com/en-us/azure/iot-hub/](https://learn.microsoft.com/en-us/azure/iot-hub/). The purpose of it is to make it easy to manage a fleet of IoT sensors which exist in the real world, emitting data at intervals which needs to be stored and analyzed. For this article, we will simply create one virtual device of which we will push data through a python script provided by Microsoft (source code here: [https://github.com/Azure/azure-iot-sdk-python](https://github.com/Azure/azure-iot-sdk-python)).
 
-### Install OpenVPN
+You can learn how to create the IoT Hub and how to deploy code/functions through an older blog: [https://griddb.net/en/blog/iot-hub-azure-griddb-cloud/](/en/blog/iot-hub-azure-griddb-cloud/). Because this information is here, we will continue on assuming you have already built the IoT Hub in your Azure and we will just discuss the source code needed to get our data to GridDB Cloud through the native Java API.
 
-To install openvpn and the client certs for my machine, I used the guide from ubuntu: https://documentation.ubuntu.com/server/how-to/security/install-openvpn/. Through this guide, you will have OpenVPN installed on your Azure VM and then will have certs on your local machine that can connect to your VM. 
+### Azure Functions
+
+The real glue of this set up is our [Azure Functions](https://azure.microsoft.com/en-us/products/functions). For this article, I created an Azure Function Standard Plan. From there, I connected the standard plan to the virtual network which is already peer-connected to our GridDB Cloud instance. With this simple step, all of our Azure Functions which we deploy and use on this app service plan will already be able to communicate with GridDB Cloud seamlessly.
+
+And for our Azure Function that combines with the IoT Hub to detect events and use that data to run some code, we will use a specific function binding in our java code: `@EventHubTrigger(name = "message", eventHubName = "events", connection = "IotHubConnectionString", consumerGroup = "myfuncapp-cg", cardinality = Cardinality.ONE) String message,`. In this case, we are telling our Azure Function that whenever an event occurs in our IoT Hub (as defined in the IoTHubConnectionString), we want to run the following code. The magic is all contained within Azure Functions and that `IoTHubConnectionString`, which is gathered in the IoT Hub called: `primary connection string`. 
+
+So in your Azure Function, when you create it, you should head to Settings -> Environment Variables. And set the `IoTHubConnectionString` as well as your GridDB Cloud credentials. 
+
+![environment variables dashboard](environment-vars.png). 
+
+If you are using VSCode, you can set these vars in your `loca.settings.json` file created when you select `Azure Functions Create Function App` (as mentioned in the blog linked above) and then do `Azure Functions: Deploy Local Settings`. 
+
+## IoT Hub Event Triggering
+
+Now let's look at the actual source code that pushes data to GridDB Cloud.
+
+### Java Source Code for Pushing Event Telemetry Data
+
+Our goal here is to log all of our sensors' within the IoT Hub's data into persistent storage (aka GridDB Cloud). To do this, we use Azure Functions and their special [bindings/triggers](https://learn.microsoft.com/en-us/azure/azure-functions/functions-triggers-bindings?tabs=isolated-process%2Cnode-v4%2Cpython-v2&pivots=programming-language-javascript). In this case, we want to detect whenever our IoT Hub's sensors receive telemetry data, which will then fire off our java code which will forge a connection to GridDB through its NoSQL interface and simply write that row of data. Here is the main method in Java: 
+
+```java
+public class IotTelemetryHandler {
+
+	private static GridDB griddb = null;
+	private static final ObjectMapper MAPPER = new ObjectMapper();
+
+	@FunctionName("IoTHubTrigger")
+	public void run(
+			@EventHubTrigger(name = "message", eventHubName = "events", connection = "IotHubConnectionString", consumerGroup = "myfuncapp-cg", cardinality = Cardinality.ONE) String message,
+
+			@BindingName("SystemProperties") Map<String, Object> properties,
+
+			final ExecutionContext context) {
+
+		TelemetryData data;
+		try {
+			data = MAPPER.readValue(message, TelemetryData.class);
+
+		} catch (Exception e) {
+			context.getLogger().severe("Failed to parse JSON message: " + e.getMessage());
+			context.getLogger().severe("Raw Message: " + message);
+			return;
+		}
+
+		try {
+			context.getLogger().info("Java Event Hub trigger processed a message: " + message);
+
+			String deviceId = properties.get("iothub-connection-device-id").toString();
+			String eventTimeIso = properties.get("iothub-enqueuedtime").toString();
+
+			Instant enqueuedInstant = Instant.parse(eventTimeIso);
+			long eventTimeMillis = enqueuedInstant.toEpochMilli();
+			Timestamp dbTimestamp = new Timestamp(eventTimeMillis);
+			data.ts = dbTimestamp;
+
+			context.getLogger().info("Data received from Device: " + deviceId);
+
+			griddb = new GridDB();
+			String containerName = "telemetryData";
+			griddb.CreateContainer(containerName);
+			griddb.WriteToContainer(containerName, data);
+			context.getLogger().info("Successfully saved to DB.");
+
+		} catch (Throwable t) {
+			context.getLogger().severe("CRITICAL: Function execution failed with exception:");
+			context.getLogger().severe(t.toString());
+			// throw new RuntimeException("GridDB processing failed", t);
+		}
+	}
+
+}
+```
+
+The Java code itself is vanilla, it's what the Azure Functions bindings do that is the real magic. As explained above, using the IoT Hub connection string directs what events are being polled to grab those values and eventually be written to GridDB.
+
+## Data Aggregation
+
+So now we've got thousands of rows of data from our sensors inside of our DB. A typical workflow in this scenario might be a separate service which runs aggregations on a timer to help manage the data or keep around an easily reference snapshot of the data in your sensors. Python is a popular vehicle for running data-science-y type operations, so let's set up the GridDB Python client and let's run a simple average function every hour.
+
+### Python Client
+
+While using Java in the Azure function works out of the box (as shown above), the python client has some requirements for installing and being run. Specifically, we need to actually have Java installed, as well as some special-built java jar files. The easiest way to get this sort of environment set up in an Azure Function is to use [Docker](https://www.docker.com/). 
+
+With Docker, we can include all of the libraries and instructions needed to install the python client and deploy the container with all source code as is. The Python script will then run on a timer every 1 hour and write to a new GridDB Cloud table which will keep track of the hourly aggregates of each data point.
+
+### Dockerize Python Client
+
+To dockerize our python client, we need to convert the instructions on [how to install the python client](https://docs.griddb.net/gettingstarted/python.html) into docker instructions, as well as copy the source code and credentials. Here is what the Dockerfile looks like: 
+
+```bash
+FROM mcr.microsoft.com/azure-functions/python:4-python3.12
+
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+ENV PYTHONBUFFERED=1
+ENV GRIDDB_NOTIFICATION_PROVIDER="[notification_provider]"
+ENV GRIDDB_CLUSTER_NAME="[clustername]"
+ENV GRIDDB_USERNAME="[griddb-user]"
+ENV GRIDDB_PASSWORD="[password]"
+ENV GRIDDB_DATABASE="[database]"
+
+WORKDIR /home/site/wwwroot
+
+RUN apt-get update && \
+    apt-get install -y default-jdk git maven && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+
+WORKDIR /tmp
+RUN git clone https://github.com/griddb/python_client.git && \
+    cd python_client/java && \
+    mvn install
+
+RUN mkdir -p /home/site/wwwroot/lib && \
+    mv /tmp/python_client/java/target/gridstore-arrow-5.8.0.jar /home/site/wwwroot/lib/gridstore-arrow.jar
 
 
-#### 1. Install OpenVPN & Easy-RSA
+WORKDIR /tmp/python_client/python
+RUN python3.12 -m pip install .
 
-* `sudo apt install openvpn easy-rsa`
+WORKDIR /home/site/wwwroot
 
-#### 2. Set Up the PKI (Certificate Authority)
+COPY ./lib/gridstore.jar /home/site/wwwroot/lib/
+COPY ./lib/arrow-memory-netty.jar /home/site/wwwroot/lib/
+COPY ./lib/gridstore-jdbc.jar /home/site/wwwroot/lib/
+COPY *.py .
+COPY requirements.txt .
 
-* `sudo make-cadir /etc/openvpn/easy-rsa`
-* `cd /etc/openvpn/easy-rsa/`
-* Initialize PKI:
-  `./easyrsa init-pki`
-* Build the CA:
-  `./easyrsa build-ca`
+RUN python3.12 -m pip install -r requirements.txt
 
-## 3. Generate Server Certificates
+ENV CLASSPATH=/home/site/wwwroot/lib/gridstore.jar:/home/site/wwwroot/lib/gridstore-jdbc.jar:/home/site/wwwroot/lib/gridstore-arrow.jar:/home/site/wwwroot/lib/arrow-memory-netty.jar
+```
 
-* Generate server key request:
-  `./easyrsa gen-req myservername nopass`
-* Generate Diffie-Hellman params:
-  `./easyrsa gen-dh`
-* Sign server certificate:
-  `./easyrsa sign-req server myservername`
-* Copy required files into `/etc/openvpn/`:
+Once in place, you do the normal docker build, docker tag, docker push. But there is one caveat!
 
-  * `pki/dh.pem`
-  * `pki/ca.crt`
-  * `pki/issued/myservername.crt`
-  * `pki/private/myservername.key`
+#### Azure Container Registry
 
-#### 4. Create Client Certificates
+Though not necessary, setting up your own Azure Container Registry(acr) (think Dockerhub) to host your images makes life a whole lot simpler for deploying your code to Azure Functions. So in my case, I set up an acr, and then pushed my built images into that repository. 
 
-* Generate client key request:
-  `./easyrsa gen-req myclient1 nopass`
-* Sign client cert:
-  `./easyrsa sign-req client myclient1`
-* Securely copy to the client machine:
+![registry page](acr.png)
 
-  * `ca.crt` (from earlier)
-  * `myclient1.crt` (inside /pki/issued)
-  * `myclient1.key` (inside /pki/private)
+Once there, I went to the deployment center of my new python Azure Function and selected my container's name etc. From there, it will deploy and run based on your stipulations. Cool!
 
-#### 5. Configure the OpenVPN Server
+![deployment-center](deployment-center.png)
 
-* Copy sample config:
-  `sudo cp /usr/share/doc/openvpn/examples/sample-config-files/server.conf /etc/openvpn/myserver.conf`
-* Edit `myserver.conf` so these lines reference your certs:
+### Python Code to do Data Aggregation
 
-  ```conf
-  ca ca.crt
-  cert myservername.crt
-  key myservername.key
-  dh dh.pem
-  ```
-* Generate TLS auth key:
-  `sudo openvpn --genkey secret ta.key`
-* Enable IP forwarding:
+Similar to the Java implementation above, we will use the Azure Function bindings/trigger on the python code to use a cron-style layout for the timer. Under the hood, the Azure Function infrastructure will run the function every 1 hour based on our setting. The code itself is also vanilla: we will query data from our table written to above from the past 1 hour, find the averages, and then write that data back to GridDB Cloud on another table. 
 
-  * Edit `/etc/sysctl.conf`, set:
-    `net.ipv4.ip_forward=1`
-  * Apply:
-    `sudo sysctl -p /etc/sysctl.conf`
-* Start the server:
-  `sudo systemctl start openvpn@myserver`
+Note that since this function solely relies on the Azure Function timer and GridDB, there is no need for special IoT Hub Connection String-type connection strings to grab. Here is the main python that Azure will run when the time is right: 
 
-#### 6. Configure the Client
+```python
+import logging
+import azure.functions as func
+import griddb_python as griddb
+from griddb_connector import GridDB
+from griddb_sql import GridDBJdbc
+from datetime import datetime
+import pyarrow as pa
+import pandas as pd
+import sys
 
-* Install OpenVPN:
-  `sudo apt install openvpn`
-* Copy sample config:
-  `sudo cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf /etc/openvpn/`
-* Place the files on client:
+app = func.FunctionApp()
 
-  * `ca.crt`
-  * `myclient1.crt`
-  * `myclient1.key`
-  * `ta.key`
-* Edit `client.conf`:
+@app.timer_trigger(schedule="0 0 * * * *", arg_name="myTimer", run_on_startup=True,
+              use_monitor=False) 
+def aggregations(myTimer: func.TimerRequest) -> None:
+    if myTimer.past_due:
+        logging.info('The timer is past due!')
 
-  ```conf
-  client
-  remote your.server.ip 1194
-  ca ca.crt
-  cert myclient1.crt
-  key myclient1.key
-  tls-auth ta.key 1
-  ```
-* Start client:
-  `sudo systemctl start openvpn@client`
+    logging.info('Python timer trigger function executed.')
+    nosql = None
+    store = None
+    ra = None
+    griddb_jdbc = None
+    
+    try:
+        print("Attempting to connect to GridDB...")
+        nosql = GridDB()
+        store = nosql.get_store()
+        ra = griddb.RootAllocator(sys.maxsize)
+        if not store:
+            print("Connection failed. Exiting script.")
+            sys.exit(1) 
 
-#### 7. Quick Troubleshooting
+        griddb_jdbc = GridDBJdbc()    
+        if griddb_jdbc.conn:
+            averages =  griddb_jdbc.calculate_avg()
+            nosql.pushAvg(averages)
+        
 
-* Check logs:
-  `sudo journalctl -u openvpn@myserver -xe`
-  `sudo journalctl -u openvpn@client -xe`
-* Ensure:
+        print("\nScript finished successfully.")
 
-  * Ports match
-  * Protocol (`udp`/`tcp`) matches
-  * `tls-auth` index matches (0 on server, 1 on client)
-  * Same `cipher`, `auth`, and `dev tun` settings
+    except Exception as e:
+        print(f"A critical error occurred in main: {e}")
+    
+    finally:
+        print("Script execution complete.")
+```
 
-### IP Masquerading
+The rest of the code isn't very interesting but let's take a brief look. Here we are querying the last 1 hour of data and calculating the averages: 
 
-As explained above, if you try it now, it simply won't work, as the traffic will be routed to the GridDB DB from the IP on your local environment which is blocked due to security rules. But once this setting is turned on, it will work. Run the following command in your VM: `sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE`. And that should do it! 
+```python
+    def calculate_avg(self):
+        try:
 
-To ensure it works, you can of course run the sample code based on the previous blog. But before going through that effort, you can also simply try this: from the local environment (connected to the VPN), ping the IP of your GridDB Cloud DB (can be fetched from the notification provider URL in the GridDB Cloud DB UI home page) `ping 172.26.30.68`. And then on your Azure VM (the one hosting the VPN and that can also connect to GridDB Cloud) run: `sudo tcpdump -i eth0 -n host 172.26.30.68`. If successful, your pings to GridDB Cloud should be routed through the VM and be heading to its destination. Cool!
+            curs = self.conn.cursor()
+            queryStr = 'SELECT temperature, pressure, humidity FROM telemetryData WHERE ts BETWEEN TIMESTAMP_ADD(HOUR, NOW(), -1) AND NOW();'
+            curs.execute(queryStr)
+            if curs.description is None:
+                print("Query returned no results or failed.")
+                return None
+            
+            column_names = [desc[0] for desc in curs.description]
+            all_rows = curs.fetchall()
+            if not all_rows:
+                print("No data found for the query range.")
+                return None
 
-And now you can feel free to run the sample code from the previous blog and it should work when pointed to your cloud-based database.
+            results = {name.lower(): [] for name in column_names}
+
+            for row in all_rows:
+                for i, name in enumerate(column_names):
+                    results[name.lower()].append(row[i])
+
+            averages = {
+                'temperature': statistics.mean(results['temperature']),
+                'humidity': statistics.mean(results['humidity']),
+                'pressure': statistics.mean(results['pressure'])
+            }
+
+            return averages
+```
+
+Note: for this function, we created the table beforehand (not in the Python code).
+
+## Bonus Azure Kafka Event Hub
+
+We also set up an Event Hub function to query the last 5 minutes of telemetry data and stream it through Kafka. We ended up leaving this as dangling, but I've included it here because the source code already exists. It also uses a timer trigger and relies solely on the connection to GridDB Cloud. Azure's Event Hub handls all of the complicated Kafka stuff under the hood, we just needed to return the data to be pushed through Kafka. Here is the source code: 
+
+
+```java
+package net.griddb;
+
+import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.annotation.EventHubOutput;
+import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.azure.functions.annotation.TimerTrigger;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+
+public class GridDBPublisher {
+    @FunctionName("GridDBPublisher")
+    @EventHubOutput(name = "outputEvent", eventHubName = "griddb-telemetry", // <--- YOUR EVENT HUB NAME
+            connection = "EventHubConnectionAppSetting" // <--- CONNECTION STRING SETTING NAME
+    )
+    public List<String> run( // Change return type to List<String> for batching
+            @TimerTrigger(name = "timerInfo", schedule = "0 */1 * * * *") String timerInfo,
+            final ExecutionContext context) {
+
+        // 1. Array to hold the serialized GridDB data (JSON Strings)
+        List<String> recordsToPublish = new ArrayList<>();
+
+        GridDBJdbc griddbSql = new GridDBJdbc();
+        try {
+            // Grabbing the last time data was pushed to Kafka
+            java.sql.Timestamp last_pushed_timestamp = griddbSql.GetMaxTime(context, "ControlTable",
+                    "last_pushed_time");
+            // Query the telemtry data table using the timestamp from above.
+            // If values are newer than our control table says, grab those rows
+            BatchResult result = griddbSql.GetTelemetryDataNewerThanControlTimeStamp(context, "telemetryData",
+                    last_pushed_timestamp);
+            recordsToPublish = result.getRecords();
+
+            if (recordsToPublish.size() > 0) {
+                java.sql.Timestamp max_telemetryTs = result.getMaxTimestamp();
+                griddbSql.WriteLastPushedTimeStampToControlTable(context, max_telemetryTs);
+            } else {
+                return recordsToPublish;
+            }
+        } catch (SQLException e) {
+            context.getLogger().log(Level.SEVERE, "Error processing row or serializing JSON", e);
+        }
+
+        return recordsToPublish; // The binding sends the contents of this list
+    }
+
+}
+```
+
+Azure Function does all of the heavy lifting here, which I think is rather cool. Just returning the ArrayList from this function allows the data to be streamed through Kafka is a true delight!
+
+## Conclusion 
+
+And with that, we have learned how powerful having GridDB Cloud in Azure can be; you can truly build robust IoT Systems without needing to produce hardware, perfect for cloud-based systems and for proof-of-concepts.

@@ -1,0 +1,4 @@
+azure-functions
+jpype1
+pyarrow
+pandas
