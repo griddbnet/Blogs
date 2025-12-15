@@ -6,13 +6,16 @@ In this article, we will build upon that idea and teach you how to set up a VPN 
 
 ## Prereqs
 
-To fully utilize GridDB Cloud with native APIs in your local environment, you will need to, of course, have access to one of the paid GridDB Cloud instances: https://griddb.net/en/blog/griddb-cloud-azure-marketplace/. You will also need to have set up a the vnet peering as described in the opening parapgraphs of this article: [TODO LINK]. 
+To fully utilize GridDB Cloud with native APIs in your local environment, you will need to, of course, have access to one of the paid GridDB Cloud instances: https://griddb.net/en/blog/griddb-cloud-azure-marketplace/. The nice thing, though, is that there are trial versions on the marketplace of one month so that you may try out GridDB Cloud's features for free!
 
+You will also need to have set up a the vnet peering as described in the opening parapgraphs of this article: [GridDB Cloud v3.1 – How to Use the Native APIs with Azure’s VNET Peering ](https://griddb.net/en/blog/griddb-cloud-v3-1-how-to-use-the-native-apis-with-azures-vnet-peering/)
 If you have this set up, you should have the following in your Azure resource: 
 
 - GridDB Cloud (Pay As You Go)
 - Azure Virtual Network with peering connection to GridDB Cloud 
 - A virtual machine connected to the above vnet
+
+Please note, that all of the above will incur some sort of cost on Azure (for example, an Azure VM b1 instance costs roughly ~$8/month if left on at all times).
 
 ## OpenVPN and IP Masquerading
 
@@ -129,6 +132,24 @@ To install openvpn and the client certs for my machine, I used the guide from ub
 
 As explained above, if you try it now, it simply won't work, as the traffic will be routed to the GridDB DB from the IP on your local environment which is blocked due to security rules. But once this setting is turned on, it will work. Run the following command in your VM: `sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE`. And that should do it! 
 
-To ensure it works, you can of course run the sample code based on the previous blog. But before going through that effort, you can also simply try this: from the local environment (connected to the VPN), ping the IP of your GridDB Cloud DB (can be fetched from the notification provider URL in the GridDB Cloud DB UI home page) `ping 172.26.30.68`. And then on your Azure VM (the one hosting the VPN and that can also connect to GridDB Cloud) run: `sudo tcpdump -i eth0 -n host 172.26.30.68`. If successful, your pings to GridDB Cloud should be routed through the VM and be heading to its destination. Cool!
+To ensure it works, you can of course run the [sample code based on the previous blog](https://github.com/griddbnet/Blogs/tree/griddb_cloud_paid_guide/sample-code). But before going through that effort, you can also simply try this: from the local environment (connected to the VPN), ping the IP of your GridDB Cloud DB (can be fetched from the notification provider URL in the GridDB Cloud DB UI home page) `ping 172.26.30.68`. And then on your Azure VM (the one hosting the VPN and that can also connect to GridDB Cloud) run: `sudo tcpdump -i eth0 -n host 172.26.30.68`. If successful, your pings to GridDB Cloud should be routed through the VM and be heading to its destination. Cool!
 
-And now you can feel free to run the sample code from the previous blog and it should work when pointed to your cloud-based database.
+To run the sample code, you can start by cloning the github repo and changing to the correct branch: 
+
+`$ git clone https://github.com/griddbnet/Blogs.git --branch griddb_cloud_paid_guide`
+
+Then set your env variables for your GridDB Connection: 
+
+```bash
+export GRIDDB_NOTIFICATION_PROVIDER=""
+export GRIDDB_CLUSTER_NAME=""
+export GRIDDB_USERNAME=""
+export GRIDDB_PASSWORD=""
+export GRIDDB_DATABASE=""
+```
+
+And then from here, navigate to either the java or python dirs and run them!
+
+For java, do `$ mvn clean package` and run the jar file: `$ java -jar target/java-samples-1.0-SNAPSHOT-jar-with-dependencies.jar`
+
+For python, after installing the [python client](https://docs.griddb.net/gettingstarted/python.html), you can install the requirements text (`python3.12 -m pip install -r requirements.txt`), make sure your JAVA_HOME and CLASSPATH env variables are set, and then run the code `python3.12 main.py`
