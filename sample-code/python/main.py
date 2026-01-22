@@ -77,7 +77,14 @@ def arrowMultiPut(store, ra):
         col = store.put_container(conInfo)
         print("Successfully created container: p01")
 
-        rb = pa.record_batch(df1)
+        pa_schema = pa.schema([
+                        ('id', pa.int64()),
+                        ('c1', pa.string()),
+                        ('c2', pa.bool_())
+    
+            ])
+
+        rb = pa.record_batch(df1, schema=pa_schema)
         col.multi_put(rb, ra)
         print(f"Successfully multi-put {len(df1)} rows into p01")
 
