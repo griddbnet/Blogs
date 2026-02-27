@@ -1,0 +1,162 @@
+---
+import { Image } from "astro:assets";
+// Added 'placement' to the props (expects a number 1-5, or undefined)
+const {
+    slug,
+    title,
+    description,
+    image,
+    isFinalist = false,
+    placement,
+} = Astro.props;
+
+// Dynamically determine the banner text and CSS class
+let bannerText = null;
+let bannerClass = "";
+
+if (placement === 1) {
+    bannerText = "🏆 1ST PLACE";
+    bannerClass = "banner-1st";
+} else if (placement === 2) {
+    bannerText = "🥈 2ND PLACE";
+    bannerClass = "banner-2nd";
+} else if (placement === 3) {
+    bannerText = "🥉 3RD PLACE";
+    bannerClass = "banner-3rd";
+} else if (placement === 4) {
+    bannerText = "🏅 4TH PLACE";
+    bannerClass = "banner-runner";
+} else if (placement === 5) {
+    bannerText = "🏅 5TH PLACE";
+    bannerClass = "banner-runner";
+} else if (isFinalist) {
+    bannerText = "⭐ FINALIST";
+    bannerClass = "banner-finalist";
+}
+---
+
+<a href={`/projects/${slug}`} class="group block h-full project-card">
+    {/* Only render the banner div if there is bannerText to show */}
+    {
+        bannerText && (
+            <div class={`banner-base ${bannerClass}`}>
+                <span>{bannerText}</span>
+            </div>
+        )
+    }
+
+    <div
+        class="h-full bg-white rounded-lg overflow-hidden border border-gray-100 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-200"
+    >
+        <div
+            class="relative h-48 overflow-hidden bg-gray-100 border-b border-gray-100 thumbnail-container"
+        >
+            <Image
+                src={image}
+                alt={title}
+                width={600}
+                height={350}
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+        </div>
+        <div class="p-6 flex flex-col">
+            <h3
+                class="text-xl font-bold text-slate-800 mb-2 group-hover:text-[#005BAC] transition-colors"
+            >
+                {title}
+            </h3>
+
+            <p
+                class="text-slate-600 text-sm leading-relaxed line-clamp-3 mb-4 flex-grow"
+            >
+                {description}
+            </p>
+
+            <div
+                class="mt-auto pt-4 border-t border-gray-100 flex items-center text-[#00A4E1] font-semibold text-sm"
+            >
+                See Project Details <span
+                    class="ml-2 transition-transform group-hover:translate-x-1"
+                    >→</span
+                >
+            </div>
+        </div>
+    </div>
+</a>
+
+<style>
+    .project-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Shared styles for all banners */
+    .banner-base {
+        position: absolute;
+        top: 18px;
+        right: -42px;
+        font-weight: 900;
+        font-size: 11px;
+        padding: 6px 45px;
+        transform: rotate(45deg);
+        z-index: 20;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* 1st Place: Animated Gold Gradient */
+    .banner-1st {
+        background: linear-gradient(90deg, #ffdf00, #d4af37, #ffdf00);
+        background-size: 200% auto;
+        color: #000;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        animation: shine 2.5s infinite linear;
+    }
+
+    /* 2nd Place: Silver/Platinum */
+    .banner-2nd {
+        background: linear-gradient(90deg, #e0e0e0, #f5f5f5, #bdbdbd);
+        color: #222;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    /* 3rd Place: Bronze/Copper */
+    .banner-3rd {
+        background: linear-gradient(90deg, #cd7f32, #e6a87c, #8b4513);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* 4th & 5th Place: Hackathon Blue Theme */
+    .banner-runner {
+        background: linear-gradient(90deg, #005bac, #00a4e1);
+        color: #fff;
+    }
+
+    /* Standard Finalist */
+    .banner-finalist {
+        background-color: #334155; /* Slate 700 */
+        color: #fff;
+    }
+
+    /* Keyframes for the 1st Place Gold Shine */
+    @keyframes shine {
+        to {
+            background-position: 200% center;
+        }
+    }
+
+    .thumbnail-container {
+        width: 100%;
+        background-color: #f3f4f6;
+        overflow: hidden;
+    }
+    .project-card img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+</style>

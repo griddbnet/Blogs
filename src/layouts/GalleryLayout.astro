@@ -1,0 +1,19 @@
+---
+import "../styles/global.css";
+---
+
+<div
+	class="bg-gradient-to-r from-[#00A4E1] to-[#005BAC] pt-32 pb-20 px-8 text-center text-white"
+>
+	<h1 class="text-5xl font-bold mb-4">Hackathon Gallery</h1>
+	<p class="text-xl opacity-90 max-w-2xl mx-auto">
+		Explore the projects built with GridDB Cloud, in-memory performance, now
+		fully managed.
+	</p>
+</div>
+
+<div class="max-w-7xl mx-auto px-6 -mt-10 pb-20">
+	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+		<slot />
+	</div>
+</div>

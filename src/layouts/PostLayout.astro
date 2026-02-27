@@ -1,0 +1,127 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { Image } from "astro:assets";
+
+const { frontmatter } = Astro.props;
+---
+
+<BaseLayout title={frontmatter.title}>
+  <div class="min-h-screen bg-gray-50 pb-20">
+    <div
+      class="bg-gradient-to-r from-[#00A4E1] to-[#005BAC] pt-32 pb-48 px-6 text-center text-white relative"
+    >
+      <a
+        href="/"
+        class="absolute top-28 left-8 flex items-center text-blue-100 hover:text-white font-bold tracking-wide transition-all group"
+      >
+        <span
+          class="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 group-hover:bg-white/20 mr-3 transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 transform group-hover:-translate-x-1 transition-transform"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+        </span>
+        Back to Gallery
+      </a>
+
+      <h1
+        class="text-4xl md:text-5xl font-bold mb-6 tracking-tight drop-shadow-sm"
+      >
+        {frontmatter.title}
+      </h1>
+      <div
+        class="flex justify-center items-center gap-4 text-blue-100 font-medium text-lg"
+      >
+        <span>By {frontmatter.teamName}</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-300"></span>
+        <span>{frontmatter.type}</span>
+      </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-6 relative z-10">
+      <div
+        class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 -mt-32 overflow-hidden border border-slate-100"
+      >
+        {
+          frontmatter.thumbnail && (
+            <div class="w-full bg-slate-100 border-b border-slate-100">
+              <Image
+                src={frontmatter.thumbnail}
+                alt={frontmatter.title}
+                width={1200}
+                height={600}
+                class="w-full h-auto object-cover max-h-[600px]"
+              />
+            </div>
+          )
+        }
+
+        <div class="p-8 md:p-12">
+          <div class="mb-8">
+            <span
+              class="inline-block bg-blue-50 text-[#005BAC] px-4 py-1.5 rounded-full text-sm font-bold tracking-wide uppercase border border-blue-100"
+            >
+              {frontmatter.type}
+            </span>
+          </div>
+
+          <div
+            class="content-body text-slate-700 leading-relaxed text-lg space-y-6"
+          >
+            <slot />
+          </div>
+
+          <div
+            class="mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center"
+          >
+            <div class="text-slate-500">
+              <span class="font-semibold text-slate-900">Team Members:</span>
+              {frontmatter.teamName}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .content-body :global(h1),
+  .content-body :global(h2),
+  .content-body :global(h3) {
+    color: #1e293b; /* slate-800 */
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  .content-body :global(h1) {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+  .content-body :global(h2) {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+  .content-body :global(p) {
+    margin-bottom: 1.5rem;
+  }
+  .content-body :global(ul) {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .content-body :global(a) {
+    color: #00a4e1;
+    text-decoration: underline;
+  }
+</style>
