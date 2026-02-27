@@ -1,9 +1,46 @@
-Over the last few months of 2025, GridDB held what is known as a [hackathon](https://en.wikipedia.org/wiki/Hackathon), to really highlight the versatility and productiveness of GridDB Cloud. The prompt of the event was simple: use the power of GridDB Cloud to build any sort of app you want; the webpage for the event made mentions of IoT, but really the prompt was open and users could submit ideas based on any personal interests or expertise. 
+# Astro Starter Kit: Basics
 
-The event (officially titled as the GridDB IoT Hackathon) had two distinct phases: the aforementioned online phase, where teams of 2-5 could submit their ideas with no coding necessary, just a basic blueprint of how they would plan to implement their idea. The next phase of the event would be an all-out in-person event hosted in Bengaluru, India for the top 5 teams, decided by the judging panel. And as exciting as the in-person event was, we will save that portion for another day. For today's article, we will focus on the online portion of the event.
+```sh
+npm create astro@latest -- --template basics
+```
 
-And now, for some numbers. We had over 250 participants sign up for the event through the online portal. From there, we had 28 teams submit their ideas. We had ideas ranging from health, to finance, to on-the-field sensors for a variety of different purposes. All-in-all, we were very impressed and flattered at the breadth and range of project ideas submitted by the wonderful GridDB community.
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
 
-Due to technical issues, we lost access to the original hackathon portal, but we have re-created the gallery for all to see here: [TODO](). 
+## 🚀 Project Structure
 
-Please be on the lookout for the next article where we will showcase the 5 submissions which graduated on to the finalist round where we hosted an event in Bengaluru, India.
+Inside of your Astro project, you'll see the following folders and files:
+
+```text
+/
+├── public/
+│   └── favicon.svg
+├── src
+│   ├── assets
+│   │   └── astro.svg
+│   ├── components
+│   │   └── Welcome.astro
+│   ├── layouts
+│   │   └── Layout.astro
+│   └── pages
+│       └── index.astro
+└── package.json
+```
+
+To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+
+## 🧞 Commands
+
+All commands are run from the root of the project, from a terminal:
+
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `npm install`             | Installs dependencies                            |
+| `npm run dev`             | Starts local dev server at `localhost:4321`      |
+| `npm run build`           | Build your production site to `./dist/`          |
+| `npm run preview`         | Preview your build locally, before deploying     |
+| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `npm run astro -- --help` | Get help using the Astro CLI                     |
+
+## 👀 Want to learn more?
+
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
