@@ -10,6 +10,8 @@ placement: 2
 
 # Smart Factory IoT Pulse
 
+[Download the Presentation](/Wimera.pdf)
+
 ## Inspiration
 Factories generate massive amounts of machine data every second—status updates, production counts, energy usage, vibrations, and more. But most plants still have zero real-time visibility into what is happening on the shop floor. Machines fail silently, energy is wasted, and decisions rely on yesterday’s reports instead of today’s data.
 
