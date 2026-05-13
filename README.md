@@ -8,11 +8,15 @@ With v3.2, that changes. You can now point your local Python or Java client dire
 
 You follow the [official quick start guide](https://www.toshiba-sol.co.jp/pro/griddbcloud/docs-en/v3_2/cloud_quickstart_guide_html/GridDB_Cloud_QuickStartGuide.html#running-a-sample-program) but I will summarize and give some helpful tips that worked for me.
 
-GridDB Cloud v3.2 is available via the Azure Marketplace. If you haven't signed up yet, grab either the [Pay-As-You-Go plan](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=Overview) or the Fixed Monthly plan. Our [Azure Marketplace signup blog](https://www.griddb.net/en/blog/griddb-cloud-azure-marketplace/) walks through the whole process.
+GridDB Cloud v3.2 is available via the Azure Marketplace. If you haven't signed up yet, grab either the [Pay-As-You-Go plan](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=Overview) or the [Fixed Monthly plan](https://marketplace.microsoft.com/en-us/product/2812187.griddb_cloud_shared_instance_with_1month_trial?tab=Overview). Our [Azure Marketplace signup blog](https://www.griddb.net/en/blog/griddb-cloud-azure-marketplace/) walks through the whole process.
 
 ## The Checklist
 
 Here's the short version of what you need to do, in order. I'll go deeper on each step below.
+
+First, we need to prepare our environment. 
+
+### Preparation
 
 1. Generate your notification provider URL from the Cloud dashboard **before** whitelisting
 2. Whitelist your local machine's IP in the GridDB access area
@@ -24,9 +28,17 @@ Here's the short version of what you need to do, in order. I'll go deeper on eac
 
 That last one is the whole reason this works. Without it, the client tries to connect over the private route and will timeout.
 
+
+
 ### 1. Generate the Notification Provider URL (Do This First!)
 
-Before you do anything else in the Cloud dashboard, head to the cluster settings and manually generate the notification provider URL. If you whitelist your IP first, it will fail with a strange warning.
+Before you do anything else in the Cloud dashboard, head to the cluster settings and manually generate the notification provider URL. 
+
+![Empty Notification Provider to Start](empty-notification.png)
+
+If you whitelist your IP first, it will fail with a strange warning.
+
+![error ip address](error-ip-address.png)
 
 Save that URL somewhere — you'll need it for your connection string.
 
@@ -34,9 +46,13 @@ Save that URL somewhere — you'll need it for your connection string.
 
 Now go to the access control area of the Cloud dashboard and add your local machine's public IP to the whitelist. If you click 'Add my IP', it will automatically add your curren't machine's public IP Address.
 
+![whitelisted ip address](whitelisted-ip.png)
+
 ### 3. Download the EE Library Files
 
-Head into cloud dashboard's help/downloads section and grab the Enterprise Edition library bundle. These jars are not available on Maven Central or anywhere else — they ship exclusively with the EE build of GridDB, which is what the Cloud runs on. You need these to be able to make SSL connections to the cloud.
+Head into cloud dashboard's help/downloads/support section and grab the Enterprise Edition library bundle labeled as: `GridDB Cloud Library and Plugin download `. These jars are not available on Maven Central or anywhere else — they ship exclusively with the EE build of GridDB, which is what the Cloud runs on. You need these to be able to make SSL connections to the cloud.
+
+![download the cloud library plugin from supports page](download-library-and-plugin.png)
 
 ### 4. Extract `gridstore-advanced.jar` from the RPM
 
