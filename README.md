@@ -1,12 +1,12 @@
 # Connecting to GridDB Cloud v3.2 from Your Local Dev Environment (No VPN, No VNet Peering)
 
-With the release of GridDB Cloud v3.2, we now get the ability to connect to GridDB Cloud from your local machine using the native NoSQL clients (Java, Python, etc.) — without having to spin up a VNet peering, without configuring a VPN, and without being stuck behind the Web API.
+With the release of GridDB Cloud v3.2, we now get the ability to connect to GridDB Cloud from your local machine using the native NoSQL clients (Java, Python, etc.) — without having to spin up a VNet peering, without configuring a VPN, and without needing to use the Web API.
 
-If you've followed along with our previous blogs covering the [Azure Marketplace signup](https://www.griddb.net/en/blog/griddb-cloud-azure-marketplace/), the [VNet peering setup](https://www.griddb.net/en/blog/griddb-cloud-v3-1-how-to-use-the-native-apis-with-azures-vnet-peering/), or the various [Azure Connected Services integrations](https://www.griddb.net/en/blog/azure-connected-services-with-griddb-cloud/), you know that getting the native API working from outside the cloud used to be a pretty heavy lift. You either had to host your code inside an Azure VNet peered to GridDB Cloud, set up a VPN to tunnel in, or resign yourself to the Web API. For local dev iteration, none of those options were super easy.
+If you've followed along with our previous blogs covering the [Azure Marketplace signup](https://www.griddb.net/en/blog/griddb-cloud-azure-marketplace/), the [VNet peering setup](https://www.griddb.net/en/blog/griddb-cloud-v3-1-how-to-use-the-native-apis-with-azures-vnet-peering/), or the various [Azure Connected Services integrations](https://www.griddb.net/en/blog/azure-connected-services-with-griddb-cloud/), you know that getting the native API working from outside the cloud used to be a bit tricky. You either had to host your code inside an Azure VNet peered to GridDB Cloud, set up a VPN to tunnel in, or resign yourself to the Web API. For local dev iteration, none of those options were super easy.
 
 With v3.2, that changes. You can now point your local Python or Java client directly at your cloud instance over the public internet, authenticate, and run queries.
 
-You follow the [official quick start guide](https://www.toshiba-sol.co.jp/pro/griddbcloud/docs-en/v3_2/cloud_quickstart_guide_html/GridDB_Cloud_QuickStartGuide.html#running-a-sample-program) but I will summarize and give some helpful tips that worked for me.
+You can follow the [official quick start guide](https://www.toshiba-sol.co.jp/pro/griddbcloud/docs-en/v3_2/cloud_quickstart_guide_html/GridDB_Cloud_QuickStartGuide.html#running-a-sample-program) but I will summarize and give some helpful tips that worked for me.
 
 GridDB Cloud v3.2 is available via the Azure Marketplace. If you haven't signed up yet, grab either the [Pay-As-You-Go plan](https://azuremarketplace.microsoft.com/en-us/marketplace/apps/2812187.griddb_cloud_payasyougo?tab=Overview) or the [Fixed Monthly plan](https://marketplace.microsoft.com/en-us/product/2812187.griddb_cloud_shared_instance_with_1month_trial?tab=Overview). Our [Azure Marketplace signup blog](https://www.griddb.net/en/blog/griddb-cloud-azure-marketplace/) walks through the whole process.
 
@@ -70,7 +70,7 @@ Standard Python client install — nothing new here. Follow the [official Python
 
 ### 6. Add Everything to CLASSPATH
 
-Once you have all your jars in one place (`gridstore.jar`, `gridstore-jdbc.jar`, `gridstore-arrow.jar`, `arrow-memory-netty.jar`, and — critically — `gridstore-advanced.jar`), export your `CLASSPATH`:
+Once you have all your jars in one place (`gridstore.jar`, `gridstore-jdbc.jar`, `gridstore-arrow.jar`, `arrow-memory-netty.jar`, and **critically**  `gridstore-advanced.jar`), export your `CLASSPATH`:
 
 ```bash
 export CLASSPATH=/path/to/lib/gridstore.jar:/path/to/lib/gridstore-jdbc.jar:/path/to/lib/gridstore-arrow.jar:/path/to/lib/arrow-memory-netty.jar:/path/to/lib/gridstore-advanced.jar
@@ -122,7 +122,7 @@ Successfully put row into SamplePython_timeseries1: [datetime.datetime(2025, 10,
 [datetime.datetime(2025, 10, 1, 15, 0), 10.21]
 ```
 
-That's it. No Azure Function wrapping, no container, no VPN client running in the background — just your script, talking directly to GridDB Cloud.
+That's it. No Azure Function wrapping, no container, no VPN client running in the background; just your script, talking directly to GridDB Cloud.
 
 The full sample python source code along with Java sample code is included with this article.
 
@@ -186,6 +186,26 @@ Creating Container
 ```
 
 And again, the sample code will be shared here. In this case, we are connecting to GridDB Cloud via the NoSQL interface AND the SQL interface through JDBC. Both work here once the above steps are adhered to.
+
+### C Client
+
+Please note, that if you would like to use the C Client, you will also need to follow the same procedure as the Java code but for the C Client. That is, you will need to include the 'public route' to your connection details and will need to extract the `.rpm` called `griddb-ee-c-lib-5.8.0-linux.x86_64.rpm` (assuming you are not using CentOS/Rocky Linux) and grab the library files `libgridstore.so.0.0.0 and libgridstore_advanced.so.0.0.0` and the header (gridstore.h).
+
+Once you have those in place, add the public route to your connection details
+
+```c
+const GSPropertyEntry props[] = {
+    { "notificationProvider", "https://<url-encoded-provider-url>" },
+    { "clusterName",          "<your cluster name>" },
+    { "database",             "public" },
+    { "user",                 "<user>" },
+    { "password",             "<password>" },
+    { "sslMode",              "PREFERRED" },
+    { "connectionRoute",      "PUBLIC" }
+};
+```
+
+And you should be good to go for the C Client as well!
 
 ## Conclusion
 
