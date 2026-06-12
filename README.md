@@ -194,9 +194,9 @@ gridstore-advanced-5.8.0.jar          gridstore-jdbc-call-logging-5.8.0.jar
 gridstore-call-logging-5.8.0.jar
 ```
 
-These JARs are gathered from the GridDB Cloud v3.2 support page. You will also need to build the GridDB Kafka Connector from [this fork](https://github.com/Imisrael/griddb-kafka-connect), which adds support for the `connection.route` and `database` configuration properties required for GridDB Cloud's native connection.
+These JARs are gathered from the [GridDB Cloud v3.2](https://www.griddb.net/en/blog/connecting-to-griddb-cloud-v3-2-from-your-local-dev-environment-no-vpn-no-vnet-peering/) support page. You will also need to build the GridDB Kafka Connector from [this fork](https://github.com/Imisrael/griddb-kafka-connect), which adds support for the `connection.route` and `database` configuration properties required for GridDB Cloud's native connection.
 
-> **Author note:** Link the v3.2 support page (the `[TODO v3.2 BLOG]` reference from the original draft).
+
 
 ### Kafka Connect
 
