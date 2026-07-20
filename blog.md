@@ -2,6 +2,8 @@
 
 IoT devices can be messy and unweildy. The same sensor that reports a clean temperature reading one second will spit out an ugly, text-based firmware error the next, with both arriving in the same stream. If you force a single tool to handle that mixed data input, you end up compromising somewhere: metrics agents are miserable at parsing free-form text, and log processors are wasteful for high-volume numeric data.
 
+![archeticture](architecture-diagram.png)
+
 In this article we will not compromise. We will build a pipeline that splits the stream at the front door and hands each half to the tool that is good at it:
 
 - **Telegraf**, InfluxData's metrics agent, consumes the clean JSON metrics.
