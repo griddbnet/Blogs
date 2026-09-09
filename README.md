@@ -4,6 +4,8 @@ GridDB ships an ODBC driver, which means any SQL-speaking Windows tool can query
 
 The driver works. But if you install it by following the bundled setup script, it will fail on every connection attempt with an instant, empty error, and nothing in the English documentation will tell you why. This post covers the setup, the failure, the systematic diagnosis, and the one-line fix that lives only in the Japanese user guide.
 
+![power-bi.png](power-bi.png)
+
 ## What's in the download
 
 The ODBC driver ships in the GridDB Cloud library bundle, under an `ODBC/` folder:
