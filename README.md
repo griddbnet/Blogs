@@ -1,163 +1,164 @@
-# Connecting Power BI to GridDB Cloud with the ODBC Driver (and the One Setup Step That Isn't Documented in English)
+# Analyzing GridDB Cloud Time-Series Data with an LLM on Azure AI Foundry
 
-GridDB ships an ODBC driver, which means any SQL-speaking Windows tool can query GridDB directly: Power BI, Excel, Tableau, Access. For GridDB Cloud users, this is the path to building dashboards on top of time-series data without writing any application code.
+In this post we'll wire up an LLM running on Azure AI Foundry to time-series data living in GridDB Cloud, and have it do what a data analyst does on a first pass: describe the trends, flag anything that looks off, and give a rough sense of where things are headed. We wanted to keep it simple, so this article will focus solely on bucketed sensor readings in, plain-English analysis out.
 
-The driver works. But if you install it by following the bundled setup script, it will fail on every connection attempt with an instant, empty error, and nothing in the English documentation will tell you why. This post covers the setup, the failure, the systematic diagnosis, and the one-line fix that lives only in the Japanese user guide.
+GridDB Cloud exposes a Web API, so the script pulls readings over HTTPS with a single SQL statement, formats them as text, and hands them to the model. There's no driver to install and nothing to configure on the read side. If you can make an HTTP request, you can do this.
 
-![power-bi.png](power-bi.png)
+We'll cover:
 
-## What's in the download
+1. Setting up a Foundry project and a serverless model deployment
+2. Pulling bucketed data from GridDB Cloud through the Web API
+3. The analysis script
+4. A small web UI on top of it
+5. The dataset we ran it against
+6. What the model actually found
 
-The ODBC driver ships in the GridDB Cloud library bundle, under an `ODBC/` folder:
+## Setting up Azure AI Foundry
 
-```
-ODBC/
-├── gridstore-odbc-sample.zip
-├── GridStoreODBC-sample.cpp / .sln / .vcproj
-├── x64/
-│   ├── GridStoreODBC64.dll
-│   ├── gridstore_advanced.dll
-│   ├── libssl-3-x64.dll
-│   ├── libcrypto-3-x64.dll
-│   ├── msvcp140.dll
-│   ├── vcruntime140.dll
-│   ├── vcruntime140_1.dll
-│   └── GridStoreODBC_64bit_setup.bat
-└── x86/
-    └── (32-bit equivalents)
-```
+Create a Foundry project (ours is called `griddb-llm`) and deploy a model. We ended up on `gpt-5.4-nano` as a serverless deployment.
 
-A few things to understand about what's here:
+One thing worth knowing before you start: model availability depends on quota, and quota is regional. When we first tried to deploy the larger GPT models, the Azure OpenAI resource had no Global Standard capacity in any region, and the one deployment that did succeed came through as Global Batch, which can't serve live requests. Serverless deployments sidestep that. They're pay-per-token and don't draw from your regional quota, so if you hit the same wall, that's the route.
 
-- **This is the SQL interface**, not the NoSQL native client. ODBC talks to GridDB's SQL port (20001 by default), so it's the same interface as JDBC.
-- **`gridstore_advanced.dll` is the client library that does the actual connecting**, including SSL. The OpenSSL DLLs (`libssl`, `libcrypto`) are its dependencies.
-- **The `.cpp` sample** connects via a plain DSN name with `SQLConnect`. There's no connection-string keyword format; all parameters live in the DSN.
-- **Windows only.** These are DLLs and a `.bat`. If you're on Linux or macOS you need a Windows box or VM.
+Once deployed, grab three things from the project's overview page:
 
-## Prerequisites
+- The endpoint. For serverless it looks like `https://<resource>.services.ai.azure.com/openai/v1`
+- An API key
+- The deployment name
 
-- A 64-bit Windows host (Server or 11 both work).
-- **Network access to the GridDB Cloud cluster's SQL port.** For GridDB Cloud this means your host must be inside a VNet peered to the Cloud tenant VNet, or connected via Point-to-Site VPN. The Web API IP whitelist does not grant native/SQL port access.
-- **Visual C++ 2015-2022 x64 Redistributable.** The loose `vcruntime140*.dll` files in the folder are not a substitute for installing it properly.
-- Power BI Desktop (64-bit, so use the 64-bit driver).
+Serverless deployments speak the OpenAI-compatible API, so the standard `openai` Python client works unchanged. You just point `base_url` at the Foundry endpoint:
 
-Confirm reachability before installing anything, so a later failure can't be a network problem:
+```python
+import os
+from openai import OpenAI
 
-```powershell
-Test-NetConnection <node-ip> -Port 20001
+client = OpenAI(
+    base_url=os.environ["FOUNDRY_ENDPOINT"],
+    api_key=os.environ["FOUNDRY_KEY"],
+)
 ```
 
-`TcpTestSucceeded : True` means the SQL port is open and routable.
+That's the entire Foundry integration. Everything else is prompt design.
 
-## Installing the driver
+## Pulling data from GridDB Cloud via the Web API
 
-Run `GridStoreODBC_64bit_setup.bat` **as administrator** (it writes to `HKLM` and `C:\Program Files`, both of which need elevation; run it un-elevated and it fails silently). It does two things:
+GridDB Cloud's Web API accepts SQL over HTTPS. You POST a JSON array of statements to the `sql/select` endpoint with basic auth and get JSON back. Here's the query we use, with time bucketing done server-side:
 
-1. Copies the DLLs to `C:\Program Files\TOSHIBA\GridStore\bin\`
-2. Registers the driver via `ODBCCONF` as **`GridStore ODBC(x64)`**
-
-Verify registration took:
-
-```powershell
-Get-ItemProperty "HKLM:\SOFTWARE\ODBC\ODBCINST.INI\ODBC Drivers"
+```sql
+SELECT ts,
+       AVG(temp) AS temp_avg, MIN(temp) AS temp_min, MAX(temp) AS temp_max,
+       AVG(scfm) AS scfm_avg, MIN(scfm) AS scfm_min, MAX(scfm) AS scfm_max,
+       AVG(gpm) AS gpm_avg,
+       AVG(ambient) AS ambient_avg, MIN(ambient) AS ambient_min, MAX(ambient) AS ambient_max
+FROM actual_reading_2
+WHERE ts >= TIMESTAMP('2026-08-24T00:00:00.000Z')
+  AND ts <= TIMESTAMP('2026-08-27T00:00:00.000Z')
+GROUP BY RANGE(ts) EVERY (5, MINUTE)
 ```
 
-You want `GridStore ODBC(x64) : Installed`. Note the exact name, it includes the space and the parenthesized suffix.
+`GROUP BY RANGE(ts) EVERY (5, MINUTE)` is GridDB's time-bucketing clause. It collapses raw 10-second readings into 5-minute buckets, which matters for two reasons. A three-day window at 10-second resolution is about 26,000 rows, far more than you want in a prompt. And the min/max columns give the model intra-bucket spread, so it can tell the difference between a metric that's steady and one that's swinging inside each bucket but averaging out flat.
 
-## The failure
+The request itself:
 
-Open **ODBC Data Sources (64-bit)**, add a System DSN with the GridDB driver, fill in the cluster name, database, credentials, and a Provider URL or Fixed List of node addresses, and click **Connect Test**. You get:
+```python
+import requests
 
-```
-Error: Connect Error! Please check a parameter.
-```
-
-Instantly. Sub-millisecond. And it's identical no matter what you change: Provider vs Fixed List, every SSL mode, every route setting, any database name. It fails before it evaluates a single input.
-
-Enabling the driver's debug log (`LogLevel=1` and a `DebugLogDir` under the driver's registry key) gives you the only clue you'll get:
-
-```
-[GS_SQLConnectExt] dbc=...
-[GS_SQLConnectExt](3878) ERROR: return SQL_ERROR: Exception in connect
-[GSAPI_SQLGetDiagRec] htype=2, number=1, ...
-```
-
-The driver enters its connect routine and throws an internal exception at line 3878. It calls `SQLGetDiagRec` afterward, but the diagnostic record it returns is **empty**. Confirmed independently through .NET's `System.Data.Odbc`, which surfaces an `OdbcException` with a blank `Message`. No SQLSTATE, no reason string, nothing.
-
-## Ruling things out
-
-With no error text to go on, the only option is elimination. Everything below was verified and excluded:
-
-| Suspect | Check | Result |
-|---|---|---|
-| Missing DLL dependencies | Dependencies (dependency walker) on both `GridStoreODBC64.dll` and `gridstore_advanced.dll` | All imports resolve, nothing missing |
-| VC++ runtime | Installed the x64 redistributable | No change |
-| Driver not registered | Registry under `ODBCINST.INI` | Registered correctly |
-| Bitness mismatch | `PROCESSOR_ARCHITECTURE`, `Is64BitProcess` | AMD64, 64-bit process |
-| Network | `Test-NetConnection` to ports 20001 and 10001 | Both succeed |
-| DNS | `nslookup`, and Fixed List mode uses raw IPs with no DNS at all | Resolves; Fixed List fails identically |
-| DSN not saved / bad params | Registry dump of the DSN | All parameters populated and correct |
-| SSL mode | Tried Disabled, Preferred, Verify | Identical failure |
-| Connection route | Tried both settings | Identical failure |
-
-Everything environmental and configurational was clean, and the failure happened before any network I/O. The natural conclusion at that point was a driver/version incompatibility with the Cloud. That conclusion was wrong.
-
-## The actual cause
-
-It was **PATH.**
-
-The fix is documented in the [GridDB ODBC Driver User Guide](https://www.toshiba-sol.co.jp/pro/griddb/docs-jp/v5_9/GridDB_ODBC_Driver_UserGuide.html#section-2), which is in Japanese and is not included in the library download or the English documentation. It says: add the driver's bin directory to the system PATH.
-
-```
-C:\Program Files\TOSHIBA\GridStore\bin
+r = requests.post(
+    f"{GRIDDB_BASE}/dbs/{DB}/sql/select",
+    auth=(os.environ["GRIDDB_USER"], os.environ["GRIDDB_PASS"]),
+    headers={
+        "Content-Type": "application/json",
+        "User-Agent": "curl/8.5.0",
+    },
+    json=[{"stmt": query}],
+    timeout=60,
+)
 ```
 
-Add that to the system `PATH`, open a fresh shell (or reboot so the ODBC manager picks it up), and the DSN connects.
+A few gotchas we hit:
 
-## Why the diagnosis missed it
+The WAF in front of GridDB Cloud rejects the default `python-requests` user agent with a 403. Set `User-Agent` to something else. Any value works; we used curl's.
 
-This is worth understanding, because it explains why every check came back clean while the driver still failed.
+Errors come back as a dict with an `errorMessage` key, while successful queries return a list. Check the shape before indexing into it.
 
-Dependencies (and static analysis in general) resolves a DLL's imports by looking in the DLL's **own directory**. Both `GridStoreODBC64.dll` and `gridstore_advanced.dll` sit in the same folder, so static analysis showed everything present.
+`RANGE` grouping tacks a trailing bucket with a null timestamp onto the results, which you'll want to drop.
 
-But `GridStoreODBC64.dll` doesn't statically import `gridstore_advanced.dll`. It loads it **dynamically at connect time** via `LoadLibrary`, and a dynamic load searches the **PATH**, not the calling DLL's folder. So at runtime:
+The response has a `columns` array and a `results` array. We zip them into `name=value` pairs per row, one row per line. That's the text the model reads.
 
-1. The ODBC manager loads `GridStoreODBC64.dll` (works, it's registered with a full path).
-2. On connect, `GridStoreODBC64.dll` tries to `LoadLibrary("gridstore_advanced.dll")`.
-3. That searches PATH, doesn't find the bin folder, fails.
-4. The driver throws `Exception in connect` before it ever opens a socket, and returns an empty diagnostic record.
+## The analysis script
 
-Every symptom lines up: instant failure, pre-network, clean static deps, mute error. The setup `.bat` copies the DLLs to a folder it never adds to PATH, so the library the driver needs most is exactly the one it can't find.
+With the data fetched and formatted, the script is short. Fetch, format, prompt, print. The full file is about 150 lines and is linked at the end of the post. The part that matters is the prompt.
 
-## Configuring the DSN for GridDB Cloud
+The system prompt sets the role and the boundaries:
 
-Once PATH is set, the DSN config is straightforward. Working settings for a host inside the peered VNet:
+```
+You are an industrial data analyst reviewing water-boiler time-series
+data from GridDB. Give qualitative judgments only: trends, anomalies,
+and direction. Do not produce precise numeric forecasts. Say plainly
+where you lack system context.
+```
 
-| Field | Value |
-|---|---|
-| Cluster Configuration | Fixed List (direct node addresses) or Provider (HTTP provider URL) |
-| Destination | `172.26.30.68:20001,172.26.30.69:20001,172.26.30.70:20001` (Fixed List), or the provider JSON URL |
-| Cluster Name | your cluster name, e.g. `gs_clustermfcloud8737` |
-| Database | `public` (or your assigned database name) |
-| User / Password | your Cloud credentials |
-| SSL Mode | Preferred |
-| Connection Route | internal (you're inside the VNet and reach the private node addresses directly) |
+The user prompt describes the columns, explains what min/max mean, includes the data, and asks for three things:
 
-Click **Save**, then **Connect Test**. It should now take a moment (it's actually talking to the cluster) and succeed.
+1. **Trend.** What each metric is doing across the window, with any cycle or rate claims scaled to the actual bucket size.
+2. **Anomalies.** What looks abnormal. We tell it that a flat value might be a controlled setpoint rather than a fault, and ask it to say which it thinks it is. We also ask it to separately flag any metric with zero min/max spread across the entire window, since that usually means a placeholder or unwired sensor.
+3. **Outlook.** A brief qualitative expectation for the near term.
 
-Then in Power BI Desktop: **Get Data → ODBC → your DSN**, and your GridDB containers appear as tables.
+The bucket size is a single constant used by both the query and the prompt text, so the model can never be told a granularity the query didn't actually produce. That sounds minor, but it's the kind of mismatch that quietly produces confident nonsense.
 
-## Summary of the traps
+We run with `temperature=0.2` and `max_completion_tokens=4096`. The token limit matters more than you'd think. Our first runs at 500 tokens truncated mid-sentence before reaching the anomalies section.
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| Setup `.bat` runs but driver isn't registered | Run without elevation; `ODBCCONF` fails silently | Run the `.bat` as administrator |
-| Registry lookup for `GridStoreODBC` finds nothing | The driver registers as `GridStore ODBC(x64)` | Use the exact registered name |
-| Instant "Connect Error", empty diagnostic, clean static deps | Driver bin dir not on PATH; `gridstore_advanced.dll` fails to load at runtime | Add `C:\Program Files\TOSHIBA\GridStore\bin` to system PATH |
-| Connection refused / timed out (after PATH fix) | No route to the cluster's private SQL port | VNet peering or P2S VPN; whitelist alone isn't enough |
+## A small web UI on top of it
 
-## Takeaways
+The script is fine for a terminal, but it hardcodes one query and one question. To try different windows, different containers, or a different ask without editing Python, we put a thin web page in front of it.
 
-- **The install script is incomplete.** It stages the DLLs but never adds their directory to PATH, and the driver can't locate its own client library without it. A one-line `setx` in the `.bat` would prevent this entirely.
-- **The critical setup step is only in the Japanese docs.** The English materials bundled with the library don't mention PATH, while the other plugins in the same download do include their setup notes. If you're working from the bundle, you won't find it.
-- **The empty diagnostic record is what turns a trivial fix into a multi-hour dig.** If the driver had reported "cannot load gridstore_advanced.dll," this would have been a thirty-second problem. When a driver fails silently before any network activity and static dependency analysis looks clean, suspect a runtime `LoadLibrary` / PATH issue before suspecting version incompatibility.
+![GridDB analysis console](analysis-console.png)
+
+The page is two text boxes and a button. The left box is the SQL, which runs against GridDB Cloud exactly as the script does. The right box is the question, which becomes the user prompt. Hit Run analysis and the page first executes the query, then hands the rows plus your question to the model, and prints the reply in the results pane on the right.
+
+Nothing about the pipeline changes. The UI calls the same fetch and prompt functions as the script; it just takes the query and the question from the form instead of from constants. That means anything you learn in the console (a bucket size that works, a question phrasing that gets better anomaly reports) drops straight back into the script. The backend is [FRAMEWORK] and lives in the same repo.
+
+## The dataset
+
+The data comes from a simulated commercial water boiler: a 50-gallon tank with a modulating burner, feeding hot water to a building on a weekday shift schedule. Every 10 simulated seconds it publishes temperature, burner airflow (`scfm`), water draw (`gpm`), and ambient temperature into GridDB Cloud through a Kafka Connect sink.
+
+The sim has the structure a real plant would have. The setpoint drops to 175°F at 9pm and rises to 200°F at 5am. Demand ramps through the morning, spikes at lunch, and falls off after 7pm. Ambient follows a daily cycle with some weather drift on top.
+
+It also injects faults at random: a burner that partially loses combustion efficiency, a valve stuck open, a temperature sensor that stops updating, a burner that shuts off entirely, a thermostat that drifts upward. Each one gets logged with start and end timestamps to a file. That log is the answer key. The model never sees it.
+
+We ran the sim at 60x speed and generated seven weeks of data in a few hours of wall clock. For the analysis below, we used the first three days.
+
+## What the model found
+
+This is the interesting part. The model was given 865 rows of numbers, the column names, and the phrase "water boiler." No schedule, no fault types, no description of the plant. Here's some of what came back.
+
+On the daily cycle:
+
+> **00:00 to ~05:00:** Mostly stable around the low-to-mid 170s with small intra-bucket spread. **~05:00 to ~11:30:** Clear step-up to ~198 to 195°F band (temp_avg jumps sharply at ~05:00). **~21:00 to ~23:55:** Temperature falls back to ~173°F and stays there with small intra-bucket spread (consistent with a different operating mode).
+
+That's the night setback schedule, reconstructed from the data. It even pinned the 21:00 transition, which is exactly when the setpoint drops.
+
+On the lunch demand block:
+
+> **~11:30 to ~12:55:** scfm is pegged at 7000 (min/max both 7000 for long stretches). This is very likely saturation/limit behavior or a control/measurement ceiling, not normal cycling.
+
+Correct. That's the burner at maximum output trying to keep up with the peak draw. It's not a fault, and the model said so, calling it a limit rather than a failure.
+
+On the one thing that actually broke:
+
+> **~15:15 to ~15:30:** Temperature collapses dramatically (to ~155 then ~112 then ~97) while scfm goes 0. This looks like a shutdown / loss of heat input / major control event. Note: gpm remains nonzero during this period, so the system is still moving water but not heating effectively.
+
+The fault log has `burner_failure` from 15:14:20 to 15:28:10 on that day. The timestamps match to within a bucket, and the mechanism it described (burner off, water still flowing, tank dumping heat) is exactly what happened.
+
+It also flagged a single bucket at the very end of the window where `temp_avg`, `temp_min`, and `temp_max` were identical, and hedged that it might be a single-point artifact rather than a stuck sensor. Fair call with one data point.
+
+## What it didn't find
+
+The three-day window had nine injected faults. The model caught one burner failure and missed the rest: two more burner failures, a 43-minute sensor flatline, a thermostat drift, two stuck valves, and a burner derate. There were also a few scheduled maintenance events, which the model didn't call out either.
+
+Some of those are genuinely hard to see from a single series. A burner derate shows up as the boiler working a bit harder than it should for the same output, which you can't spot without knowing what "should" looks like. A stuck valve is a `gpm` reading that's high but not impossible. And the flatline sat inside a window where the model had already found plenty of other structure to describe.
+
+This is the case for the digital twin. In a previous post we ran a second copy of the same simulation with no faults injected, writing to its own container. Subtract the twin from the actual and every one of those misses becomes a visible divergence: a derate is a persistent efficiency gap, a flatline is one series frozen while the other moves, a stuck valve is `gpm` diverging from the modeled demand. Same model, same prompt, but the input is the residual instead of the raw series. That's the version that turns "isn't it neat" into something you'd run in production, and it's where we're headed next.
+
+## Conclusion
+
+The whole thing is one SQL query over the GridDB Cloud Web API, one prompt, and about 150 lines of Python. From nothing but bucketed numbers, the model reconstructed the plant's operating schedule, correctly identified a burner running at its limit under peak load, and caught a burner failure to within five minutes. For a first-pass analysis of unfamiliar time-series data, that's a lot of signal for very little setup.
