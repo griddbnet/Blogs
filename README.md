@@ -13,6 +13,8 @@ We'll cover:
 5. The dataset we ran it against
 6. What the model actually found
 
+![block diagram](data-flow.png)
+
 ## Setting up Azure AI Foundry
 
 Create a Foundry project (ours is called `griddb-llm`) and deploy a model. We ended up on `gpt-5.4-nano` as a serverless deployment.
