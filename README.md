@@ -6,7 +6,7 @@ You can chat with GridDB data in Chat2DB using a fully local LLM. There are nume
 
 [Chat2DB](https://github.com/OtterMind/Chat2DB) is an AI-powered SQL client: you ask a question in plain English, and it explores your schema, writes SQL, runs it, and answers. Though because GridDB isn't on its list of supported databases, we will add it, wire the AI up to a model running on a local GPU through Ollama, and then test how well it actually answers questions against real GridDB data, both on a self-hosted GridDB CE instance and on GridDB Cloud.
 
-The air quality data (`aqdata`) is real sensor data collected with a Raspberry Pi, as described in [Monitoring California Air Quality with GridDB, a Raspberry Pi and GridDB Cloud](https://www.griddb.net/en/blog/griddb-air-quality-california-pi-cloud/). The boiler data used in the GridDB Cloud section comes from the digital twin simulation in our [previous post]([LINK]). `SalesData` is a small three-column sample table (`id`, `temperature`, `icecreamsales`) used only to compare models.
+The air quality data (`aqdata`) is real sensor data collected with a Raspberry Pi, as described in [Monitoring Air Quality in California using Home Assistant, Raspberry Pi, and GridDB Cloud](https://www.griddb.net/en/blog/griddb-air-quality-california-pi-cloud/). The boiler data used in the GridDB Cloud section comes from the digital twin simulation in our [whitepaper](https://www.griddb.net/en/resources/griddb-digital-twin/). `SalesData` is a small three-column sample table (`id`, `temperature`, `icecreamsales`) used only to compare models.
 
 ![natural_language](/images/natural_language_example.png)
 
